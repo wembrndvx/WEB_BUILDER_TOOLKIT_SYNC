@@ -1,0 +1,16 @@
+{
+  "name": "rnbt-architecture",
+  "version": "1.0.0",
+  "description": "RNBT architecture E2E tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
+  }
+}
