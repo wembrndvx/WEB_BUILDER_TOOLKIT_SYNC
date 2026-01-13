@@ -400,4 +400,43 @@ console.log('[Component] appendElement accessible in destroy:', !!this.appendEle
   expect(beforeDestroyIndex).toBeLessThan(destroyIndex);
 
   console.log('✓ TC-LC-004: destroy 시점에서 appendElement 접근 불가 검증 완료');
+
+  // ========== TC-LC-005: 다중 컴포넌트 라이프사이클 순서 검증 ==========
+  // visual.do 탭으로 돌아가기
+  await page.bringToFront();
+
+  // Components 패널 열기
+  await page.locator('#edit-menu-bar .el-menu-item').nth(1).locator('svg').click();
+  await page.locator('#panel-content-area').waitFor({ state: 'visible' });
+
+  // Fundamental 카테고리 선택
+  await page.locator('#panel-content-area .el-tree-node__content:has-text("Fundamental")').click();
+  await page.waitForTimeout(500);
+
+  const componentListForLC005 = page.locator('#panel-content-area .component-thumb-list .list').first();
+  const editAreaForLC005 = page.locator('.editor .edit-area-main');
+
+  // Button 컴포넌트 추가
+  const buttonComponent = componentListForLC005.locator('.component span').filter({ hasText: 'Button' }).first().locator('..').locator('.img-wrap');
+  await buttonComponent.dragTo(editAreaForLC005);
+  await page.waitForTimeout(500);
+  console.log('✓ Button 컴포넌트 추가 완료');
+
+  // Close Button 컴포넌트 추가
+  const closeButtonComponent = componentListForLC005.locator('.component span').filter({ hasText: 'Close Button' }).first().locator('..').locator('.img-wrap');
+  await closeButtonComponent.dragTo(editAreaForLC005);
+  await page.waitForTimeout(500);
+  console.log('✓ Close Button 컴포넌트 추가 완료');
+
+  // Spinners 컴포넌트 추가
+  const spinnersComponent = componentListForLC005.locator('.component span').filter({ hasText: 'Spinners' }).first().locator('..').locator('.img-wrap');
+  await spinnersComponent.dragTo(editAreaForLC005);
+  await page.waitForTimeout(500);
+  console.log('✓ Spinners 컴포넌트 추가 완료');
+
+  // 저장
+  await page.keyboard.press('Control+s');
+  await page.waitForTimeout(1000);
+
+  console.log('✓ TC-LC-005: 컴포넌트 3개 추가 완료 (Button, Close Button, Spinners)');
 });
