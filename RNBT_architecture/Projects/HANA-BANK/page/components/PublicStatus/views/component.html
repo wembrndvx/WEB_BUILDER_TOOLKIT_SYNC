@@ -1,0 +1,54 @@
+<div class="public-status">
+    <div class="public-status__block">
+        <div class="public-status__group">
+            <!-- Header -->
+            <div class="public-status__header">
+                <!-- Title -->
+                <div class="public-status__title">
+                    <div class="public-status__title-icon">
+                        <img src="assets/title-icon.svg" alt="">
+                    </div>
+                    <span class="public-status__title-text">Public 현황</span>
+                </div>
+
+                <!-- Info Box -->
+                <div class="public-status__info-box">
+                    <span class="public-status__info-label">금일건수</span>
+                    <div class="public-status__info-divider">
+                        <div class="public-status__info-divider-inner">
+                            <div class="public-status__info-divider-line">
+                                <img src="assets/divider-line.svg" alt="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="public-status__info-item">
+                        <span class="public-status__info-value" data-bind="TBD_todayCount">-</span>
+                        <span class="public-status__info-unit">건</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Box -->
+            <div class="public-status__content-box">
+                <!-- Chart Container (ECharts) -->
+                <div class="public-status__chart-container"></div>
+
+                <!-- Legend -->
+                <div class="public-status__legend">
+                    <div class="public-status__legend-item">
+                        <div class="public-status__legend-content">
+                            <div class="public-status__legend-line public-status__legend-line--yesterday"></div>
+                            <span class="public-status__legend-text">전일</span>
+                        </div>
+                    </div>
+                    <div class="public-status__legend-item">
+                        <div class="public-status__legend-content">
+                            <div class="public-status__legend-line public-status__legend-line--today"></div>
+                            <span class="public-status__legend-text">금일</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

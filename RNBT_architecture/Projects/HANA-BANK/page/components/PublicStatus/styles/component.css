@@ -1,0 +1,232 @@
+/* PublicStatus Component - component.css */
+/* Container: 610 x 324 (from Figma metadata) */
+
+#public-status-container {
+    width: 610px;
+    height: 324px;
+    overflow: hidden;
+}
+
+/* Main wrapper */
+.public-status {
+    width: 100%;
+    height: 100%;
+}
+
+/* Block - Main Container */
+.public-status__block {
+    background-color: rgba(42, 42, 42, 0.5);
+    border: 0.3px solid #778985;
+    border-radius: 14.831px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Inner shadow overlay */
+.public-status__block::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 4px 4px 4px 0px rgba(0, 0, 0, 0.06);
+}
+
+/* Group - Main content wrapper */
+.public-status__group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+/* Header */
+.public-status__header {
+    display: flex;
+    height: 38px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+}
+
+/* Title section */
+.public-status__title {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+}
+
+.public-status__title-icon {
+    width: 16.681px;
+    height: 18.27px;
+    position: relative;
+}
+
+.public-status__title-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+}
+
+.public-status__title-text {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: normal;
+    color: #e9ebeb;
+    white-space: nowrap;
+}
+
+/* Info box (right side) */
+.public-status__info-box {
+    display: flex;
+    gap: 18px;
+    height: 38px;
+    width: 183px;
+    align-items: center;
+    padding: 6px 17px;
+    border: 0.75px solid #5e5e5e;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                linear-gradient(90deg, rgba(59, 76, 70, 0.1) 0%, rgba(59, 76, 70, 0.1) 100%),
+                linear-gradient(90deg, rgb(22, 36, 32) 0%, rgb(22, 36, 32) 100%);
+    position: relative;
+}
+
+.public-status__info-label {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    line-height: normal;
+    color: #f2f9ef;
+    text-align: center;
+    width: 56px;
+    white-space: nowrap;
+}
+
+.public-status__info-divider {
+    display: flex;
+    width: 0;
+    height: 20px;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.public-status__info-divider-inner {
+    transform: rotate(90deg);
+}
+
+.public-status__info-divider-line {
+    width: 20px;
+    height: 0;
+    position: relative;
+}
+
+.public-status__info-divider-line img {
+    display: block;
+    width: 100%;
+    height: 1px;
+    max-width: none;
+}
+
+.public-status__info-item {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1;
+    min-width: 1px;
+    min-height: 1px;
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 500;
+    line-height: normal;
+    white-space: nowrap;
+}
+
+.public-status__info-value {
+    font-size: 18px;
+    color: #5bdcc6;
+    text-align: right;
+}
+
+.public-status__info-unit {
+    font-size: 16px;
+    color: #9c9c9c;
+    text-align: center;
+}
+
+/* Content box */
+.public-status__content-box {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+/* Chart Container (ECharts) */
+.public-status__chart-container {
+    width: 100%;
+    height: 190px;
+}
+
+/* Legend */
+.public-status__legend {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.public-status__legend-item {
+    display: flex;
+    flex-direction: column;
+    width: 53.167px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    padding: 4.583px 11px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 0.688px solid rgba(255, 255, 255, 0.3);
+    border-radius: 18.333px;
+}
+
+.public-status__legend-content {
+    display: flex;
+    gap: 3.667px;
+    align-items: center;
+}
+
+.public-status__legend-line {
+    width: 9.167px;
+    height: 1.833px;
+}
+
+.public-status__legend-line--yesterday {
+    background-color: #038c8c;
+}
+
+.public-status__legend-line--today {
+    background-color: #5bdcc6;
+}
+
+.public-status__legend-text {
+    font-family: 'Pretendard', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: normal;
+    color: white;
+    white-space: nowrap;
+}

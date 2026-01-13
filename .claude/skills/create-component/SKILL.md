@@ -765,6 +765,68 @@ console.log('[ComponentName] Destroyed');
 
 ---
 
+## 차트 컴포넌트 필수 규칙
+
+**Figma에서 차트가 정적 SVG로 제공되더라도, 동적 데이터를 표시하는 차트는 반드시 ECharts로 구현한다.**
+
+```
+❌ 잘못된 접근:
+- Figma SVG를 그대로 사용 → "디자인 일치하니까 정적으로 두자"
+- ECharts 구현을 TBD로 미루기
+- "나중에 동적으로 바꾸면 되지" 생각
+
+✅ 올바른 접근:
+- 차트 영역 식별 → ECharts 컨테이너로 대체
+- Figma의 정적 SVG 차트는 제거
+- Figma 디자인은 차트 스타일(색상, 그리드, 레전드 등) 참고용으로만 사용
+- config.chart에 ECharts 설정 정의
+```
+
+**이유**: create-component의 목적은 "동적 컴포넌트" 생성이다. 정적 SVG 차트는 데이터 변경 시 업데이트가 불가능하여 컴포넌트의 목적에 맞지 않는다.
+
+### 차트 변환 예시
+
+```javascript
+// Figma: 정적 SVG 라인 차트
+// → 제거하고 ECharts 컨테이너로 대체
+
+// HTML
+<div class="component__chart-container"></div>
+
+// register.js
+const chartConfig = {
+    container: '.component__chart-container',
+    xKey: 'TBD_timestamps',
+    series: [
+        { yKey: 'TBD_yesterday', name: '전일', color: '#038c8c' },
+        { yKey: 'TBD_today', name: '금일', color: '#5bdcc6' }
+    ]
+};
+
+// ECharts 초기화
+const chartContainer = this.appendElement.querySelector(chartConfig.container);
+this.chartInstance = echarts.init(chartContainer);
+
+// 렌더링 함수에서 차트 업데이트
+function renderChart(config, { response }) {
+    const { data } = response;
+    if (!data || !this.chartInstance) return;
+
+    const option = {
+        xAxis: { data: data[config.xKey] },
+        series: config.series.map(s => ({
+            name: s.name,
+            type: 'line',
+            data: data[s.yKey],
+            itemStyle: { color: s.color }
+        }))
+    };
+    this.chartInstance.setOption(option);
+}
+```
+
+---
+
 ## 금지 사항
 
 ```
