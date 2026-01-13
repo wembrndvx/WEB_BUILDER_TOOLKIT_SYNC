@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('로그인 후 visual.do 접속 확인', { timeout: 60000 }, async ({ page }) => {
+test('로그인 후 visual.do 접속 확인', { timeout: 120000 }, async ({ page }) => {
   // 로그인 페이지 접속
   await page.goto('/renobit');
 
@@ -235,16 +235,67 @@ test('로그인 후 visual.do 접속 확인', { timeout: 60000 }, async ({ page 
   await codeBoxPage.keyboard.press('Control+a');
   await codeBoxPage.keyboard.press('Backspace');
 
-  // openPage 코드 입력
-  const registerCode = `const openPage = wemb.pageManager.openPageByName.bind(wemb.pageManager);
+  // TC-LC-002 검증 코드 + openPage 코드 입력
+  const registerCode = `// TC-LC-002 검증
+console.log('[Component] register');
+console.log('[Component] appendElement:', this.appendElement);
+console.log('[Component] appendElement tagName:', this.appendElement?.tagName);
+
+// openPage 코드
+const openPage = wemb.pageManager.openPageByName.bind(wemb.pageManager);
 this.appendElement.addEventListener('click', () => openPage('openPageTarget'));`;
 
   await codeBoxPage.keyboard.type(registerCode);
 
+  console.log('✓ register 탭에 TC-LC-002 검증 코드 + openPage 코드 입력 완료');
+
+  // beforeDestroy 탭 클릭
+  await codeBoxPage.locator('#allEditArea .el-tabs__item:has-text("beforeDestroy")').click();
+
+  // beforeDestroy 탭의 Monaco 에디터 선택자 (pane-2: register(0) → completed(1) → beforeDestroy(2))
+  const beforeDestroyEditorSelector = '#allEditArea #pane-2 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+
+  await codeBoxPage.locator(beforeDestroyEditorSelector).waitFor({ state: 'visible' });
+  await codeBoxPage.locator(beforeDestroyEditorSelector).click();
+
+  // 기존 내용 전체 선택 후 삭제
+  await codeBoxPage.keyboard.press('Control+a');
+  await codeBoxPage.keyboard.press('Backspace');
+
+  // TC-LC-002 beforeDestroy 검증 코드 입력
+  const beforeDestroyCode = `// TC-LC-002 검증
+console.log('[Component] beforeDestroy');
+console.log('[Component] appendElement still accessible:', !!this.appendElement);`;
+
+  await codeBoxPage.keyboard.type(beforeDestroyCode);
+
+  console.log('✓ beforeDestroy 탭에 TC-LC-002 검증 코드 입력 완료');
+
+  // destroy 탭 클릭 (TC-LC-004: appendElement 접근 불가 검증)
+  await codeBoxPage.getByRole('tab', { name: 'destroy', exact: true }).click();
+
+  // destroy 탭의 Monaco 에디터 선택자 (pane-3: register(0) → completed(1) → beforeDestroy(2) → destroy(3))
+  const destroyEditorSelector = '#allEditArea #pane-3 > div > div > div.overflow-guard > div.monaco-scrollable-element.editor-scrollable.vs-dark > div.lines-content.monaco-editor-background > div.view-lines.monaco-mouse-cursor-text';
+
+  await codeBoxPage.locator(destroyEditorSelector).waitFor({ state: 'visible' });
+  await codeBoxPage.locator(destroyEditorSelector).click();
+
+  // 기존 내용 전체 선택 후 삭제
+  await codeBoxPage.keyboard.press('Control+a');
+  await codeBoxPage.keyboard.press('Backspace');
+
+  // TC-LC-004 destroy 검증 코드 입력
+  const destroyCode = `// TC-LC-004 검증: destroy 시점에서 appendElement 접근 불가 확인
+console.log('[Component] destroy');
+console.log('[Component] appendElement in destroy:', this.appendElement);
+console.log('[Component] appendElement accessible in destroy:', !!this.appendElement);`;
+
+  await codeBoxPage.keyboard.type(destroyCode);
+
+  console.log('✓ destroy 탭에 TC-LC-004 검증 코드 입력 완료');
+
   // Apply 버튼 클릭
   await codeBoxPage.locator('.apply-btn').click();
-
-  console.log('✓ register 탭에 openPage 코드 입력 완료');
 
   // visual.do 탭으로 돌아가기
   await page.bringToFront();
@@ -258,11 +309,25 @@ this.appendElement.addEventListener('click', () => openPage('openPageTarget'));`
   // 캔버스 영역 클릭하여 포커스
   await page.locator('#app-main').click();
 
+  // 콘솔 로그 수집 배열 (미리 선언)
+  const pageTransitionLogs: string[] = [];
+  const componentLogs: string[] = [];
+
   // Ctrl+Enter로 미리보기 실행 - 새 탭이 열림
   const [previewPage] = await Promise.all([
     page.context().waitForEvent('page'),
     page.keyboard.press('Control+Enter')
   ]);
+
+  // 콘솔 리스너 등록 (로드 전에 등록해야 register 로그 수집 가능)
+  previewPage.on('console', (msg) => {
+    if (msg.text().includes('[Page]')) {
+      pageTransitionLogs.push(msg.text());
+    }
+    if (msg.text().includes('[Component]')) {
+      componentLogs.push(msg.text());
+    }
+  });
 
   // 뷰어 탭 로드 대기
   await previewPage.waitForLoadState();
@@ -272,14 +337,6 @@ this.appendElement.addEventListener('click', () => openPage('openPageTarget'));`
 
   // 뷰어 로딩 완료 대기 (Loading Viewer 사라질 때까지)
   await previewPage.locator('.badge_1').waitFor({ state: 'visible', timeout: 30000 });
-
-  // 페이지 이동 시 beforeUnload 콘솔 로그 수집
-  const pageTransitionLogs: string[] = [];
-  previewPage.on('console', (msg) => {
-    if (msg.text().includes('[Page]')) {
-      pageTransitionLogs.push(msg.text());
-    }
-  });
 
   // Badge 컴포넌트 (badge_1) 클릭
   await previewPage.locator('.badge_1').click();
@@ -302,4 +359,45 @@ this.appendElement.addEventListener('click', () => openPage('openPageTarget'));`
   expect(beforeUnloadIndex).toBeGreaterThanOrEqual(0);
 
   console.log('✓ beforeUnload 라이프사이클 실행 확인 완료');
+
+  // TC-LC-002: 컴포넌트 라이프사이클 검증
+  console.log('=== 컴포넌트 라이프사이클 콘솔 로그 ===');
+  componentLogs.forEach((log) => console.log(log));
+
+  // register 로그 확인
+  const registerIndex = componentLogs.findIndex((log) => log.includes('[Component] register'));
+  expect(registerIndex).toBeGreaterThanOrEqual(0);
+
+  // appendElement 접근 가능 확인
+  const appendElementLog = componentLogs.find((log) => log.includes('[Component] appendElement tagName:'));
+  expect(appendElementLog).toBeDefined();
+  expect(appendElementLog).toContain('DIV');
+
+  // beforeDestroy 로그 확인
+  const beforeDestroyIndex = componentLogs.findIndex((log) => log.includes('[Component] beforeDestroy'));
+  expect(beforeDestroyIndex).toBeGreaterThanOrEqual(0);
+
+  // beforeDestroy에서 appendElement 접근 가능 확인
+  const accessibleLog = componentLogs.find((log) => log.includes('[Component] appendElement still accessible:'));
+  expect(accessibleLog).toBeDefined();
+  expect(accessibleLog).toContain('true');
+
+  // 순서 검증: register가 beforeDestroy보다 먼저
+  expect(registerIndex).toBeLessThan(beforeDestroyIndex);
+
+  console.log('✓ TC-LC-002: 컴포넌트 라이프사이클 순서 검증 완료 (register → beforeDestroy)');
+
+  // TC-LC-004: destroy 시점에서 appendElement 접근 불가 검증
+  const destroyIndex = componentLogs.findIndex((log) => log.includes('[Component] destroy'));
+  expect(destroyIndex).toBeGreaterThanOrEqual(0);
+
+  // destroy에서 appendElement 접근 불가 확인 (false)
+  const destroyAccessibleLog = componentLogs.find((log) => log.includes('[Component] appendElement accessible in destroy:'));
+  expect(destroyAccessibleLog).toBeDefined();
+  expect(destroyAccessibleLog).toContain('false');
+
+  // 순서 검증: beforeDestroy가 destroy보다 먼저
+  expect(beforeDestroyIndex).toBeLessThan(destroyIndex);
+
+  console.log('✓ TC-LC-004: destroy 시점에서 appendElement 접근 불가 검증 완료');
 });
