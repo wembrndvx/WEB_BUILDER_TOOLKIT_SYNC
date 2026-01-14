@@ -68,6 +68,7 @@ if (this._tableInstance) {
 // ======================
 this._treeData = null;
 this._expandedNodes = null;
+this._loadedNodes = null;
 this._selectedNodeId = null;
 this._allAssets = null;
 this._searchTerm = null;

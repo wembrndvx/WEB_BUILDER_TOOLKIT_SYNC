@@ -25,7 +25,8 @@ function initComponent() {
     // ======================
     this.subscriptions = {
         'hierarchy': ['renderTree'],
-        'hierarchyAssets': ['renderTable']
+        'hierarchyAssets': ['renderTable'],
+        'hierarchyChildren': ['appendChildren']
     };
 
     // ======================
@@ -33,6 +34,7 @@ function initComponent() {
     // ======================
     this._treeData = null;
     this._expandedNodes = new Set();
+    this._loadedNodes = new Set(); // Lazy Loading된 노드 추적
     this._selectedNodeId = null;
     this._allAssets = [];
     this._searchTerm = '';
@@ -63,6 +65,7 @@ function initComponent() {
     // ======================
     this.renderTree = renderTree.bind(this);
     this.renderTable = renderTable.bind(this);
+    this.appendChildren = appendChildren.bind(this);
     this.toggleNode = toggleNode.bind(this);
     this.selectNode = selectNode.bind(this);
     this.expandAll = expandAll.bind(this);
@@ -152,7 +155,7 @@ function setupInternalHandlers() {
 
         // 토글 영역 클릭 → 펼침/접힘
         if (e.target.closest('.node-toggle') && !toggle.classList.contains('leaf')) {
-            ctx.toggleNode(nodeId);
+            ctx.toggleNode(nodeId, nodeEl);
         } else {
             // 나머지 영역 클릭 → 노드 선택
             ctx.selectNode(nodeId);
@@ -222,6 +225,47 @@ function renderTree({ response }) {
     console.log('[AssetList] Tree rendered:', data.summary);
 }
 
+/**
+ * Lazy Loading으로 가져온 children을 트리에 추가
+ */
+function appendChildren({ response }) {
+    const { data } = response;
+    if (!data || !data.parentId) return;
+
+    const { parentId, children } = data;
+
+    // 트리 데이터에 children 추가
+    addChildrenToNode.call(this, this._treeData, parentId, children);
+
+    // 로딩 완료 표시
+    this._loadedNodes.add(parentId);
+
+    // 트리 재렌더링
+    renderTreeNodes.call(this, this._treeData, this._treeSearchTerm);
+
+    console.log(`[AssetList] Lazy loaded ${children.length} children for ${parentId}`);
+}
+
+/**
+ * 트리 데이터에서 특정 노드를 찾아 children 추가
+ */
+function addChildrenToNode(items, parentId, children) {
+    if (!items) return false;
+
+    for (const item of items) {
+        if (item.id === parentId) {
+            item.children = children;
+            return true;
+        }
+        if (item.children && item.children.length > 0) {
+            if (addChildrenToNode.call(this, item.children, parentId, children)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function renderTreeNodes(items, searchTerm = '') {
     const rootEl = this.appendElement.querySelector('.tree-root');
     if (!rootEl) return;
@@ -239,14 +283,17 @@ function renderTreeNodes(items, searchTerm = '') {
 }
 
 function createTreeNode(item, searchTerm) {
-    const { id, name, type, status, children = [], assetCount } = item;
-    const hasChildren = children.length > 0;
+    const { id, name, type, status, children = [], hasChildren: apiHasChildren, assetCount } = item;
+    // hasChildren: API에서 제공된 값이 있으면 사용, 없으면 children 배열로 판단
+    const hasChildren = apiHasChildren !== undefined ? apiHasChildren : children.length > 0;
+    const hasLoadedChildren = children.length > 0;
     const isExpanded = this._expandedNodes.has(id);
     const isSelected = this._selectedNodeId === id;
+    const needsLazyLoad = hasChildren && !hasLoadedChildren && !this._loadedNodes.has(id);
 
     // 검색 필터
     const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm);
-    const hasMatchingDescendants = hasChildren && checkDescendants(children, searchTerm);
+    const hasMatchingDescendants = hasLoadedChildren && checkDescendants(children, searchTerm);
 
     if (searchTerm && !matchesSearch && !hasMatchingDescendants) {
         return null;
@@ -256,6 +303,8 @@ function createTreeNode(item, searchTerm) {
     li.className = 'tree-node';
     li.dataset.nodeId = id;
     li.dataset.nodeType = type;
+    li.dataset.hasChildren = hasChildren;
+    li.dataset.needsLazyLoad = needsLazyLoad;
 
     // Node Content
     const content = document.createElement('div');
@@ -309,13 +358,22 @@ function createTreeNode(item, searchTerm) {
             childrenUl.classList.add('expanded');
         }
 
-        go(
-            children,
-            each(child => {
-                const childEl = createTreeNode.call(this, child, searchTerm);
-                if (childEl) childrenUl.appendChild(childEl);
-            })
-        );
+        // 로딩된 children이 있으면 렌더링
+        if (hasLoadedChildren) {
+            go(
+                children,
+                each(child => {
+                    const childEl = createTreeNode.call(this, child, searchTerm);
+                    if (childEl) childrenUl.appendChild(childEl);
+                })
+            );
+        } else if (needsLazyLoad) {
+            // Lazy Loading 필요한 경우 로딩 표시
+            const loadingLi = document.createElement('li');
+            loadingLi.className = 'tree-node loading-placeholder';
+            loadingLi.innerHTML = '<span class="loading-text">Loading...</span>';
+            childrenUl.appendChild(loadingLi);
+        }
 
         li.appendChild(childrenUl);
     }
@@ -334,12 +392,26 @@ function checkDescendants(children, searchTerm) {
 // ======================
 // NODE ACTIONS
 // ======================
-function toggleNode(nodeId) {
-    if (this._expandedNodes.has(nodeId)) {
-        this._expandedNodes.delete(nodeId);
-    } else {
+function toggleNode(nodeId, nodeEl) {
+    const isExpanding = !this._expandedNodes.has(nodeId);
+
+    if (isExpanding) {
         this._expandedNodes.add(nodeId);
+
+        // Lazy Loading 필요 여부 확인
+        const needsLazyLoad = nodeEl?.dataset.needsLazyLoad === 'true';
+
+        if (needsLazyLoad && !this._loadedNodes.has(nodeId)) {
+            // Lazy Loading 요청 이벤트 발행
+            Weventbus.emit('@hierarchyChildrenRequested', {
+                event: { nodeId },
+                targetInstance: this
+            });
+        }
+    } else {
+        this._expandedNodes.delete(nodeId);
     }
+
     updateNodeVisuals.call(this, nodeId);
 }
 

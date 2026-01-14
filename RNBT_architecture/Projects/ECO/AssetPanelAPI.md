@@ -90,22 +90,31 @@
 [1] 패널 로드
      │
      ▼
-    Tree 구조 조회 API 호출
+    Tree 초기 로딩 (depth 제한 또는 루트만)
      │
      ▼
     컨테이너 자산으로 Tree 렌더링
 
 
-[2] Tree 노드 클릭
+[2] Tree 노드 펼침 (Lazy Loading)
      │
      ▼
-    해당 노드의 하위 자산 조회 API 호출
+    해당 노드의 하위 컨테이너 조회 API 호출
+     │
+     ▼
+    children 렌더링
+
+
+[3] Tree 노드 클릭 (선택)
+     │
+     ▼
+    해당 노드의 하위 자산 목록 조회 API 호출
      │
      ▼
     전체 자산 한 번에 로딩 → Table 렌더링
 
 
-[3] Table 행 클릭
+[4] Table 행 클릭
      │
      ▼
     클릭된 자산 정보 이벤트 발행
@@ -164,17 +173,23 @@
 
 ## 7. API 구조
 
-### API 1: 계층 트리 조회
+### API 1: 계층 트리 조회 (초기 로딩)
 
 ```
-GET /api/hierarchy
+GET /api/hierarchy?depth={n}
 ```
 
 | 항목 | 내용 |
 |------|------|
-| 용도 | Tree 렌더링 |
+| 용도 | Tree 초기 렌더링 |
 | 호출 시점 | 패널 초기화 |
 | 응답 | `canHaveChildren === true` 인 자산들의 트리 구조 |
+
+#### Parameters
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| depth | number | 2 | 반환할 트리 깊이 (1: 루트만, 2: 루트+1레벨, ...) |
 
 #### Response 예시
 
@@ -187,6 +202,7 @@ GET /api/hierarchy
         "name": "본관",
         "type": "building",
         "canHaveChildren": true,
+        "hasChildren": true,
         "status": "normal",
         "children": [
           {
@@ -194,10 +210,64 @@ GET /api/hierarchy
             "name": "1층",
             "type": "floor",
             "canHaveChildren": true,
+            "hasChildren": true,
             "status": "warning",
-            "children": [...]
+            "children": []
           }
         ]
+      }
+    ],
+    "summary": {
+      "totalContainers": 381,
+      "depth": 2
+    }
+  }
+}
+```
+
+#### Response Fields
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| hasChildren | boolean | 하위 노드 존재 여부 (Lazy Loading 판단용) |
+| children | array | depth 범위 내 하위 노드 (범위 밖이면 빈 배열) |
+
+---
+
+### API 2: 노드 하위 컨테이너 조회 (Lazy Loading)
+
+```
+GET /api/hierarchy/{nodeId}/children
+```
+
+| 항목 | 내용 |
+|------|------|
+| 용도 | Tree 노드 펼침 시 하위 로딩 |
+| 호출 시점 | Tree 노드 펼침 (hasChildren: true이고 children이 비어있을 때) |
+| 응답 | 해당 노드의 직속 하위 컨테이너 자산 |
+
+#### Response 예시
+
+```json
+{
+  "data": {
+    "parentId": "floor-001-01",
+    "children": [
+      {
+        "id": "room-001-01-01",
+        "name": "서버실",
+        "type": "room",
+        "canHaveChildren": true,
+        "hasChildren": true,
+        "status": "warning"
+      },
+      {
+        "id": "room-001-01-02",
+        "name": "통신실",
+        "type": "room",
+        "canHaveChildren": true,
+        "hasChildren": false,
+        "status": "normal"
       }
     ]
   }
@@ -206,7 +276,7 @@ GET /api/hierarchy
 
 ---
 
-### API 2: 노드별 자산 목록 조회
+### API 3: 노드별 자산 목록 조회 (Table용)
 
 ```
 GET /api/hierarchy/{nodeId}/assets
@@ -215,8 +285,8 @@ GET /api/hierarchy/{nodeId}/assets
 | 항목 | 내용 |
 |------|------|
 | 용도 | Table 렌더링 |
-| 호출 시점 | Tree 노드 클릭 |
-| 응답 | 해당 노드 하위 전체 자산 (한 번에 전부) |
+| 호출 시점 | Tree 노드 선택 (클릭) |
+| 응답 | 해당 노드 하위 전체 자산 (컨테이너 + 단말, 플랫 목록) |
 
 #### Response 예시
 
@@ -254,7 +324,7 @@ GET /api/hierarchy/{nodeId}/assets
 
 ---
 
-### API 3: 자산 상세 조회 (필요 시)
+### API 4: 자산 상세 조회 (필요 시)
 
 ```
 GET /api/assets/{assetId}
@@ -268,17 +338,52 @@ GET /api/assets/{assetId}
 
 ---
 
-## 8. 데이터 로딩 전략
+## 8. API 호출 흐름
 
-| 항목 | 결정 내용 |
-|------|----------|
-| 로딩 방식 | Tree 노드 클릭 시 하위 자산을 한 번에 전부 로딩 |
-| 페이지네이션 | 없음 |
-| 렌더링 최적화 | Tabulator 가상 스크롤로 처리 |
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  1. 패널 로드                                                    │
+│     GET /api/hierarchy?depth=2                                   │
+│     → Tree 초기 렌더링 (루트 + 1레벨)                            │
+│                                                                  │
+│  2. Tree 노드 펼침 (예: 1층 펼침)                                 │
+│     GET /api/hierarchy/floor-001-01/children                     │
+│     → 서버실, 통신실 등 하위 컨테이너 로딩                        │
+│                                                                  │
+│  3. Tree 노드 선택 (예: 서버실 클릭)                              │
+│     GET /api/hierarchy/room-001-01-01/assets                     │
+│     → Table에 서버실 하위 전체 자산 표시                          │
+│                                                                  │
+│  4. Table 행 클릭 (예: UPS-A 클릭)                                │
+│     GET /api/assets/ups-001 (필요 시)                            │
+│     → 상세 정보 팝업 또는 이벤트 발행                             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 9. 자산관리시스템에 요청할 필드
+## 9. 데이터 로딩 전략
+
+| 항목 | 결정 내용 |
+|------|----------|
+| Tree 초기 로딩 | depth 파라미터로 제한 (기본 2레벨) |
+| Tree 확장 | Lazy Loading (노드 펼침 시 children 조회) |
+| Table 로딩 | 노드 선택 시 하위 자산 한 번에 전부 로딩 |
+| 렌더링 최적화 | Tabulator 가상 스크롤 |
+
+### 규모별 전략
+
+| 규모 | 컨테이너 수 | 전략 |
+|------|------------|------|
+| 소규모 | ~100개 | 전체 로딩 가능 (depth 제한 없이) |
+| 중규모 | 100~1,000개 | depth=2~3으로 제한 + Lazy Loading |
+| 대규모 | 1,000개 이상 | depth=1 + Lazy Loading 필수 |
+
+---
+
+## 10. 자산관리시스템에 요청할 필드
 
 ### 필수 필드
 
@@ -288,6 +393,7 @@ GET /api/assets/{assetId}
   "name": "서버실 A",
   "type": "room",
   "canHaveChildren": true,
+  "hasChildren": true,
   "parentId": "floor-001",
   "status": "normal"
 }
@@ -299,6 +405,7 @@ GET /api/assets/{assetId}
 | name | string | 자산 이름 |
 | type | string | 자산 타입 (자산관리시스템에서 정의) |
 | canHaveChildren | boolean | **핵심 구분자** - children 가능 여부 |
+| hasChildren | boolean | 실제 하위 노드 존재 여부 (Lazy Loading용) |
 | parentId | string | 상위 자산 ID |
 | status | string | 상태 (normal / warning / critical) |
 
@@ -312,7 +419,18 @@ GET /api/assets/{assetId}
 
 ---
 
-## 10. 미결 사항
+## 11. API 요약
+
+| API | 용도 | 호출 시점 |
+|-----|------|----------|
+| `GET /api/hierarchy?depth=n` | Tree 초기 로딩 | 패널 로드 |
+| `GET /api/hierarchy/{nodeId}/children` | Tree Lazy Loading | 노드 펼침 |
+| `GET /api/hierarchy/{nodeId}/assets` | Table 렌더링 | 노드 선택 |
+| `GET /api/assets/{assetId}` | 자산 상세 | 행 클릭 (필요 시) |
+
+---
+
+## 12. 미결 사항
 
 | 항목 | 설명 | 상태 |
 |------|------|------|
@@ -328,3 +446,4 @@ GET /api/assets/{assetId}
 | 날짜 | 내용 |
 |------|------|
 | 2026-01-14 | 초안 작성 - 자산 패널 API 설계 논의 정리 |
+| 2026-01-14 | Lazy Loading API 추가 (depth 파라미터, children 조회) |

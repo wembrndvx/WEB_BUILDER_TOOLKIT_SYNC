@@ -18,177 +18,395 @@ function getRandomStatus() {
     return 'critical';
 }
 
-function calculateAggregateStatus(items) {
-    if (!items || items.length === 0) return 'normal';
-    if (items.some(i => i.status === 'critical')) return 'critical';
-    if (items.some(i => i.status === 'warning')) return 'warning';
+/**
+ * 하위 자산들의 상태를 집계하여 부모 상태 결정
+ * critical > warning > normal 우선순위
+ */
+function calculateAggregateStatus(node) {
+    if (!node.children || node.children.length === 0) {
+        return node.status || 'normal';
+    }
+
+    let hasCritical = false;
+    let hasWarning = false;
+
+    for (const child of node.children) {
+        const childStatus = calculateAggregateStatus(child);
+        if (childStatus === 'critical') hasCritical = true;
+        if (childStatus === 'warning') hasWarning = true;
+    }
+
+    if (hasCritical) return 'critical';
+    if (hasWarning) return 'warning';
     return 'normal';
 }
 
 // ======================
 // HIERARCHY DATA STRUCTURE
 // ======================
-
-const BUILDINGS = [
-    { id: 'building-001', name: '본관' },
-    { id: 'building-002', name: '별관 A' },
-    { id: 'building-003', name: '별관 B' }
-];
-
-const ROOM_NAMES = [
-    '서버실 A', '서버실 B', '네트워크실', '전산실',
-    '통신실', 'UPS실', '항온항습실', '모니터링실',
-    '백업실', '스토리지실', '개발실', '운영실'
-];
+// 핵심 원칙: 모든 것은 "자산(Asset)"
+// - canHaveChildren: true → Tree에 표시되는 컨테이너 자산
+// - canHaveChildren: false → Table에만 표시되는 말단 자산
+// - 자산은 개별로 존재하거나 다른 자산에 포함될 수 있음
 
 // Hierarchy & Assets Cache
 let HIERARCHY_CACHE = null;
-let ASSETS_BY_ROOM = {};
-let ALL_ASSETS = [];
+let ALL_ASSETS = [];  // 모든 자산 (canHaveChildren 관계없이)
 
 // ======================
 // HIERARCHY DATA GENERATORS
 // ======================
 
+/**
+ * 통합 자산 계층 생성
+ *
+ * 다양한 케이스를 다룸:
+ * 1. Building > Floor > Room (공간 계층)
+ * 2. Room > Rack > Server (장비 계층)
+ * 3. Room > PDU (개별 존재)
+ * 4. Rack > PDU (포함 관계)
+ * 5. 독립 자산 (센서, CRAC 등)
+ *
+ * 모든 항목은 동일한 Asset 구조:
+ * - id, name, type, parentId
+ * - canHaveChildren: boolean (Tree 표시 여부)
+ * - hasChildren: boolean (Lazy Loading용)
+ * - children: [] (하위 자산)
+ */
 function generateHierarchy() {
-    const items = [];
-    let assetIndex = 0;
-    let roomIndex = 0;
+    ALL_ASSETS = [];
 
-    BUILDINGS.forEach((building, bIdx) => {
-        const floors = [];
+    const items = [
+        // ========================================
+        // 케이스 1: 본관 - 전통적인 공간 계층
+        // Building > Floor > Room > Rack > Server
+        // ========================================
+        createAsset('building-001', '본관', 'building', null, true, [
+            createAsset('floor-001-01', '1층', 'floor', 'building-001', true, [
+                createAsset('room-001-01-01', '서버실 A', 'room', 'floor-001-01', true, [
+                    // Rack은 컨테이너 (Server를 포함)
+                    createAsset('rack-001', 'Rack A-01', 'rack', 'room-001-01-01', true, [
+                        createAsset('server-001', 'Server 001', 'server', 'rack-001', false),
+                        createAsset('server-002', 'Server 002', 'server', 'rack-001', false),
+                        createAsset('server-003', 'Server 003', 'server', 'rack-001', false),
+                    ]),
+                    createAsset('rack-002', 'Rack A-02', 'rack', 'room-001-01-01', true, [
+                        createAsset('server-004', 'Server 004', 'server', 'rack-002', false),
+                        createAsset('server-005', 'Server 005', 'server', 'rack-002', false),
+                        // PDU가 Rack 안에 포함된 케이스
+                        createAsset('pdu-001', 'PDU 001 (In-Rack)', 'pdu', 'rack-002', false),
+                    ]),
+                    // PDU가 Room에 직접 존재하는 케이스 (Rack 밖)
+                    createAsset('pdu-002', 'PDU 002 (Standalone)', 'pdu', 'room-001-01-01', false),
+                    // CRAC, Sensor는 말단 자산
+                    createAsset('crac-001', 'CRAC 001', 'crac', 'room-001-01-01', false),
+                    createAsset('sensor-001', 'Sensor 001', 'sensor', 'room-001-01-01', false),
+                ]),
+                createAsset('room-001-01-02', '네트워크실', 'room', 'floor-001-01', true, [
+                    // 네트워크 장비 전용 Rack
+                    createAsset('rack-003', 'Network Rack 01', 'rack', 'room-001-01-02', true, [
+                        createAsset('switch-001', 'Switch 001', 'switch', 'rack-003', false),
+                        createAsset('switch-002', 'Switch 002', 'switch', 'rack-003', false),
+                        createAsset('router-001', 'Router 001', 'router', 'rack-003', false),
+                    ]),
+                    createAsset('ups-001', 'UPS 001', 'ups', 'room-001-01-02', false),
+                    createAsset('sensor-002', 'Sensor 002', 'sensor', 'room-001-01-02', false),
+                ]),
+            ]),
+            createAsset('floor-001-02', '2층', 'floor', 'building-001', true, [
+                createAsset('room-001-02-01', 'UPS실', 'room', 'floor-001-02', true, [
+                    // UPS는 말단 자산 (다른 것을 포함하지 않음)
+                    createAsset('ups-002', 'UPS 002', 'ups', 'room-001-02-01', false),
+                    createAsset('ups-003', 'UPS 003', 'ups', 'room-001-02-01', false),
+                    createAsset('ups-004', 'UPS 004', 'ups', 'room-001-02-01', false),
+                    createAsset('sensor-003', 'Sensor 003', 'sensor', 'room-001-02-01', false),
+                ]),
+            ]),
+        ]),
 
-        // 건물당 2개 층
-        for (let fIdx = 0; fIdx < 2; fIdx++) {
-            const floorNum = String(fIdx + 1).padStart(2, '0');
-            const floorId = `floor-${building.id.split('-')[1]}-${floorNum}`;
-            const rooms = [];
+        // ========================================
+        // 케이스 2: 별관 A - PDU가 컨테이너 역할
+        // Room > PDU > Circuit (PDU가 회로를 포함)
+        // ========================================
+        createAsset('building-002', '별관 A', 'building', null, true, [
+            createAsset('floor-002-01', '1층', 'floor', 'building-002', true, [
+                createAsset('room-002-01-01', '전산실', 'room', 'floor-002-01', true, [
+                    // PDU가 컨테이너 역할 (회로/분기를 포함)
+                    createAsset('pdu-003', 'PDU 003 (Main)', 'pdu', 'room-002-01-01', true, [
+                        createAsset('circuit-001', 'Circuit A1', 'circuit', 'pdu-003', false),
+                        createAsset('circuit-002', 'Circuit A2', 'circuit', 'pdu-003', false),
+                        createAsset('circuit-003', 'Circuit B1', 'circuit', 'pdu-003', false),
+                    ]),
+                    // 일반 PDU (말단)
+                    createAsset('pdu-004', 'PDU 004', 'pdu', 'room-002-01-01', false),
+                    createAsset('crac-002', 'CRAC 002', 'crac', 'room-002-01-01', false),
+                ]),
+                createAsset('room-002-01-02', '항온항습실', 'room', 'floor-002-01', true, [
+                    createAsset('crac-003', 'CRAC 003', 'crac', 'room-002-01-02', false),
+                    createAsset('crac-004', 'CRAC 004', 'crac', 'room-002-01-02', false),
+                    createAsset('sensor-004', 'Sensor 004', 'sensor', 'room-002-01-02', false),
+                    createAsset('sensor-005', 'Sensor 005', 'sensor', 'room-002-01-02', false),
+                ]),
+            ]),
+        ]),
 
-            // 층당 2개 방
-            for (let rIdx = 0; rIdx < 2; rIdx++) {
-                const roomNum = String(rIdx + 1).padStart(2, '0');
-                const roomId = `room-${building.id.split('-')[1]}-${floorNum}-${roomNum}`;
-                const roomAssets = generateRoomAssets(roomId, assetIndex);
-                assetIndex += 6;
-
-                const roomStatus = calculateAggregateStatus(roomAssets);
-
-                // 방별 자산 저장
-                ASSETS_BY_ROOM[roomId] = roomAssets;
-                ALL_ASSETS = ALL_ASSETS.concat(roomAssets);
-
-                rooms.push({
-                    id: roomId,
-                    name: ROOM_NAMES[roomIndex % ROOM_NAMES.length],
-                    type: 'room',
-                    status: roomStatus,
-                    assetCount: roomAssets.length
-                });
-
-                roomIndex++;
-            }
-
-            const floorStatus = calculateAggregateStatus(rooms);
-
-            floors.push({
-                id: floorId,
-                name: `${fIdx + 1}층`,
-                type: 'floor',
-                status: floorStatus,
-                children: rooms
-            });
-        }
-
-        const buildingStatus = calculateAggregateStatus(floors);
-
-        items.push({
-            id: building.id,
-            name: building.name,
-            type: 'building',
-            status: buildingStatus,
-            children: floors
-        });
-    });
+        // ========================================
+        // 케이스 3: 별관 B - 혼합 구조
+        // 깊은 계층 + 평면 구조 공존
+        // ========================================
+        createAsset('building-003', '별관 B', 'building', null, true, [
+            createAsset('floor-003-01', '1층', 'floor', 'building-003', true, [
+                createAsset('room-003-01-01', '통합관제실', 'room', 'floor-003-01', true, [
+                    // 캐비넷(컨테이너) 안에 여러 장비
+                    createAsset('cabinet-001', 'Cabinet 001', 'cabinet', 'room-003-01-01', true, [
+                        createAsset('server-006', 'Server 006', 'server', 'cabinet-001', false),
+                        createAsset('storage-001', 'Storage 001', 'storage', 'cabinet-001', false),
+                        createAsset('pdu-005', 'PDU 005', 'pdu', 'cabinet-001', false),
+                    ]),
+                    // 독립 센서들
+                    createAsset('sensor-006', 'Temp Sensor', 'sensor', 'room-003-01-01', false),
+                    createAsset('sensor-007', 'Humidity Sensor', 'sensor', 'room-003-01-01', false),
+                    createAsset('sensor-008', 'Power Meter', 'sensor', 'room-003-01-01', false),
+                ]),
+            ]),
+            createAsset('floor-003-02', '2층', 'floor', 'building-003', true, [
+                // 빈 층 (하위 자산 없음, 하지만 canHaveChildren=true)
+                // hasChildren=false로 설정됨
+            ]),
+        ]),
+    ];
 
     return items;
 }
 
-function generateRoomAssets(roomId, startIndex) {
-    const assets = [];
+/**
+ * 자산 생성 헬퍼 함수
+ * @param {string} id - 자산 ID
+ * @param {string} name - 자산 이름
+ * @param {string} type - 자산 유형
+ * @param {string|null} parentId - 부모 자산 ID
+ * @param {boolean} canHaveChildren - 컨테이너 여부 (Tree 표시 여부)
+ * @param {Array} children - 하위 자산 배열
+ */
+function createAsset(id, name, type, parentId, canHaveChildren, children = []) {
+    const asset = {
+        id,
+        name,
+        type,
+        parentId,
+        canHaveChildren,
+        hasChildren: children.length > 0,
+        status: getRandomStatus(),
+        children
+    };
 
-    // 방당 6개 자산: UPS 1, PDU 2, CRAC 1, Sensor 2
-    const assetConfig = [
-        { type: 'ups', prefix: 'UPS' },
-        { type: 'pdu', prefix: 'PDU' },
-        { type: 'pdu', prefix: 'PDU' },
-        { type: 'crac', prefix: 'CRAC' },
-        { type: 'sensor', prefix: 'Sensor' },
-        { type: 'sensor', prefix: 'Sensor' }
-    ];
-
-    assetConfig.forEach((config, i) => {
-        const idx = startIndex + i + 1;
-        const status = getRandomStatus();
-        assets.push({
-            id: `${config.type}-${String(idx).padStart(3, '0')}`,
-            type: config.type,
-            name: `${config.prefix} ${String(idx).padStart(3, '0')}`,
-            roomId,
-            status
-        });
+    // 모든 자산을 ALL_ASSETS에 등록 (Tree 노드 포함)
+    ALL_ASSETS.push({
+        id,
+        name,
+        type,
+        parentId,
+        canHaveChildren,
+        status: asset.status
     });
 
-    return assets;
+    return asset;
 }
 
 function initializeHierarchy() {
-    ASSETS_BY_ROOM = {};
     ALL_ASSETS = [];
 
     const items = generateHierarchy();
+
+    // 상태 집계 (하위 → 상위)
+    items.forEach(item => {
+        item.status = calculateAggregateStatus(item);
+    });
+
+    // 통계 집계
+    const stats = countAssetsByType(items);
 
     HIERARCHY_CACHE = {
         title: 'ECO 자산 관리',
         items,
         summary: {
-            buildings: 3,
-            floors: 6,
-            rooms: 12,
-            assets: ALL_ASSETS.length
+            totalAssets: ALL_ASSETS.length,
+            containers: stats.containers,
+            terminals: stats.terminals,
+            byType: stats.byType
         }
     };
 
-    console.log(`[Hierarchy] Initialized: ${HIERARCHY_CACHE.summary.buildings} buildings, ${HIERARCHY_CACHE.summary.floors} floors, ${HIERARCHY_CACHE.summary.rooms} rooms, ${HIERARCHY_CACHE.summary.assets} assets`);
+    console.log(`[Hierarchy] Initialized: ${ALL_ASSETS.length} total assets`);
+    console.log(`  - Containers (canHaveChildren=true): ${stats.containers}`);
+    console.log(`  - Terminals (canHaveChildren=false): ${stats.terminals}`);
+    console.log(`  - By Type:`, stats.byType);
 }
 
-function findNodeById(nodeId) {
-    if (!HIERARCHY_CACHE) return null;
+/**
+ * 자산 유형별 통계
+ */
+function countAssetsByType(items) {
+    const byType = {};
+    let containers = 0;
+    let terminals = 0;
 
-    for (const building of HIERARCHY_CACHE.items) {
-        if (building.id === nodeId) return building;
-        for (const floor of building.children || []) {
-            if (floor.id === nodeId) return floor;
-            for (const room of floor.children || []) {
-                if (room.id === nodeId) return room;
-            }
+    ALL_ASSETS.forEach(asset => {
+        byType[asset.type] = (byType[asset.type] || 0) + 1;
+        if (asset.canHaveChildren) {
+            containers++;
+        } else {
+            terminals++;
+        }
+    });
+
+    return { byType, containers, terminals };
+}
+
+/**
+ * 재귀적으로 노드 찾기 (모든 깊이 지원)
+ */
+function findNodeById(nodeId, items = null) {
+    if (!HIERARCHY_CACHE && !items) return null;
+
+    const searchItems = items || HIERARCHY_CACHE.items;
+
+    for (const item of searchItems) {
+        if (item.id === nodeId) return item;
+        if (item.children && item.children.length > 0) {
+            const found = findNodeById(nodeId, item.children);
+            if (found) return found;
         }
     }
     return null;
 }
 
+/**
+ * 노드 경로 생성 (부모 → 현재)
+ */
 function getNodePath(nodeId) {
     if (!HIERARCHY_CACHE) return '';
 
-    for (const building of HIERARCHY_CACHE.items) {
-        if (building.id === nodeId) return building.name;
-        for (const floor of building.children || []) {
-            if (floor.id === nodeId) return `${building.name} > ${floor.name}`;
-            for (const room of floor.children || []) {
-                if (room.id === nodeId) return `${building.name} > ${floor.name} > ${room.name}`;
-            }
+    const node = findNodeById(nodeId);
+    if (!node) return '';
+
+    const path = [node.name];
+    let current = node;
+
+    while (current.parentId) {
+        const parent = findNodeById(current.parentId);
+        if (parent) {
+            path.unshift(parent.name);
+            current = parent;
+        } else {
+            break;
         }
     }
-    return '';
+
+    return path.join(' > ');
+}
+
+/**
+ * depth 제한에 따라 트리 구조 필터링
+ * - canHaveChildren: true인 노드만 Tree에 포함
+ * @param {Array} items - 트리 아이템 배열
+ * @param {number} maxDepth - 최대 depth (1: 루트만, 2: 루트+1레벨, ...)
+ * @param {number} currentDepth - 현재 depth
+ * @returns {Array} depth 제한된 트리 (컨테이너만)
+ */
+function limitTreeDepth(items, maxDepth, currentDepth = 1) {
+    if (!items || items.length === 0) return [];
+
+    return items
+        .filter(item => item.canHaveChildren) // Tree에는 컨테이너만 표시
+        .map(item => {
+            // 하위 컨테이너만 필터링
+            const containerChildren = (item.children || []).filter(c => c.canHaveChildren);
+
+            const result = {
+                id: item.id,
+                name: item.name,
+                type: item.type,
+                canHaveChildren: item.canHaveChildren,
+                hasChildren: containerChildren.length > 0,
+                parentId: item.parentId,
+                status: item.status,
+                // 직속 하위 자산 수 (컨테이너 포함)
+                childCount: (item.children || []).length
+            };
+
+            // depth 범위 내에서만 children 포함
+            if (currentDepth < maxDepth && containerChildren.length > 0) {
+                result.children = limitTreeDepth(containerChildren, maxDepth, currentDepth + 1);
+            } else {
+                // depth 초과시 빈 배열 (hasChildren으로 Lazy Loading 가능 여부 판단)
+                result.children = [];
+            }
+
+            return result;
+        });
+}
+
+/**
+ * 특정 노드의 직속 하위 컨테이너 조회 (Lazy Loading용)
+ * - canHaveChildren: true인 하위 노드만 반환
+ * @param {string} nodeId - 부모 노드 ID
+ * @returns {Array} 직속 하위 컨테이너 목록
+ */
+function getNodeChildren(nodeId) {
+    const node = findNodeById(nodeId);
+    if (!node || !node.children) return [];
+
+    // 컨테이너만 필터링
+    return node.children
+        .filter(child => child.canHaveChildren)
+        .map(child => {
+            const containerChildren = (child.children || []).filter(c => c.canHaveChildren);
+            return {
+                id: child.id,
+                name: child.name,
+                type: child.type,
+                canHaveChildren: child.canHaveChildren,
+                hasChildren: containerChildren.length > 0,
+                parentId: nodeId,
+                status: child.status,
+                childCount: (child.children || []).length
+            };
+        });
+}
+
+/**
+ * 특정 노드 하위의 모든 자산 조회 (재귀)
+ * - canHaveChildren 관계없이 모든 하위 자산 반환
+ * @param {string} nodeId - 부모 노드 ID
+ * @returns {Array} 모든 하위 자산 목록
+ */
+function getNodeAssets(nodeId) {
+    const node = findNodeById(nodeId);
+    if (!node) return [];
+
+    const assets = [];
+
+    function collectAssets(item) {
+        // 현재 노드도 자산으로 포함 (루트 노드 제외)
+        if (item.id !== nodeId) {
+            assets.push({
+                id: item.id,
+                name: item.name,
+                type: item.type,
+                parentId: item.parentId,
+                canHaveChildren: item.canHaveChildren,
+                status: item.status
+            });
+        }
+        // 하위 자산 재귀 수집
+        if (item.children && item.children.length > 0) {
+            item.children.forEach(child => collectAssets(child));
+        }
+    }
+
+    collectAssets(node);
+    return assets;
 }
 
 // ======================
@@ -528,44 +746,76 @@ function generateAssetsSummary(assets) {
 // API ENDPOINTS - Hierarchy (NEW)
 // ======================
 
+/**
+ * GET /api/hierarchy?depth=n
+ * 계층 트리 조회 (초기 로딩)
+ * - depth: 반환할 트리 깊이 (기본: 2)
+ *   - 1: 루트만
+ *   - 2: 루트 + 1레벨 (기본값)
+ *   - 3: 루트 + 2레벨
+ */
 app.get('/api/hierarchy', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy`);
-    res.json({ data: HIERARCHY_CACHE });
+
+    const depth = parseInt(req.query.depth) || 2;
+    const limitedItems = limitTreeDepth(HIERARCHY_CACHE.items, depth);
+
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy?depth=${depth}`);
+
+    res.json({
+        data: {
+            title: HIERARCHY_CACHE.title,
+            items: limitedItems,
+            summary: {
+                ...HIERARCHY_CACHE.summary,
+                totalContainers: HIERARCHY_CACHE.summary.buildings +
+                                 HIERARCHY_CACHE.summary.floors +
+                                 HIERARCHY_CACHE.summary.rooms,
+                depth
+            }
+        }
+    });
 });
 
+/**
+ * GET /api/hierarchy/:nodeId/children
+ * 노드 하위 컨테이너 조회 (Lazy Loading)
+ * - Tree 노드 펼침 시 호출
+ * - hasChildren: true 이고 children이 비어있을 때 호출
+ */
+app.get('/api/hierarchy/:nodeId/children', (req, res) => {
+    const { nodeId } = req.params;
+
+    if (!HIERARCHY_CACHE) initializeHierarchy();
+
+    const children = getNodeChildren(nodeId);
+
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/children - ${children.length} children`);
+
+    res.json({
+        data: {
+            parentId: nodeId,
+            children
+        }
+    });
+});
+
+/**
+ * GET /api/hierarchy/:nodeId/assets
+ * 노드 하위의 모든 자산 조회 (Table용)
+ * - canHaveChildren 관계없이 모든 하위 자산 반환
+ */
 app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
     const { nodeId } = req.params;
 
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
-    let assets = [];
-    let nodeName = '';
-    let nodeType = '';
-
-    if (nodeId.startsWith('room-')) {
-        assets = ASSETS_BY_ROOM[nodeId] || [];
-        const room = findNodeById(nodeId);
-        nodeName = room?.name || nodeId;
-        nodeType = 'room';
-    } else if (nodeId.startsWith('floor-')) {
-        const floor = findNodeById(nodeId);
-        nodeName = floor?.name || nodeId;
-        nodeType = 'floor';
-        (floor?.children || []).forEach(room => {
-            assets = assets.concat(ASSETS_BY_ROOM[room.id] || []);
-        });
-    } else if (nodeId.startsWith('building-')) {
-        const building = findNodeById(nodeId);
-        nodeName = building?.name || nodeId;
-        nodeType = 'building';
-        (building?.children || []).forEach(floor => {
-            (floor.children || []).forEach(room => {
-                assets = assets.concat(ASSETS_BY_ROOM[room.id] || []);
-            });
-        });
+    const node = findNodeById(nodeId);
+    if (!node) {
+        return res.status(404).json({ error: 'Node not found', nodeId });
     }
 
+    const assets = getNodeAssets(nodeId);
     const nodePath = getNodePath(nodeId);
     const summary = generateAssetsSummary(assets);
 
@@ -574,9 +824,9 @@ app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
     res.json({
         data: {
             nodeId,
-            nodeName,
+            nodeName: node.name,
             nodePath,
-            nodeType,
+            nodeType: node.type,
             assets,
             summary
         }
@@ -597,7 +847,7 @@ app.get('/api/assets/summary', (req, res) => {
 app.get('/api/assets', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
-    const { type, roomId } = req.query;
+    const { type, parentId, canHaveChildren } = req.query;
     let filteredAssets = [...ALL_ASSETS];
 
     if (type) {
@@ -605,8 +855,13 @@ app.get('/api/assets', (req, res) => {
         filteredAssets = filteredAssets.filter(asset => types.includes(asset.type));
     }
 
-    if (roomId) {
-        filteredAssets = filteredAssets.filter(asset => asset.roomId === roomId);
+    if (parentId) {
+        filteredAssets = filteredAssets.filter(asset => asset.parentId === parentId);
+    }
+
+    if (canHaveChildren !== undefined) {
+        const isContainer = canHaveChildren === 'true';
+        filteredAssets = filteredAssets.filter(asset => asset.canHaveChildren === isContainer);
     }
 
     const summary = generateAssetsSummary(filteredAssets);
@@ -752,28 +1007,25 @@ app.listen(PORT, () => {
     console.log(`  Environmental Control & Operations`);
     console.log(`  Running on http://localhost:${PORT}`);
     console.log(`========================================`);
-    console.log(`\nHierarchy Structure:`);
-    console.log(`  Buildings: ${HIERARCHY_CACHE.summary.buildings}`);
-    console.log(`  Floors: ${HIERARCHY_CACHE.summary.floors}`);
-    console.log(`  Rooms: ${HIERARCHY_CACHE.summary.rooms}`);
-    console.log(`  Assets: ${HIERARCHY_CACHE.summary.assets}`);
+    console.log(`\n핵심 원칙: 모든 것은 자산(Asset)`);
+    console.log(`  - canHaveChildren: true → Tree에 표시 (컨테이너)`);
+    console.log(`  - canHaveChildren: false → Table에만 표시 (말단)`);
+    console.log(`\nAsset Summary:`);
+    console.log(`  Total Assets: ${HIERARCHY_CACHE.summary.totalAssets}`);
+    console.log(`  Containers: ${HIERARCHY_CACHE.summary.containers}`);
+    console.log(`  Terminals: ${HIERARCHY_CACHE.summary.terminals}`);
+    console.log(`  By Type:`, HIERARCHY_CACHE.summary.byType);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  GET /api/hierarchy                - Hierarchy tree`);
-    console.log(`  GET /api/hierarchy/:nodeId/assets - Assets by node`);
-    console.log(`  GET /api/assets                   - All assets`);
-    console.log(`  GET /api/assets?type=ups          - Filter by type`);
-    console.log(`  GET /api/assets?roomId=room-xxx   - Filter by room`);
-    console.log(`  GET /api/assets/summary           - Summary only`);
-    console.log(`  GET /api/asset/:id                - Single asset`);
-    console.log(`  POST /api/assets/validate         - Batch validate`);
-    console.log(`  GET /api/ups/:id                  - UPS status`);
-    console.log(`  GET /api/ups/:id/history          - UPS history`);
-    console.log(`  GET /api/pdu/:id                  - PDU status`);
-    console.log(`  GET /api/pdu/:id/circuits         - PDU circuits`);
-    console.log(`  GET /api/pdu/:id/history          - PDU history`);
-    console.log(`  GET /api/crac/:id                 - CRAC status`);
-    console.log(`  GET /api/crac/:id/history         - CRAC history`);
-    console.log(`  GET /api/sensor/:id               - Sensor status`);
-    console.log(`  GET /api/sensor/:id/history       - Sensor history`);
+    console.log(`  GET /api/hierarchy?depth=n           - Hierarchy tree (depth limited, containers only)`);
+    console.log(`  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading, containers only)`);
+    console.log(`  GET /api/hierarchy/:nodeId/assets    - All assets under node (for Table)`);
+    console.log(`  GET /api/assets                      - All assets`);
+    console.log(`  GET /api/assets?type=ups             - Filter by type`);
+    console.log(`  GET /api/asset/:id                   - Single asset`);
+    console.log(`  POST /api/assets/validate            - Batch validate`);
+    console.log(`  GET /api/ups/:id                     - UPS status`);
+    console.log(`  GET /api/pdu/:id                     - PDU status`);
+    console.log(`  GET /api/crac/:id                    - CRAC status`);
+    console.log(`  GET /api/sensor/:id                  - Sensor status`);
     console.log(`\n`);
 });
