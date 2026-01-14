@@ -146,6 +146,9 @@
         margin: 0;
         padding: 0;
         list-style: none;
+        /* 성능 최적화: 뷰포트 밖 노드 렌더링 스킵 */
+        content-visibility: auto;
+        contain-intrinsic-size: auto 32px;
     }
 
     .node-content {
