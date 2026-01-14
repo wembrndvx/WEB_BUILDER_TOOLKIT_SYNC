@@ -174,6 +174,20 @@ function generateHierarchy() {
                 // hasChildren=false로 설정됨
             ]),
         ]),
+
+        // ========================================
+        // 케이스 4: 독립 공간 - 건물 없이 바로 방
+        // Root Level에 Room이 직접 존재
+        // ========================================
+        createAsset('room-independent-01', '외부 창고', 'room', null, true, [
+            createAsset('storage-002', 'Storage 002', 'storage', 'room-independent-01', false),
+            createAsset('sensor-009', 'Temp Sensor', 'sensor', 'room-independent-01', false),
+        ]),
+        createAsset('room-independent-02', '야외 발전기실', 'room', null, true, [
+            createAsset('ups-005', 'UPS 005 (Outdoor)', 'ups', 'room-independent-02', false),
+            createAsset('pdu-006', 'PDU 006 (Outdoor)', 'pdu', 'room-independent-02', false),
+            createAsset('sensor-010', 'Power Meter', 'sensor', 'room-independent-02', false),
+        ]),
     ];
 
     return items;
@@ -747,7 +761,10 @@ const I18N_DATA = {
         'room-001-02-01': { ko: 'UPS실', en: 'UPS Room', ja: 'UPS室' },
         'room-002-01-01': { ko: '전산실', en: 'Computer Room', ja: '電算室' },
         'room-002-01-02': { ko: '항온항습실', en: 'HVAC Room', ja: '空調室' },
-        'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' }
+        'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' },
+        // 독립 공간 (root level rooms)
+        'room-independent-01': { ko: '외부 창고', en: 'External Warehouse', ja: '外部倉庫' },
+        'room-independent-02': { ko: '야외 발전기실', en: 'Outdoor Generator Room', ja: '屋外発電機室' }
     },
 
     // 타입 라벨

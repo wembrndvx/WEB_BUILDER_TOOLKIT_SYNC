@@ -304,6 +304,28 @@
                             children: []
                         }
                     ]
+                },
+
+                // ========================================
+                // 케이스 4: 독립 공간 - 건물 없이 바로 방
+                // 루트 레벨에 room이 직접 존재
+                // ========================================
+                {
+                    id: "room-independent-01", name: "외부 창고", type: "room",
+                    canHaveChildren: true, parentId: null, status: "normal",
+                    children: [
+                        { id: "storage-002", name: "Storage 002", type: "storage", canHaveChildren: false, parentId: "room-independent-01", status: randomStatus() },
+                        { id: "sensor-009", name: "Temp Sensor", type: "sensor", canHaveChildren: false, parentId: "room-independent-01", status: randomStatus() }
+                    ]
+                },
+                {
+                    id: "room-independent-02", name: "야외 발전기실", type: "room",
+                    canHaveChildren: true, parentId: null, status: "warning",
+                    children: [
+                        { id: "ups-005", name: "UPS 005 (Outdoor)", type: "ups", canHaveChildren: false, parentId: "room-independent-02", status: randomStatus() },
+                        { id: "pdu-006", name: "PDU 006 (Outdoor)", type: "pdu", canHaveChildren: false, parentId: "room-independent-02", status: randomStatus() },
+                        { id: "sensor-010", name: "Power Meter", type: "sensor", canHaveChildren: false, parentId: "room-independent-02", status: "warning" }
+                    ]
                 }
             ]
         };
@@ -492,7 +514,10 @@
                 'room-001-02-01': { ko: 'UPS실', en: 'UPS Room', ja: 'UPS室' },
                 'room-002-01-01': { ko: '전산실', en: 'Computer Room', ja: '電算室' },
                 'room-002-01-02': { ko: '항온항습실', en: 'HVAC Room', ja: '空調室' },
-                'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' }
+                'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' },
+                // 독립 공간 (root level rooms)
+                'room-independent-01': { ko: '외부 창고', en: 'External Warehouse', ja: '外部倉庫' },
+                'room-independent-02': { ko: '야외 발전기실', en: 'Outdoor Generator Room', ja: '屋外発電機室' }
             },
             types: {
                 ko: { building: '건물', floor: '층', room: '방', rack: '랙', cabinet: '캐비넷',
