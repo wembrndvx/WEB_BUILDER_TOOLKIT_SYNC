@@ -283,20 +283,24 @@ function findNodeById(nodeId, items = null) {
 
 /**
  * 노드 경로 생성 (부모 → 현재)
+ * @param {string} nodeId - 노드 ID
+ * @param {string} locale - 언어 코드 (ko, en, ja)
  */
-function getNodePath(nodeId) {
+function getNodePath(nodeId, locale = 'ko') {
     if (!HIERARCHY_CACHE) return '';
 
     const node = findNodeById(nodeId);
     if (!node) return '';
 
-    const path = [node.name];
+    const translatedNode = applyI18nToAsset(node, locale);
+    const path = [translatedNode.name];
     let current = node;
 
     while (current.parentId) {
         const parent = findNodeById(current.parentId);
         if (parent) {
-            path.unshift(parent.name);
+            const translatedParent = applyI18nToAsset(parent, locale);
+            path.unshift(translatedParent.name);
             current = parent;
         } else {
             break;
@@ -715,6 +719,97 @@ function generateSensorHistory(sensorId, period = '24h') {
 }
 
 // ======================
+// I18N DATA (자산 데이터 전용)
+// ======================
+
+const I18N_DATA = {
+    locales: [
+        { code: 'ko', name: '한국어', default: true },
+        { code: 'en', name: 'English' },
+        { code: 'ja', name: '日本語' }
+    ],
+
+    // 자산 이름 (locale별)
+    names: {
+        // 건물
+        'building-001': { ko: '본관', en: 'Main Building', ja: '本館' },
+        'building-002': { ko: '별관 A', en: 'Annex A', ja: '別館A' },
+        'building-003': { ko: '별관 B', en: 'Annex B', ja: '別館B' },
+        // 층
+        'floor-001-01': { ko: '1층', en: '1st Floor', ja: '1階' },
+        'floor-001-02': { ko: '2층', en: '2nd Floor', ja: '2階' },
+        'floor-002-01': { ko: '1층', en: '1st Floor', ja: '1階' },
+        'floor-003-01': { ko: '1층', en: '1st Floor', ja: '1階' },
+        'floor-003-02': { ko: '2층', en: '2nd Floor', ja: '2階' },
+        // 방
+        'room-001-01-01': { ko: '서버실 A', en: 'Server Room A', ja: 'サーバールームA' },
+        'room-001-01-02': { ko: '네트워크실', en: 'Network Room', ja: 'ネットワーク室' },
+        'room-001-02-01': { ko: 'UPS실', en: 'UPS Room', ja: 'UPS室' },
+        'room-002-01-01': { ko: '전산실', en: 'Computer Room', ja: '電算室' },
+        'room-002-01-02': { ko: '항온항습실', en: 'HVAC Room', ja: '空調室' },
+        'room-003-01-01': { ko: '통합관제실', en: 'Control Room', ja: '統合管制室' }
+    },
+
+    // 타입 라벨
+    types: {
+        ko: {
+            building: '건물', floor: '층', room: '방', rack: '랙', cabinet: '캐비넷',
+            server: '서버', storage: '스토리지', switch: '스위치', router: '라우터',
+            ups: 'UPS', pdu: 'PDU', crac: '항온항습기', sensor: '센서', circuit: '회로'
+        },
+        en: {
+            building: 'Building', floor: 'Floor', room: 'Room', rack: 'Rack', cabinet: 'Cabinet',
+            server: 'Server', storage: 'Storage', switch: 'Switch', router: 'Router',
+            ups: 'UPS', pdu: 'PDU', crac: 'CRAC', sensor: 'Sensor', circuit: 'Circuit'
+        },
+        ja: {
+            building: 'ビル', floor: 'フロア', room: '部屋', rack: 'ラック', cabinet: 'キャビネット',
+            server: 'サーバー', storage: 'ストレージ', switch: 'スイッチ', router: 'ルーター',
+            ups: 'UPS', pdu: 'PDU', crac: '空調機', sensor: 'センサー', circuit: '回路'
+        }
+    },
+
+    // 상태 라벨
+    statuses: {
+        ko: { normal: '정상', warning: '경고', critical: '위험' },
+        en: { normal: 'Normal', warning: 'Warning', critical: 'Critical' },
+        ja: { normal: '正常', warning: '警告', critical: '危険' }
+    }
+};
+
+/**
+ * 자산에 다국어 라벨 적용
+ * @param {Object} asset - 원본 자산
+ * @param {string} locale - 언어 코드 (ko, en, ja)
+ * @returns {Object} 다국어 적용된 자산
+ */
+function applyI18nToAsset(asset, locale = 'ko') {
+    const typeLabels = I18N_DATA.types[locale] || I18N_DATA.types['ko'];
+    const statusLabels = I18N_DATA.statuses[locale] || I18N_DATA.statuses['ko'];
+    const nameI18n = I18N_DATA.names[asset.id];
+
+    return {
+        ...asset,
+        name: nameI18n ? (nameI18n[locale] || nameI18n['ko'] || asset.name) : asset.name,
+        typeLabel: typeLabels[asset.type] || asset.type,
+        statusLabel: statusLabels[asset.status] || asset.status
+    };
+}
+
+/**
+ * 트리 구조에 다국어 적용 (재귀)
+ */
+function applyI18nToTree(items, locale = 'ko') {
+    return items.map(item => {
+        const translated = applyI18nToAsset(item, locale);
+        if (item.children && item.children.length > 0) {
+            translated.children = applyI18nToTree(item.children, locale);
+        }
+        return translated;
+    });
+}
+
+// ======================
 // SUMMARY GENERATOR
 // ======================
 
@@ -735,70 +830,89 @@ function generateAssetsSummary(assets) {
 }
 
 // ======================
-// API ENDPOINTS - Hierarchy (NEW)
+// API ENDPOINTS - I18N
 // ======================
 
 /**
- * GET /api/hierarchy?depth=n
+ * GET /api/i18n/locales
+ * 지원 locale 목록 조회
+ */
+app.get('/api/i18n/locales', (req, res) => {
+    console.log(`[${new Date().toISOString()}] GET /api/i18n/locales`);
+    res.json({
+        data: {
+            available: I18N_DATA.locales,
+            default: I18N_DATA.locales.find(l => l.default)?.code || 'ko'
+        }
+    });
+});
+
+// ======================
+// API ENDPOINTS - Hierarchy
+// ======================
+
+/**
+ * GET /api/hierarchy?depth=n&locale=ko
  * 계층 트리 조회 (초기 로딩)
  * - depth: 반환할 트리 깊이 (기본: 2)
- *   - 1: 루트만
- *   - 2: 루트 + 1레벨 (기본값)
- *   - 3: 루트 + 2레벨
+ * - locale: 언어 코드 (ko, en, ja)
  */
 app.get('/api/hierarchy', (req, res) => {
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
     const depth = parseInt(req.query.depth) || 2;
+    const locale = req.query.locale || 'ko';
     const limitedItems = limitTreeDepth(HIERARCHY_CACHE.items, depth);
+    const translatedItems = applyI18nToTree(limitedItems, locale);
 
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy?depth=${depth}`);
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy?depth=${depth}&locale=${locale}`);
 
     res.json({
         data: {
             title: HIERARCHY_CACHE.title,
-            items: limitedItems,
+            items: translatedItems,
             summary: {
                 ...HIERARCHY_CACHE.summary,
-                totalContainers: HIERARCHY_CACHE.summary.buildings +
-                                 HIERARCHY_CACHE.summary.floors +
-                                 HIERARCHY_CACHE.summary.rooms,
                 depth
-            }
+            },
+            meta: { locale }
         }
     });
 });
 
 /**
- * GET /api/hierarchy/:nodeId/children
+ * GET /api/hierarchy/:nodeId/children?locale=ko
  * 노드 하위 컨테이너 조회 (Lazy Loading)
- * - Tree 노드 펼침 시 호출
- * - hasChildren: true 이고 children이 비어있을 때 호출
+ * - locale: 언어 코드 (ko, en, ja)
  */
 app.get('/api/hierarchy/:nodeId/children', (req, res) => {
     const { nodeId } = req.params;
+    const locale = req.query.locale || 'ko';
 
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
     const children = getNodeChildren(nodeId);
+    const translatedChildren = children.map(child => applyI18nToAsset(child, locale));
 
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/children - ${children.length} children`);
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/children?locale=${locale} - ${children.length} children`);
 
     res.json({
         data: {
             parentId: nodeId,
-            children
-        }
+            children: translatedChildren
+        },
+        meta: { locale }
     });
 });
 
 /**
- * GET /api/hierarchy/:nodeId/assets
+ * GET /api/hierarchy/:nodeId/assets?locale=ko
  * 노드 하위의 모든 자산 조회 (Table용)
- * - canHaveChildren 관계없이 모든 하위 자산 반환
+ * - locale: 언어 코드 (ko, en, ja)
  */
 app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
     const { nodeId } = req.params;
+    const locale = req.query.locale || 'ko';
 
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
@@ -808,20 +922,24 @@ app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
     }
 
     const assets = getNodeAssets(nodeId);
-    const nodePath = getNodePath(nodeId);
+    const translatedAssets = assets.map(asset => applyI18nToAsset(asset, locale));
+    const translatedNode = applyI18nToAsset(node, locale);
+    const nodePath = getNodePath(nodeId, locale);
     const summary = generateAssetsSummary(assets);
 
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/assets - ${assets.length} assets`);
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/assets?locale=${locale} - ${assets.length} assets`);
 
     res.json({
         data: {
             nodeId,
-            nodeName: node.name,
+            nodeName: translatedNode.name,
             nodePath,
             nodeType: node.type,
-            assets,
+            nodeTypeLabel: translatedNode.typeLabel,
+            assets: translatedAssets,
             summary
-        }
+        },
+        meta: { locale }
     });
 });
 

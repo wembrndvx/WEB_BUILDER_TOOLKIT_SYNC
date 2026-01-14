@@ -6,20 +6,87 @@
 
 ---
 
-## 계층 구조
+## 설계 원칙: 모든 것은 자산(Asset)
+
+### 배경
+
+외부 자산관리시스템은 다양한 계층 구조를 가질 수 있습니다:
+- Building > Floor > Room (공간 계층)
+- Room > Rack > Server (장비 계층)
+- PDU > Circuit (전력 분배)
+- 독립 센서, CRAC 등
+
+**핵심 통찰**: "계층"과 "자산"이 별개가 아닙니다. Building, Floor, Room도 자산의 일종이며, 다만 children을 가질 수 있는 자산일 뿐입니다.
+
+### 단일 구분 기준: `canHaveChildren`
+
+| 값 | 분류 | 설명 | Tree 표현 | 예시 |
+|----|------|------|----------|------|
+| `true` | 컨테이너 자산 | children을 가질 수 있음 | O | Building, Floor, Room, Rack, Cabinet, PDU(Main) |
+| `false` | 말단 자산 | children을 가질 수 없음 | X | Server, UPS, Sensor, CRAC, Circuit |
+
+### UI 구조
 
 ```
-건물 (Building)
-  └── 층 (Floor)
-        └── 방 (Room)
-              └── 자산 (Asset: UPS, PDU, CRAC, Sensor)
+┌─────────────────────────────────────────────────────────────────┐
+│                         자산 패널                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌─────────────────┐    ┌─────────────────────────────────────┐ │
+│  │      Tree        │    │              Table                  │ │
+│  │                  │    │                                     │ │
+│  │  모든 자산       │    │  선택한 노드의 하위 전체 자산         │ │
+│  │  계층 탐색       │    │  (컨테이너 + 말단 모두 포함)          │ │
+│  │                  │    │                                     │ │
+│  └─────────────────┘    └─────────────────────────────────────┘ │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**데이터 규모**:
-- 건물: 3개 (본관, 별관 A, 별관 B)
-- 층: 6개 (건물당 2개)
-- 방: 12개 (층당 2개)
-- 자산: 72개 (방당 6개: UPS 1, PDU 2, CRAC 1, Sensor 2)
+| 영역 | 표시 기준 |
+|------|----------|
+| Tree | 모든 자산 (canHaveChildren 관계없이) |
+| Table | 선택한 노드 하위의 모든 자산 (컨테이너 + 말단) |
+
+---
+
+## 계층 구조 예시
+
+```
+🏢 본관 (building, canHaveChildren=true)
+ ├── 📂 1층 (floor, canHaveChildren=true)
+ │    ├── 🚪 서버실 A (room, canHaveChildren=true)
+ │    │    ├── 🗄️ Rack A-01 (rack, canHaveChildren=true)
+ │    │    │    ├── 🖥️ Server 001 (server, canHaveChildren=false)
+ │    │    │    ├── 🖥️ Server 002 (server, canHaveChildren=false)
+ │    │    │    └── 🖥️ Server 003 (server, canHaveChildren=false)
+ │    │    ├── 🗄️ Rack A-02 (rack, canHaveChildren=true)
+ │    │    │    ├── 🖥️ Server 004 (server, canHaveChildren=false)
+ │    │    │    └── 🔌 PDU 001 (pdu, canHaveChildren=false) ← Rack 안 PDU
+ │    │    ├── 🔌 PDU 002 (pdu, canHaveChildren=false) ← Room 직속 PDU
+ │    │    ├── ❄️ CRAC 001 (crac, canHaveChildren=false)
+ │    │    └── 📡 Sensor 001 (sensor, canHaveChildren=false)
+ │    └── 🚪 네트워크실 (room, canHaveChildren=true)
+ │         ├── 🗄️ Network Rack 01 (rack, canHaveChildren=true)
+ │         │    ├── 🔀 Switch 001 (switch, canHaveChildren=false)
+ │         │    └── 📶 Router 001 (router, canHaveChildren=false)
+ │         └── 🔋 UPS 001 (ups, canHaveChildren=false)
+ └── 📂 2층 (floor, canHaveChildren=true)
+      └── 🚪 UPS실 (room, canHaveChildren=true)
+           ├── 🔋 UPS 002 (ups, canHaveChildren=false)
+           └── 🔋 UPS 003 (ups, canHaveChildren=false)
+
+🏢 별관 A (building, canHaveChildren=true)
+ └── 📂 1층 (floor, canHaveChildren=true)
+      └── 🚪 전산실 (room, canHaveChildren=true)
+           ├── 🔌 PDU 003 (Main) (pdu, canHaveChildren=true) ← 컨테이너 PDU
+           │    ├── ⚡ Circuit A1 (circuit, canHaveChildren=false)
+           │    ├── ⚡ Circuit A2 (circuit, canHaveChildren=false)
+           │    └── ⚡ Circuit B1 (circuit, canHaveChildren=false)
+           └── 🔌 PDU 004 (pdu, canHaveChildren=false) ← 말단 PDU
+```
+
+**참고**: 같은 타입(예: PDU)도 상황에 따라 컨테이너/말단이 될 수 있습니다.
 
 ---
 
@@ -27,7 +94,8 @@
 
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
-| `GET /api/hierarchy` | 페이지 로드 | AssetList | 계층 트리 렌더링 |
+| `GET /api/hierarchy?depth=n` | 페이지 로드 | AssetList | 계층 트리 초기 렌더링 |
+| `GET /api/hierarchy/:nodeId/children` | 트리 노드 펼침 | AssetList | Lazy Loading |
 | `GET /api/hierarchy/:nodeId/assets` | 트리 노드 클릭 | AssetList | 선택 노드의 자산 목록 표시 |
 | `GET /api/assets` | 새로고침 | AssetList | 전체 자산 목록 조회 |
 | `GET /api/ups/:id` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 표시 |
@@ -42,13 +110,43 @@
 
 ---
 
-## 1. 계층 구조 조회 (NEW)
+## API 호출 흐름
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  1. 패널 로드                                                    │
+│     GET /api/hierarchy?depth=2                                   │
+│     → Tree 초기 렌더링 (루트 + 1레벨)                            │
+│                                                                  │
+│  2. Tree 노드 펼침 (예: 1층 펼침)                                 │
+│     GET /api/hierarchy/floor-001-01/children                     │
+│     → 서버실, 네트워크실 등 하위 자산 로딩                        │
+│                                                                  │
+│  3. Tree 노드 선택 (예: 서버실 클릭)                              │
+│     GET /api/hierarchy/room-001-01-01/assets                     │
+│     → Table에 서버실 하위 전체 자산 표시                          │
+│                                                                  │
+│  4. Table 행 클릭 (예: UPS-A 클릭)                                │
+│     GET /api/ups/ups-001                                         │
+│     → 상세 정보 표시 또는 이벤트 발행                             │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1. 계층 트리 조회 (초기 로딩)
 
 ### Request
 
 ```
-GET /api/hierarchy
+GET /api/hierarchy?depth={n}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| depth | number | 2 | 반환할 트리 깊이 (1: 루트만, 2: 루트+1레벨, ...) |
 
 ### Response
 
@@ -61,38 +159,29 @@ GET /api/hierarchy
         "id": "building-001",
         "name": "본관",
         "type": "building",
-        "status": "normal",
+        "canHaveChildren": true,
+        "hasChildren": true,
+        "parentId": null,
+        "status": "warning",
         "children": [
           {
             "id": "floor-001-01",
             "name": "1층",
             "type": "floor",
+            "canHaveChildren": true,
+            "hasChildren": true,
+            "parentId": "building-001",
             "status": "warning",
-            "children": [
-              {
-                "id": "room-001-01-01",
-                "name": "서버실 A",
-                "type": "room",
-                "status": "warning",
-                "assetCount": 6
-              },
-              {
-                "id": "room-001-01-02",
-                "name": "서버실 B",
-                "type": "room",
-                "status": "normal",
-                "assetCount": 6
-              }
-            ]
+            "children": []
           }
         ]
       }
     ],
     "summary": {
-      "buildings": 3,
-      "floors": 6,
-      "rooms": 12,
-      "assets": 72
+      "totalAssets": 45,
+      "containers": 15,
+      "terminals": 30,
+      "byType": { "building": 3, "floor": 6, "room": 6, "rack": 4, "server": 6, "ups": 4, "pdu": 5, "crac": 4, "sensor": 8 }
     }
   }
 }
@@ -102,16 +191,74 @@ GET /api/hierarchy
 
 | Field | Type | Description |
 |-------|------|-------------|
-| id | string | 노드 ID (`building-xxx`, `floor-xxx-xx`, `room-xxx-xx-xx`) |
-| name | string | 노드 이름 |
-| type | string | 노드 타입 (`building` \| `floor` \| `room`) |
-| status | string | 집계 상태 (하위 노드 중 가장 심각한 상태) |
-| children | array | 하위 노드 목록 |
-| assetCount | number | 자산 수 (room 타입만) |
+| id | string | 자산 ID |
+| name | string | 자산 이름 |
+| type | string | 자산 타입 |
+| canHaveChildren | boolean | 컨테이너 여부 (Tree 노드 펼침 가능 여부) |
+| hasChildren | boolean | 하위 자산 존재 여부 (Lazy Loading 판단용) |
+| parentId | string | 부모 자산 ID |
+| status | string | 상태 (`normal` \| `warning` \| `critical`) |
+| children | array | depth 범위 내 하위 자산 (범위 밖이면 빈 배열) |
+
+### Lazy Loading 동작 원리
+
+```
+초기 로드: depth=2 (Building + Floor)
+    │
+    ├─→ Building [hasChildren=true, children=[Floor...]]
+    │       └─→ Floor [hasChildren=true, children=[]]
+    │               └─→ "Loading..." placeholder 표시
+    │
+    └─→ 사용자가 Floor ▶ 클릭
+            │
+            └─→ GET /api/hierarchy/floor-001-01/children
+                    │
+                    └─→ Room, Rack, Server 등 반환
+```
 
 ---
 
-## 2. 노드별 자산 조회 (NEW)
+## 2. 노드 하위 자산 조회 (Lazy Loading)
+
+### Request
+
+```
+GET /api/hierarchy/:nodeId/children
+```
+
+### Response
+
+```json
+{
+  "data": {
+    "parentId": "floor-001-01",
+    "children": [
+      {
+        "id": "room-001-01-01",
+        "name": "서버실 A",
+        "type": "room",
+        "canHaveChildren": true,
+        "hasChildren": true,
+        "parentId": "floor-001-01",
+        "status": "warning"
+      },
+      {
+        "id": "room-001-01-02",
+        "name": "네트워크실",
+        "type": "room",
+        "canHaveChildren": true,
+        "hasChildren": true,
+        "parentId": "floor-001-01",
+        "status": "normal"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 3. 노드별 자산 조회 (Table용)
 
 ### Request
 
@@ -133,17 +280,34 @@ GET /api/hierarchy/:nodeId/assets
     "nodeType": "room",
     "assets": [
       {
-        "id": "ups-001",
-        "type": "ups",
-        "name": "UPS 001",
-        "roomId": "room-001-01-01",
+        "id": "rack-001",
+        "name": "Rack A-01",
+        "type": "rack",
+        "canHaveChildren": true,
+        "parentId": "room-001-01-01",
         "status": "normal"
+      },
+      {
+        "id": "server-001",
+        "name": "Server 001",
+        "type": "server",
+        "canHaveChildren": false,
+        "parentId": "rack-001",
+        "status": "normal"
+      },
+      {
+        "id": "pdu-002",
+        "name": "PDU 002 (Standalone)",
+        "type": "pdu",
+        "canHaveChildren": false,
+        "parentId": "room-001-01-01",
+        "status": "warning"
       }
     ],
     "summary": {
-      "total": 6,
-      "byType": { "ups": 1, "pdu": 2, "crac": 1, "sensor": 2 },
-      "byStatus": { "normal": 5, "warning": 1, "critical": 0 }
+      "total": 10,
+      "byType": { "rack": 2, "server": 5, "pdu": 1, "crac": 1, "sensor": 1 },
+      "byStatus": { "normal": 8, "warning": 2, "critical": 0 }
     }
   }
 }
@@ -157,19 +321,21 @@ GET /api/hierarchy/:nodeId/assets
 | nodeName | string | 노드 이름 |
 | nodePath | string | 경로 (breadcrumb) |
 | nodeType | string | 노드 타입 |
-| assets | array | 자산 목록 |
+| assets | array | 하위 모든 자산 (컨테이너 + 말단, 플랫 목록) |
 | summary | object | 자산 요약 |
 
 ---
 
-## 3. 전체 자산 조회
+## 4. 전체 자산 조회
 
 ### Request
 
 ```
 GET /api/assets
 GET /api/assets?type=ups
-GET /api/assets?roomId=room-001-01-01
+GET /api/assets?type=ups,pdu
+GET /api/assets?parentId=room-001-01-01
+GET /api/assets?canHaveChildren=true
 ```
 
 ### Response
@@ -180,34 +346,33 @@ GET /api/assets?roomId=room-001-01-01
     "assets": [
       {
         "id": "ups-001",
-        "type": "ups",
         "name": "UPS 001",
-        "roomId": "room-001-01-01",
+        "type": "ups",
+        "canHaveChildren": false,
+        "parentId": "room-001-01-02",
         "status": "normal"
       }
     ],
     "summary": {
-      "total": 72,
-      "byType": { "ups": 12, "pdu": 24, "crac": 12, "sensor": 24 },
-      "byStatus": { "normal": 54, "warning": 13, "critical": 5 }
+      "total": 45,
+      "byType": { "building": 3, "floor": 6, "room": 6, "rack": 4, "server": 6, "ups": 4, "pdu": 5, "crac": 4, "sensor": 8 },
+      "byStatus": { "normal": 35, "warning": 8, "critical": 2 }
     }
   }
 }
 ```
 
-### Response Fields
+### Query Parameters
 
-| Field | Type | Description |
-|-------|------|-------------|
-| id | string | 자산 ID |
-| type | string | 자산 타입 (`ups` \| `pdu` \| `crac` \| `sensor`) |
-| name | string | 자산 이름 |
-| roomId | string | 소속 방 ID |
-| status | string | 상태 (`normal` \| `warning` \| `critical`) |
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| type | string | 자산 타입 필터 (쉼표로 복수 지정 가능) |
+| parentId | string | 부모 자산 ID 필터 |
+| canHaveChildren | boolean | 컨테이너/말단 필터 |
 
 ---
 
-## 4. UPS 현재 상태 조회
+## 5. UPS 현재 상태 조회
 
 ### Request
 
@@ -270,7 +435,7 @@ otherwise                           → status: "normal"
 
 ---
 
-## 5. UPS 히스토리 조회
+## 6. UPS 히스토리 조회
 
 ### Request
 
@@ -299,7 +464,7 @@ GET /api/ups/:id/history?period=7d
 
 ---
 
-## 6. PDU 현재 상태 조회
+## 7. PDU 현재 상태 조회
 
 ### Request
 
@@ -333,7 +498,7 @@ GET /api/pdu/:id
 
 ---
 
-## 7. PDU 회로 목록 조회
+## 8. PDU 회로 목록 조회
 
 ### Request
 
@@ -364,7 +529,7 @@ GET /api/pdu/:id/circuits
 
 ---
 
-## 8. PDU 히스토리 조회
+## 9. PDU 히스토리 조회
 
 ### Request
 
@@ -388,7 +553,7 @@ GET /api/pdu/:id/history
 
 ---
 
-## 9. CRAC 현재 상태 조회
+## 10. CRAC 현재 상태 조회
 
 ### Request
 
@@ -427,7 +592,7 @@ GET /api/crac/:id
 
 ---
 
-## 10. CRAC 히스토리 조회
+## 11. CRAC 히스토리 조회
 
 ### Request
 
@@ -452,7 +617,7 @@ GET /api/crac/:id/history
 
 ---
 
-## 11. 온습도 센서 현재 상태 조회
+## 12. 온습도 센서 현재 상태 조회
 
 ### Request
 
@@ -493,7 +658,7 @@ otherwise                                                 → status: "normal"
 
 ---
 
-## 12. 온습도 센서 히스토리 조회
+## 13. 온습도 센서 히스토리 조회
 
 ### Request
 
@@ -517,6 +682,53 @@ GET /api/sensor/:id/history
 
 ---
 
+## 자산관리시스템에 요청할 필드
+
+### 필수 필드
+
+```json
+{
+  "id": "asset-001",
+  "name": "서버실 A",
+  "type": "room",
+  "canHaveChildren": true,
+  "hasChildren": true,
+  "parentId": "floor-001",
+  "status": "normal"
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| id | string | 자산 ID |
+| name | string | 자산 이름 |
+| type | string | 자산 타입 (자산관리시스템에서 정의) |
+| canHaveChildren | boolean | **핵심 구분자** - children 가능 여부 |
+| hasChildren | boolean | 실제 하위 노드 존재 여부 (Lazy Loading용) |
+| parentId | string | 상위 자산 ID |
+| status | string | 상태 (normal / warning / critical) |
+
+---
+
+## 데이터 로딩 전략
+
+| 항목 | 결정 내용 |
+|------|----------|
+| Tree 초기 로딩 | depth 파라미터로 제한 (기본 2레벨) |
+| Tree 확장 | Lazy Loading (노드 펼침 시 children 조회) |
+| Table 로딩 | 노드 선택 시 하위 자산 한 번에 전부 로딩 |
+| 렌더링 최적화 | Tabulator 가상 스크롤 |
+
+### 규모별 전략
+
+| 규모 | 자산 수 | 전략 |
+|------|---------|------|
+| 소규모 | ~100개 | 전체 로딩 가능 (depth 제한 없이) |
+| 중규모 | 100~1,000개 | depth=2~3으로 제한 + Lazy Loading |
+| 대규모 | 1,000개 이상 | depth=1 + Lazy Loading 필수 |
+
+---
+
 ## Mock Server 실행
 
 ```bash
@@ -534,9 +746,35 @@ npm start  # http://localhost:4004
   Running on http://localhost:4004
 ========================================
 
-Hierarchy Structure:
-  Buildings: 3
-  Floors: 6
-  Rooms: 12
-  Assets: 72
+핵심 원칙: 모든 것은 자산(Asset)
+  - canHaveChildren: true → Tree에 표시 (컨테이너)
+  - canHaveChildren: false → Table에만 표시 (말단)
+
+Asset Summary:
+  Total Assets: 45
+  Containers: 15
+  Terminals: 30
+  By Type: { building: 3, floor: 6, room: 6, rack: 4, ... }
+
+Available endpoints:
+  GET /api/hierarchy?depth=n           - Hierarchy tree (depth limited)
+  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading)
+  GET /api/hierarchy/:nodeId/assets    - All assets under node (for Table)
+  GET /api/assets                      - All assets
+  GET /api/assets?type=ups             - Filter by type
+  GET /api/asset/:id                   - Single asset
+  GET /api/ups/:id                     - UPS status
+  GET /api/pdu/:id                     - PDU status
+  GET /api/crac/:id                    - CRAC status
+  GET /api/sensor/:id                  - Sensor status
 ```
+
+---
+
+## 변경 이력
+
+| 날짜 | 내용 |
+|------|------|
+| 2025-12-22 | 초안 작성 - 기본 API 정의 |
+| 2026-01-14 | "모든 것은 자산" 설계 원칙 반영, Lazy Loading API 추가 |
+| 2026-01-14 | AssetPanelAPI.md 내용 통합 |
