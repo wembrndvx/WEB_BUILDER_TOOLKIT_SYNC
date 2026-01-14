@@ -824,4 +824,50 @@
     @keyframes modal-spin {
         to { transform: rotate(360deg); }
     }
+
+    /* ======================
+     * Responsive Layout
+     * 컨테이너 너비 768px 이하: 트리/테이블 세로 배치
+     * ====================== */
+    @container (max-width: 768px) {
+        .split-layout {
+            flex-direction: column;
+        }
+
+        .tree-pane {
+            width: 100%;
+            max-width: none;
+            min-width: auto;
+            max-height: 35vh;
+            border-right: none;
+            border-bottom: 1px solid #21262d;
+        }
+
+        .pane-resizer {
+            display: none;
+        }
+
+        .table-pane {
+            min-width: auto;
+        }
+
+        .toolbar {
+            flex-wrap: wrap;
+        }
+
+        .filter-box {
+            width: 100%;
+        }
+
+        .type-filter,
+        .status-filter {
+            flex: 1;
+        }
+    }
+}
+
+/* Container Query 지원을 위한 컨테이너 정의 */
+#asset-list-container {
+    container-type: inline-size;
+    container-name: asset-list;
 }
