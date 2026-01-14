@@ -5,16 +5,27 @@
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
+      "param_info": [
+        {
+          "param_name": "depth",
+          "param_type": "number",
+          "default_value": "1"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
+        }
+      ],
       "data_type": "1",
       "interval": "0",
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Building-Floor-Room hierarchy structure",
+      "description": "Building-Floor-Room hierarchy structure (i18n supported)",
       "dataset_id": "hierarchy-001",
       "name": "hierarchy",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/hierarchy\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy?depth=#{depth}&locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -25,6 +36,11 @@
           "param_name": "nodeId",
           "param_type": "string",
           "default_value": ""
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
         }
       ],
       "data_type": "1",
@@ -32,10 +48,36 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Assets in selected hierarchy node",
+      "description": "Children of hierarchy node (Lazy Loading, i18n supported)",
+      "dataset_id": "hierarchy-children-001",
+      "name": "hierarchyChildren",
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{nodeId}/children?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "nodeId",
+          "param_type": "string",
+          "default_value": ""
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Assets in selected hierarchy node (i18n supported)",
       "dataset_id": "hierarchy-assets-001",
       "name": "hierarchyAssets",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/hierarchy/#{nodeId}/assets\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{nodeId}/assets?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -50,7 +92,7 @@
       "description": "All ECO assets list",
       "dataset_id": "assets-001",
       "name": "assets",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/assets\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/assets\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -71,7 +113,7 @@
       "description": "UPS current status (on-demand)",
       "dataset_id": "ups-001",
       "name": "ups",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/ups/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -92,7 +134,7 @@
       "description": "UPS load/battery history (on-demand)",
       "dataset_id": "ups-history-001",
       "name": "upsHistory",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/ups/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/ups/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -113,7 +155,7 @@
       "description": "PDU current status (on-demand)",
       "dataset_id": "pdu-001",
       "name": "pdu",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/pdu/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -134,7 +176,7 @@
       "description": "PDU circuit list (on-demand)",
       "dataset_id": "pdu-circuits-001",
       "name": "pduCircuits",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/pdu/#{assetId}/circuits\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}/circuits\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -155,7 +197,7 @@
       "description": "PDU power/current history (on-demand)",
       "dataset_id": "pdu-history-001",
       "name": "pduHistory",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/pdu/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/pdu/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -176,7 +218,7 @@
       "description": "CRAC current status (on-demand)",
       "dataset_id": "crac-001",
       "name": "crac",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/crac/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -197,7 +239,7 @@
       "description": "CRAC temperature/humidity history (on-demand)",
       "dataset_id": "crac-history-001",
       "name": "cracHistory",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/crac/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/crac/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -218,7 +260,7 @@
       "description": "Temperature/Humidity sensor current status (on-demand)",
       "dataset_id": "sensor-001",
       "name": "sensor",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/sensor/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -239,7 +281,7 @@
       "description": "Sensor temperature/humidity history (on-demand)",
       "dataset_id": "sensor-history-001",
       "name": "sensorHistory",
-      "rest_api": "{\"url\":\"http://localhost:4004/api/sensor/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/sensor/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []
