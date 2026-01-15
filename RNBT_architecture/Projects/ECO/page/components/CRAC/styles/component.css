@@ -105,137 +105,33 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
 }
 
-/* Temperature Section */
-.values-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.section-title {
-    font-size: 12px;
-    font-weight: 500;
-    color: #8892a0;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.temp-values {
+/* Current Values - 동적 필드 컨테이너 */
+.current-values {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
     gap: 12px;
 }
 
 .value-card {
     background: #252b3b;
     border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.value-card.supply .value-icon {
-    color: #3b82f6;
-}
-
-.value-card.return .value-icon {
-    color: #ef4444;
-}
-
-.value-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-}
-
-.value-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    padding: 12px;
 }
 
 .value-label {
     font-size: 11px;
     color: #8892a0;
+    margin-bottom: 4px;
     text-transform: uppercase;
 }
 
-.value-number {
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-}
-
-.crac-supply-temp,
-.crac-return-temp {
-    font-size: 24px;
+.value-data {
+    font-size: 20px;
     font-weight: 600;
     color: #e0e6ed;
-}
-
-.value-unit {
-    font-size: 14px;
-    color: #8892a0;
-}
-
-/* Status Values */
-.status-values {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-}
-
-.status-card {
-    background: #252b3b;
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-}
-
-.status-label {
-    font-size: 10px;
-    color: #8892a0;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-}
-
-.status-number {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    gap: 2px;
-}
-
-.crac-humidity,
-.crac-fan-speed,
-.crac-setpoint {
-    font-size: 18px;
-    font-weight: 600;
-    color: #e0e6ed;
-}
-
-.crac-mode {
-    font-size: 12px;
-    font-weight: 500;
-    color: #3b82f6;
-    text-transform: uppercase;
-}
-
-.status-number.mode {
-    justify-content: center;
-}
-
-.status-unit {
-    font-size: 11px;
-    color: #8892a0;
 }
 
 /* Chart Section */

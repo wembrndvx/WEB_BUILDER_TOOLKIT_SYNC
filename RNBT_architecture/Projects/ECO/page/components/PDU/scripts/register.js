@@ -49,21 +49,18 @@ function initComponent() {
     ];
 
     // ======================
-    // 2. Data Config (API 필드 매핑)
+    // 2. Data Config (하드코딩 제거)
+    // - API 응답의 fields 배열을 직접 사용하여 동적 렌더링
     // ======================
     this.baseInfoConfig = [
         { key: 'name', selector: '.pdu-name' },
         { key: 'zone', selector: '.pdu-zone' },
+        { key: 'statusLabel', selector: '.pdu-status' },
         { key: 'status', selector: '.pdu-status', dataAttr: 'status' }
     ];
 
-    this.pduInfoConfig = [
-        { key: 'totalPower', selector: '.pdu-power', suffix: 'kW' },
-        { key: 'totalCurrent', selector: '.pdu-current', suffix: 'A' },
-        { key: 'voltage', selector: '.pdu-voltage', suffix: 'V' },
-        { key: 'activeCircuits', selector: '.pdu-active-circuits' },
-        { key: 'powerFactor', selector: '.pdu-pf' }
-    ];
+    // 동적 필드 컨테이너 selector (Summary Bar)
+    this.fieldsContainerSelector = '.summary-bar';
 
     // ======================
     // 3. Table Config - Tabulator 옵션 빌더
@@ -108,9 +105,9 @@ function initComponent() {
     };
 
     // ======================
-    // 5. 렌더링 함수 바인딩 (config 부분 적용)
+    // 5. 렌더링 함수 바인딩
     // ======================
-    this.renderPDUInfo = renderPDUInfo.bind(this, [...this.baseInfoConfig, ...this.pduInfoConfig]);
+    this.renderPDUInfo = renderPDUInfo.bind(this);
     this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
     this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
 
@@ -235,17 +232,31 @@ function onPopupCreated(popupConfig, tableConfig) {
 // RENDER FUNCTIONS
 // ======================
 
-function renderPDUInfo(config, data) {
+function renderPDUInfo(data) {
+    // 기본 정보 렌더링 (name, zone, status)
     fx.go(
-        config,
-        fx.each(({ key, selector, dataAttr, suffix }) => {
+        this.baseInfoConfig,
+        fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
             if (!el) return;
             const value = data[key];
-            el.textContent = suffix ? `${value}${suffix}` : value;
+            el.textContent = value;
             if (dataAttr) el.dataset[dataAttr] = value;
         })
     );
+
+    // 동적 필드 렌더링 (API fields 배열 사용 - Summary Bar)
+    const container = this.popupQuery(this.fieldsContainerSelector);
+    if (!container || !data.fields) return;
+
+    const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+    container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+        const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+        return `<div class="summary-item">
+            <span class="summary-label">${label}</span>
+            <span class="summary-value">${displayValue ?? '-'}</span>
+        </div>`;
+    }).join('');
 }
 
 function renderCircuitTable(config, data) {

@@ -40,22 +40,17 @@ function initComponent() {
     ];
 
     // ======================
-    // 2. Data Config (API 필드 매핑)
+    // 2. Data Config (하드코딩 제거)
+    // - API 응답의 fields 배열을 직접 사용하여 동적 렌더링
     // ======================
     this.baseInfoConfig = [
         { key: 'name', selector: '.ups-name' },
-        { key: 'zone', selector: '.ups-zone' },
+        { key: 'statusLabel', selector: '.ups-status' },
         { key: 'status', selector: '.ups-status', dataAttr: 'status' }
     ];
 
-    this.upsInfoConfig = [
-        { key: 'load', selector: '.ups-load', suffix: '%' },
-        { key: 'batteryLevel', selector: '.ups-battery', suffix: '%' },
-        { key: 'inputVoltage', selector: '.ups-input-voltage', suffix: 'V' },
-        { key: 'outputVoltage', selector: '.ups-output-voltage', suffix: 'V' },
-        { key: 'runtime', selector: '.ups-runtime', suffix: 'min' },
-        { key: 'mode', selector: '.ups-mode' }
-    ];
+    // 동적 필드 컨테이너 selector
+    this.fieldsContainerSelector = '.fields-container';
 
     this.chartConfig = {
         xKey: 'timestamps',
@@ -69,7 +64,7 @@ function initComponent() {
     // ======================
     // 3. 렌더링 함수 바인딩
     // ======================
-    this.renderUPSInfo = renderUPSInfo.bind(this, [...this.baseInfoConfig, ...this.upsInfoConfig]);
+    this.renderUPSInfo = renderUPSInfo.bind(this);
     this.renderChart = renderChart.bind(this, this.chartConfig);
 
     // ======================
@@ -144,17 +139,31 @@ function showDetail(assetId) {
     });
 }
 
-function renderUPSInfo(config, data) {
+function renderUPSInfo(data) {
+    // 기본 정보 렌더링 (name, status)
     fx.go(
-        config,
-        fx.each(({ key, selector, dataAttr, suffix }) => {
+        this.baseInfoConfig,
+        fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
             if (!el) return;
             const value = data[key];
-            el.textContent = suffix ? `${value}${suffix}` : value;
+            el.textContent = value;
             dataAttr && (el.dataset[dataAttr] = value);
         })
     );
+
+    // 동적 필드 렌더링 (API fields 배열 사용)
+    const container = this.popupQuery(this.fieldsContainerSelector);
+    if (!container || !data.fields) return;
+
+    const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+    container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+        const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+        return `<div class="value-card">
+            <div class="value-label">${label}</div>
+            <div class="value-data">${displayValue ?? '-'}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderChart(config, data) {

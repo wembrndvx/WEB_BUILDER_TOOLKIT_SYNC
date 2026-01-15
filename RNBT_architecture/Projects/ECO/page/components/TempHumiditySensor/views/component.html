@@ -23,38 +23,9 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Current Values -->
-                <div class="current-values">
-                    <div class="value-card temperature">
-                        <div class="value-icon">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                                <path d="M16 4V20M16 20C13.7909 20 12 21.7909 12 24C12 26.2091 13.7909 28 16 28C18.2091 28 20 26.2091 20 24C20 21.7909 18.2091 20 16 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                <path d="M12 10H14M12 14H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                        <div class="value-info">
-                            <div class="value-label">Temperature</div>
-                            <div class="value-number">
-                                <span class="sensor-temp">-</span>
-                                <span class="value-unit">°C</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="value-card humidity">
-                        <div class="value-icon">
-                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                                <path d="M16 4C16 4 8 12 8 18C8 22.4183 11.5817 26 16 26C20.4183 26 24 22.4183 24 18C24 12 16 4 16 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12 18C12 16 14 14 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </div>
-                        <div class="value-info">
-                            <div class="value-label">Humidity</div>
-                            <div class="value-number">
-                                <span class="sensor-humidity">-</span>
-                                <span class="value-unit">%</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Current Values (동적 생성 - API fields 배열 사용) -->
+                <div class="current-values fields-container">
+                    <!-- JS에서 API 응답의 fields 배열을 기반으로 동적 생성 -->
                 </div>
 
                 <!-- Chart -->

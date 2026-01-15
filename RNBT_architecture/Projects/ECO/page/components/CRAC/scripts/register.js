@@ -40,22 +40,18 @@ function initComponent() {
     ];
 
     // ======================
-    // DATA CONFIG
+    // DATA CONFIG (하드코딩 제거)
+    // - API 응답의 fields 배열을 직접 사용하여 동적 렌더링
     // ======================
     this.baseInfoConfig = [
         { key: 'name', selector: '.crac-name' },
         { key: 'zone', selector: '.crac-zone' },
+        { key: 'statusLabel', selector: '.crac-status' },
         { key: 'status', selector: '.crac-status', dataAttr: 'status' }
     ];
 
-    this.cracInfoConfig = [
-        { key: 'supplyTemp', selector: '.crac-supply-temp' },
-        { key: 'returnTemp', selector: '.crac-return-temp' },
-        { key: 'humidity', selector: '.crac-humidity' },
-        { key: 'fanSpeed', selector: '.crac-fan-speed' },
-        { key: 'setpoint', selector: '.crac-setpoint' },
-        { key: 'mode', selector: '.crac-mode' }
-    ];
+    // 동적 필드 컨테이너 selector
+    this.fieldsContainerSelector = '.fields-container';
 
     this.chartConfig = {
         xKey: 'timestamps',
@@ -137,9 +133,9 @@ function initComponent() {
 // RENDER FUNCTIONS
 // ======================
 function renderCRACInfo(data) {
-    const config = [...this.baseInfoConfig, ...this.cracInfoConfig];
+    // 기본 정보 렌더링 (name, zone, status)
     fx.go(
-        config,
+        this.baseInfoConfig,
         fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
             if (el) {
@@ -148,6 +144,19 @@ function renderCRACInfo(data) {
             }
         })
     );
+
+    // 동적 필드 렌더링 (API fields 배열 사용)
+    const container = this.popupQuery(this.fieldsContainerSelector);
+    if (!container || !data.fields) return;
+
+    const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+    container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+        const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+        return `<div class="value-card">
+            <div class="value-label">${label}</div>
+            <div class="value-data">${displayValue ?? '-'}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderChart(data) {

@@ -41,18 +41,18 @@ function initComponent() {
     ];
 
     // ======================
-    // DATA CONFIG
+    // DATA CONFIG (하드코딩 제거)
+    // - API 응답의 fields 배열을 직접 사용하여 동적 렌더링
     // ======================
     this.baseInfoConfig = [
         { key: 'name', selector: '.sensor-name' },
         { key: 'zone', selector: '.sensor-zone' },
+        { key: 'statusLabel', selector: '.sensor-status' },
         { key: 'status', selector: '.sensor-status', dataAttr: 'status' }
     ];
 
-    this.sensorInfoConfig = [
-        { key: 'temperature', selector: '.sensor-temp' },
-        { key: 'humidity', selector: '.sensor-humidity' }
-    ];
+    // 동적 필드 컨테이너 selector
+    this.fieldsContainerSelector = '.fields-container';
 
     this.chartConfig = {
         xKey: 'timestamps',
@@ -133,9 +133,9 @@ function initComponent() {
 // RENDER FUNCTIONS
 // ======================
 function renderSensorInfo(data) {
-    const config = [...this.baseInfoConfig, ...this.sensorInfoConfig];
+    // 기본 정보 렌더링 (name, zone, status)
     fx.go(
-        config,
+        this.baseInfoConfig,
         fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
             if (el) {
@@ -144,6 +144,19 @@ function renderSensorInfo(data) {
             }
         })
     );
+
+    // 동적 필드 렌더링 (API fields 배열 사용)
+    const container = this.popupQuery(this.fieldsContainerSelector);
+    if (!container || !data.fields) return;
+
+    const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
+    container.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
+        const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+        return `<div class="value-card">
+            <div class="value-label">${label}</div>
+            <div class="value-data">${displayValue ?? '-'}</div>
+        </div>`;
+    }).join('');
 }
 
 function renderChart(data) {

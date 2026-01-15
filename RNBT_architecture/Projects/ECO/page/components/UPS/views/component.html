@@ -22,44 +22,9 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Current Values -->
-                <div class="current-values">
-                    <div class="value-card">
-                        <div class="value-label">Load</div>
-                        <div class="value-number">
-                            <span class="ups-load">-</span>
-                        </div>
-                    </div>
-                    <div class="value-card">
-                        <div class="value-label">Battery</div>
-                        <div class="value-number">
-                            <span class="ups-battery">-</span>
-                        </div>
-                    </div>
-                    <div class="value-card">
-                        <div class="value-label">Input</div>
-                        <div class="value-number">
-                            <span class="ups-input-voltage">-</span>
-                        </div>
-                    </div>
-                    <div class="value-card">
-                        <div class="value-label">Output</div>
-                        <div class="value-number">
-                            <span class="ups-output-voltage">-</span>
-                        </div>
-                    </div>
-                    <div class="value-card">
-                        <div class="value-label">Runtime</div>
-                        <div class="value-number">
-                            <span class="ups-runtime">-</span>
-                        </div>
-                    </div>
-                    <div class="value-card">
-                        <div class="value-label">Mode</div>
-                        <div class="value-number mode">
-                            <span class="ups-mode">-</span>
-                        </div>
-                    </div>
+                <!-- Current Values (동적 생성 - API fields 배열 사용) -->
+                <div class="current-values fields-container">
+                    <!-- JS에서 API 응답의 fields 배열을 기반으로 동적 생성 -->
                 </div>
 
                 <!-- Chart -->

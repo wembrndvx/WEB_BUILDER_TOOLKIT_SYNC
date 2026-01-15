@@ -23,70 +23,9 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Temperature Values -->
-                <div class="values-section">
-                    <div class="section-title">Temperature</div>
-                    <div class="temp-values">
-                        <div class="value-card supply">
-                            <div class="value-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <div class="value-info">
-                                <div class="value-label">Supply</div>
-                                <div class="value-number">
-                                    <span class="crac-supply-temp">-</span>
-                                    <span class="value-unit">°C</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="value-card return">
-                            <div class="value-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 5V19M12 19L6 13M12 19L18 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                            <div class="value-info">
-                                <div class="value-label">Return</div>
-                                <div class="value-number">
-                                    <span class="crac-return-temp">-</span>
-                                    <span class="value-unit">°C</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Status Values -->
-                <div class="status-values">
-                    <div class="status-card">
-                        <div class="status-label">Humidity</div>
-                        <div class="status-number">
-                            <span class="crac-humidity">-</span>
-                            <span class="status-unit">%</span>
-                        </div>
-                    </div>
-                    <div class="status-card">
-                        <div class="status-label">Fan Speed</div>
-                        <div class="status-number">
-                            <span class="crac-fan-speed">-</span>
-                            <span class="status-unit">%</span>
-                        </div>
-                    </div>
-                    <div class="status-card">
-                        <div class="status-label">Setpoint</div>
-                        <div class="status-number">
-                            <span class="crac-setpoint">-</span>
-                            <span class="status-unit">°C</span>
-                        </div>
-                    </div>
-                    <div class="status-card">
-                        <div class="status-label">Mode</div>
-                        <div class="status-number mode">
-                            <span class="crac-mode">-</span>
-                        </div>
-                    </div>
+                <!-- Current Values (동적 생성 - API fields 배열 사용) -->
+                <div class="current-values fields-container">
+                    <!-- JS에서 API 응답의 fields 배열을 기반으로 동적 생성 -->
                 </div>
 
                 <!-- Chart -->

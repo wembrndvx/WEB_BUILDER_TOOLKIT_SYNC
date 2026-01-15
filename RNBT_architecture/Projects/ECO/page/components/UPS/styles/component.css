@@ -127,16 +127,10 @@
     text-transform: uppercase;
 }
 
-.value-number {
+.value-data {
     font-size: 20px;
     font-weight: 600;
     color: #e0e6ed;
-}
-
-.value-number.mode {
-    font-size: 14px;
-    text-transform: uppercase;
-    color: #3b82f6;
 }
 
 .chart-section {
