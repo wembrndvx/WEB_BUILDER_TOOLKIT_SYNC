@@ -1104,24 +1104,24 @@ app.get('/api/hierarchy', (req, res) => {
 });
 
 /**
- * GET /api/hierarchy/:nodeId/children?locale=ko
+ * GET /api/hierarchy/:assetId/children?locale=ko
  * 노드 하위 컨테이너 조회 (Lazy Loading)
  * - locale: 언어 코드 (ko, en, ja)
  */
-app.get('/api/hierarchy/:nodeId/children', (req, res) => {
-    const { nodeId } = req.params;
+app.get('/api/hierarchy/:assetId/children', (req, res) => {
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
 
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
-    const children = getNodeChildren(nodeId);
+    const children = getNodeChildren(assetId);
     const translatedChildren = children.map(child => applyI18nToAsset(child, locale));
 
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/children?locale=${locale} - ${children.length} children`);
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${assetId}/children?locale=${locale} - ${children.length} children`);
 
     res.json({
         data: {
-            parentId: nodeId,
+            parentId: assetId,
             children: translatedChildren
         },
         meta: { locale }
@@ -1129,36 +1129,36 @@ app.get('/api/hierarchy/:nodeId/children', (req, res) => {
 });
 
 /**
- * GET /api/hierarchy/:nodeId/assets?locale=ko
+ * GET /api/hierarchy/:assetId/assets?locale=ko
  * 노드 하위의 모든 자산 조회 (Table용)
  * - locale: 언어 코드 (ko, en, ja)
  */
-app.get('/api/hierarchy/:nodeId/assets', (req, res) => {
-    const { nodeId } = req.params;
+app.get('/api/hierarchy/:assetId/assets', (req, res) => {
+    const { assetId } = req.params;
     const locale = req.query.locale || 'ko';
 
     if (!HIERARCHY_CACHE) initializeHierarchy();
 
-    const node = findNodeById(nodeId);
+    const node = findNodeById(assetId);
     if (!node) {
-        return res.status(404).json({ error: 'Node not found', nodeId });
+        return res.status(404).json({ error: 'Asset not found', assetId });
     }
 
-    const assets = getNodeAssets(nodeId);
+    const assets = getNodeAssets(assetId);
     const translatedAssets = assets.map(asset => applyI18nToAsset(asset, locale));
     const translatedNode = applyI18nToAsset(node, locale);
-    const nodePath = getNodePath(nodeId, locale);
+    const assetPath = getNodePath(assetId, locale);
     const summary = generateAssetsSummary(assets);
 
-    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${nodeId}/assets?locale=${locale} - ${assets.length} assets`);
+    console.log(`[${new Date().toISOString()}] GET /api/hierarchy/${assetId}/assets?locale=${locale} - ${assets.length} assets`);
 
     res.json({
         data: {
-            nodeId,
-            nodeName: translatedNode.name,
-            nodePath,
-            nodeType: node.type,
-            nodeTypeLabel: translatedNode.typeLabel,
+            assetId,
+            assetName: translatedNode.name,
+            assetPath,
+            assetType: node.type,
+            assetTypeLabel: translatedNode.typeLabel,
             assets: translatedAssets,
             summary
         },
@@ -1279,17 +1279,17 @@ app.listen(PORT, () => {
     console.log(`  Terminals: ${HIERARCHY_CACHE.summary.terminals}`);
     console.log(`  By Type:`, HIERARCHY_CACHE.summary.byType);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  GET /api/hierarchy?depth=n&locale=ko - Hierarchy tree (depth limited)`);
-    console.log(`  GET /api/hierarchy/:nodeId/children  - Node children (Lazy Loading)`);
-    console.log(`  GET /api/hierarchy/:nodeId/assets    - All assets under node (for Table)`);
-    console.log(`  GET /api/ups/:id?locale=ko           - UPS status with fields metadata`);
-    console.log(`  GET /api/ups/:id/history             - UPS load/battery history`);
-    console.log(`  GET /api/pdu/:id?locale=ko           - PDU status with fields metadata`);
-    console.log(`  GET /api/pdu/:id/circuits            - PDU circuit list`);
-    console.log(`  GET /api/pdu/:id/history             - PDU power/current history`);
-    console.log(`  GET /api/crac/:id?locale=ko          - CRAC status with fields metadata`);
-    console.log(`  GET /api/crac/:id/history            - CRAC temperature/humidity history`);
-    console.log(`  GET /api/sensor/:id?locale=ko        - Sensor status with fields metadata`);
-    console.log(`  GET /api/sensor/:id/history          - Sensor temperature/humidity history`);
+    console.log(`  GET /api/hierarchy?depth=n&locale=ko       - Hierarchy tree (depth limited)`);
+    console.log(`  GET /api/hierarchy/:assetId/children       - Asset children (Lazy Loading)`);
+    console.log(`  GET /api/hierarchy/:assetId/assets         - All assets under asset (for Table)`);
+    console.log(`  GET /api/ups/:assetId?locale=ko            - UPS status with fields metadata`);
+    console.log(`  GET /api/ups/:assetId/history              - UPS load/battery history`);
+    console.log(`  GET /api/pdu/:assetId?locale=ko            - PDU status with fields metadata`);
+    console.log(`  GET /api/pdu/:assetId/circuits             - PDU circuit list`);
+    console.log(`  GET /api/pdu/:assetId/history              - PDU power/current history`);
+    console.log(`  GET /api/crac/:assetId?locale=ko           - CRAC status with fields metadata`);
+    console.log(`  GET /api/crac/:assetId/history             - CRAC temperature/humidity history`);
+    console.log(`  GET /api/sensor/:assetId?locale=ko         - Sensor status with fields metadata`);
+    console.log(`  GET /api/sensor/:assetId/history           - Sensor temperature/humidity history`);
     console.log(`\n`);
 });

@@ -27,7 +27,7 @@
 | 자산 이름 | O | `name` 필드 |
 | 타입 라벨 | O | `typeLabel` 필드 추가 |
 | 상태 라벨 | O | `statusLabel` 필드 추가 |
-| 노드 경로 | O | `nodePath` 번역됨 |
+| 자산 경로 | O | `assetPath` 번역됨 |
 | UI 텍스트 | X | 클라이언트 하드코딩 유지 |
 
 ---
@@ -62,8 +62,8 @@ GET /api/i18n/locales
 ```
 GET /api/hierarchy?depth=2&locale=ko
 GET /api/hierarchy?depth=2&locale=en
-GET /api/hierarchy/:nodeId/children?locale=ja
-GET /api/hierarchy/:nodeId/assets?locale=en
+GET /api/hierarchy/:assetId/children?locale=ja
+GET /api/hierarchy/:assetId/assets?locale=en
 ```
 
 ### 응답 구조 변화
@@ -126,7 +126,7 @@ GET /api/hierarchy/:nodeId/assets?locale=en
 }
 ```
 
-### GET /api/hierarchy/:nodeId/children?locale=ko
+### GET /api/hierarchy/:assetId/children?locale=ko
 
 Lazy Loading 시에도 동일하게 적용:
 
@@ -147,18 +147,18 @@ Lazy Loading 시에도 동일하게 적용:
 }
 ```
 
-### GET /api/hierarchy/:nodeId/assets?locale=ko
+### GET /api/hierarchy/:assetId/assets?locale=ko
 
-테이블 데이터 + nodePath 번역:
+테이블 데이터 + assetPath 번역:
 
 ```json
 {
   "data": {
-    "nodeId": "room-001-01-01",
-    "nodeName": "Server Room A",
-    "nodePath": "Main Building > 1st Floor > Server Room A",
-    "nodeType": "room",
-    "nodeTypeLabel": "Room",
+    "assetId": "room-001-01-01",
+    "assetName": "Server Room A",
+    "assetPath": "Main Building > 1st Floor > Server Room A",
+    "assetType": "room",
+    "assetTypeLabel": "Room",
     "assets": [
       {
         "id": "server-001",
@@ -179,10 +179,10 @@ Lazy Loading 시에도 동일하게 적용:
 자산 상세 API도 locale 파라미터를 지원하며, `fields` 배열의 `label`과 `valueLabel`이 번역됩니다:
 
 ```
-GET /api/ups/:id?locale=en
-GET /api/pdu/:id?locale=en
-GET /api/crac/:id?locale=en
-GET /api/sensor/:id?locale=en
+GET /api/ups/:assetId?locale=en
+GET /api/pdu/:assetId?locale=en
+GET /api/crac/:assetId?locale=en
+GET /api/sensor/:assetId?locale=en
 ```
 
 **응답 예시 (locale=en)**
@@ -345,7 +345,7 @@ columns: [
 | Hierarchy API locale 파라미터 | ✅ 완료 | 모든 Hierarchy API |
 | 자산 이름 번역 | ✅ 완료 | 주요 공간(건물/층/방) |
 | typeLabel/statusLabel | ✅ 완료 | 모든 자산에 추가 |
-| nodePath 번역 | ✅ 완료 | 경로도 번역됨 |
+| assetPath 번역 | ✅ 완료 | 경로도 번역됨 |
 | preview.html 적용 | ✅ 완료 | locale 선택기, API 파라미터 전달 |
 | register.js 적용 | ✅ 완료 | locale 구독, 이벤트 발행 |
 | 자산 상세 API fields | ✅ 완료 | UPS/PDU/CRAC/Sensor fields 라벨 번역 |
@@ -372,3 +372,4 @@ GET /api/i18n/ui?locale=ko&component=AssetList
 | 2026-01-14 | Mock 서버 구현 완료 - 자산 데이터 다국어 적용 |
 | 2026-01-14 | 클라이언트 구현 완료 - preview.html, register.js 적용 |
 | 2026-01-15 | 자산 상세 API 다국어 문서 추가 - fields 라벨 번역 테이블 |
+| 2026-01-15 | API 파라미터 통일: `nodeId` → `assetId`로 변경 |

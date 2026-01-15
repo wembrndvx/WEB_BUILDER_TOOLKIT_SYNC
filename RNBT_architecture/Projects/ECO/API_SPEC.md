@@ -102,17 +102,17 @@
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
 | `GET /api/hierarchy?depth=n&locale=ko` | 페이지 로드 | AssetList | 계층 트리 초기 렌더링 |
-| `GET /api/hierarchy/:nodeId/children?locale=ko` | 트리 노드 펼침 | AssetList | Lazy Loading |
-| `GET /api/hierarchy/:nodeId/assets?locale=ko` | 트리 노드 클릭 | AssetList | 선택 노드의 자산 목록 표시 |
-| `GET /api/ups/:id?locale=ko` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 + fields 메타데이터 |
-| `GET /api/ups/:id/history` | 행 클릭 / 3D 클릭 | UPS | 부하/배터리 차트 렌더링 |
-| `GET /api/pdu/:id?locale=ko` | 행 클릭 / 3D 클릭 | PDU | PDU 현재 상태 + fields 메타데이터 |
-| `GET /api/pdu/:id/circuits` | 행 클릭 / 3D 클릭 | PDU | 회로 테이블 렌더링 |
-| `GET /api/pdu/:id/history` | 행 클릭 / 3D 클릭 | PDU | 전력 사용량 차트 렌더링 |
-| `GET /api/crac/:id?locale=ko` | 행 클릭 / 3D 클릭 | CRAC | CRAC 현재 상태 + fields 메타데이터 |
-| `GET /api/crac/:id/history` | 행 클릭 / 3D 클릭 | CRAC | 온습도 차트 렌더링 |
-| `GET /api/sensor/:id?locale=ko` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 센서 현재 상태 + fields 메타데이터 |
-| `GET /api/sensor/:id/history` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 온습도 차트 렌더링 |
+| `GET /api/hierarchy/:assetId/children?locale=ko` | 트리 노드 펼침 | AssetList | Lazy Loading |
+| `GET /api/hierarchy/:assetId/assets?locale=ko` | 트리 노드 클릭 | AssetList | 선택 노드의 자산 목록 표시 |
+| `GET /api/ups/:assetId?locale=ko` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 + fields 메타데이터 |
+| `GET /api/ups/:assetId/history` | 행 클릭 / 3D 클릭 | UPS | 부하/배터리 차트 렌더링 |
+| `GET /api/pdu/:assetId?locale=ko` | 행 클릭 / 3D 클릭 | PDU | PDU 현재 상태 + fields 메타데이터 |
+| `GET /api/pdu/:assetId/circuits` | 행 클릭 / 3D 클릭 | PDU | 회로 테이블 렌더링 |
+| `GET /api/pdu/:assetId/history` | 행 클릭 / 3D 클릭 | PDU | 전력 사용량 차트 렌더링 |
+| `GET /api/crac/:assetId?locale=ko` | 행 클릭 / 3D 클릭 | CRAC | CRAC 현재 상태 + fields 메타데이터 |
+| `GET /api/crac/:assetId/history` | 행 클릭 / 3D 클릭 | CRAC | 온습도 차트 렌더링 |
+| `GET /api/sensor/:assetId?locale=ko` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 센서 현재 상태 + fields 메타데이터 |
+| `GET /api/sensor/:assetId/history` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 온습도 차트 렌더링 |
 
 ---
 
@@ -251,7 +251,7 @@ GET /api/hierarchy?depth={n}&locale={locale}
 ### Request
 
 ```
-GET /api/hierarchy/:nodeId/children?locale={locale}
+GET /api/hierarchy/:assetId/children?locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -302,11 +302,11 @@ GET /api/hierarchy/:nodeId/children?locale={locale}
 ### Request
 
 ```
-GET /api/hierarchy/:nodeId/assets?locale={locale}
+GET /api/hierarchy/:assetId/assets?locale={locale}
 ```
 
 **Parameters**:
-- `nodeId`: 노드 ID (예: `building-001`, `floor-001-01`, `room-001-01-01`)
+- `assetId`: 자산 ID (예: `building-001`, `floor-001-01`, `room-001-01-01`)
 
 | 파라미터 | 타입 | 기본값 | 설명 |
 |----------|------|--------|------|
@@ -317,11 +317,11 @@ GET /api/hierarchy/:nodeId/assets?locale={locale}
 ```json
 {
   "data": {
-    "nodeId": "room-001-01-01",
-    "nodeName": "서버실 A",
-    "nodePath": "본관 > 1층 > 서버실 A",
-    "nodeType": "room",
-    "nodeTypeLabel": "방",
+    "assetId": "room-001-01-01",
+    "assetName": "서버실 A",
+    "assetPath": "본관 > 1층 > 서버실 A",
+    "assetType": "room",
+    "assetTypeLabel": "방",
     "assets": [
       {
         "id": "rack-001",
@@ -370,11 +370,11 @@ GET /api/hierarchy/:nodeId/assets?locale={locale}
 
 | Field | Type | Description |
 |-------|------|-------------|
-| nodeId | string | 노드 ID |
-| nodeName | string | 노드 이름 (locale에 따라 번역됨) |
-| nodePath | string | 경로 (breadcrumb, locale에 따라 번역됨) |
-| nodeType | string | 노드 타입 |
-| nodeTypeLabel | string | 노드 타입 라벨 (locale에 따라 번역됨) |
+| assetId | string | 선택된 자산 ID |
+| assetName | string | 자산 이름 (locale에 따라 번역됨) |
+| assetPath | string | 경로 (breadcrumb, locale에 따라 번역됨) |
+| assetType | string | 자산 타입 |
+| assetTypeLabel | string | 자산 타입 라벨 (locale에 따라 번역됨) |
 | assets | array | 하위 모든 자산 (컨테이너 + 말단, 플랫 목록) |
 | summary | object | 자산 요약 |
 | meta.locale | string | 응답에 적용된 언어 코드 |
@@ -386,7 +386,7 @@ GET /api/hierarchy/:nodeId/assets?locale={locale}
 ### Request
 
 ```
-GET /api/ups/:id?locale={locale}
+GET /api/ups/:assetId?locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -464,8 +464,8 @@ otherwise                           → status: "normal"
 ### Request
 
 ```
-GET /api/ups/:id/history
-GET /api/ups/:id/history?period=7d
+GET /api/ups/:assetId/history
+GET /api/ups/:assetId/history?period=7d
 ```
 
 ### Response
@@ -493,7 +493,7 @@ GET /api/ups/:id/history?period=7d
 ### Request
 
 ```
-GET /api/pdu/:id?locale={locale}
+GET /api/pdu/:assetId?locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -539,7 +539,7 @@ GET /api/pdu/:id?locale={locale}
 ### Request
 
 ```
-GET /api/pdu/:id/circuits
+GET /api/pdu/:assetId/circuits
 ```
 
 ### Response
@@ -570,7 +570,7 @@ GET /api/pdu/:id/circuits
 ### Request
 
 ```
-GET /api/pdu/:id/history
+GET /api/pdu/:assetId/history
 ```
 
 ### Response
@@ -594,7 +594,7 @@ GET /api/pdu/:id/history
 ### Request
 
 ```
-GET /api/crac/:id?locale={locale}
+GET /api/crac/:assetId?locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -645,7 +645,7 @@ GET /api/crac/:id?locale={locale}
 ### Request
 
 ```
-GET /api/crac/:id/history
+GET /api/crac/:assetId/history
 ```
 
 ### Response
@@ -670,7 +670,7 @@ GET /api/crac/:id/history
 ### Request
 
 ```
-GET /api/sensor/:id?locale={locale}
+GET /api/sensor/:assetId?locale={locale}
 ```
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -723,7 +723,7 @@ otherwise                                                 → status: "normal"
 ### Request
 
 ```
-GET /api/sensor/:id/history
+GET /api/sensor/:assetId/history
 ```
 
 ### Response
@@ -818,17 +818,17 @@ Asset Summary:
 
 Available endpoints:
   GET /api/hierarchy?depth=n&locale=ko       - Hierarchy tree (depth limited, i18n)
-  GET /api/hierarchy/:nodeId/children        - Node children (Lazy Loading)
-  GET /api/hierarchy/:nodeId/assets          - All assets under node (for Table)
+  GET /api/hierarchy/:assetId/children        - Node children (Lazy Loading)
+  GET /api/hierarchy/:assetId/assets          - All assets under node (for Table)
   GET /api/ups/:id?locale=ko                 - UPS status + fields metadata
-  GET /api/ups/:id/history                   - UPS load/battery history
+  GET /api/ups/:assetId/history                   - UPS load/battery history
   GET /api/pdu/:id?locale=ko                 - PDU status + fields metadata
-  GET /api/pdu/:id/circuits                  - PDU circuit list
-  GET /api/pdu/:id/history                   - PDU power history
+  GET /api/pdu/:assetId/circuits                  - PDU circuit list
+  GET /api/pdu/:assetId/history                   - PDU power history
   GET /api/crac/:id?locale=ko                - CRAC status + fields metadata
-  GET /api/crac/:id/history                  - CRAC temperature history
+  GET /api/crac/:assetId/history                  - CRAC temperature history
   GET /api/sensor/:id?locale=ko              - Sensor status + fields metadata
-  GET /api/sensor/:id/history                - Sensor temperature history
+  GET /api/sensor/:assetId/history                - Sensor temperature history
 ```
 
 ---
@@ -918,3 +918,4 @@ GET /api/i18n/locales
 | 2026-01-15 | 자산 상세 API의 roomId → parentId 변경 (일관성 개선) |
 | 2026-01-15 | 미사용 API 제거 (`/api/assets`, `/api/asset/:id`) |
 | 2026-01-15 | 자산 상세 API에 fields 메타데이터 추가 (하드코딩 제거) |
+| 2026-01-15 | API 파라미터 통일: `nodeId`, `:id` → `assetId`로 변경 |

@@ -280,7 +280,7 @@
         }
 
         /**
-         * GET /api/hierarchy/:nodeId/children?locale=ko
+         * GET /api/hierarchy/:assetId/children?locale=ko
          * 노드의 직속 children 조회 (Lazy Loading, 다국어 지원)
          */
         async function fetchNodeChildren(nodeId, locale = 'ko') {
@@ -295,7 +295,7 @@
         }
 
         /**
-         * GET /api/hierarchy/:nodeId/assets?locale=ko
+         * GET /api/hierarchy/:assetId/assets?locale=ko
          * 노드 하위의 모든 자산 조회 (Table용, 다국어 지원)
          */
         async function fetchNodeAssets(nodeId, locale = 'ko') {
@@ -305,7 +305,7 @@
                 return { response: json };
             } catch (error) {
                 console.error('[API] fetchNodeAssets error:', error);
-                return { response: { data: { nodeId, nodeName: '', nodePath: '', assets: [], summary: {} } } };
+                return { response: { data: { assetId: nodeId, assetName: '', assetPath: '', assets: [], summary: {} } } };
             }
         }
     </script>
@@ -646,11 +646,11 @@
             const { data } = response;
             if (!data) return;
 
-            const { nodePath, assets = [], summary } = data;
+            const { assetPath, assets = [], summary } = data;
 
             const pathEl = panel.querySelector('.node-path');
             const countEl = panel.querySelector('.selected-node-info .node-count');
-            if (pathEl) pathEl.textContent = nodePath || '전체 자산';
+            if (pathEl) pathEl.textContent = assetPath || '전체 자산';
             if (countEl) countEl.textContent = `${assets.length}개`;
 
             allAssets = assets;

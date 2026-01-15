@@ -103,8 +103,8 @@ register.js와 동일한 `{ response: { data: {...} } }` 구조 사용:
 {
     response: {
         data: {
-            nodeId: "room-001-01-01",
-            nodePath: "본관 > 1층 > 서버실 A",
+            assetId: "room-001-01-01",
+            assetPath: "본관 > 1층 > 서버실 A",
             assets: [...],
             summary: { total: 10, byStatus: {...} }
         }
@@ -205,7 +205,7 @@ selectNode(nodeId)
             │
             └─→ renderTable({ response })
                     │
-                    ├─→ nodePath 표시 ("본관 > 1층 > 서버실 A")
+                    ├─→ assetPath 표시 ("본관 > 1층 > 서버실 A")
                     ├─→ allAssets = assets (상태 저장)
                     │
                     └─→ applyFilters()

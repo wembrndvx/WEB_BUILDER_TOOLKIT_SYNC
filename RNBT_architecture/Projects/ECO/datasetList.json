@@ -33,7 +33,7 @@
       "delivery_type": "0",
       "param_info": [
         {
-          "param_name": "nodeId",
+          "param_name": "assetId",
           "param_type": "string",
           "default_value": ""
         },
@@ -48,10 +48,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Children of hierarchy node (Lazy Loading, i18n supported)",
+      "description": "Children of hierarchy asset (Lazy Loading, i18n supported)",
       "dataset_id": "hierarchy-children-001",
       "name": "hierarchyChildren",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{nodeId}/children?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{assetId}/children?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -59,7 +59,7 @@
       "delivery_type": "0",
       "param_info": [
         {
-          "param_name": "nodeId",
+          "param_name": "assetId",
           "param_type": "string",
           "default_value": ""
         },
@@ -74,10 +74,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Assets in selected hierarchy node (i18n supported)",
+      "description": "Assets in selected hierarchy asset (i18n supported)",
       "dataset_id": "hierarchy-assets-001",
       "name": "hierarchyAssets",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{nodeId}/assets?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/hierarchy/#{assetId}/assets?locale=#{locale}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",

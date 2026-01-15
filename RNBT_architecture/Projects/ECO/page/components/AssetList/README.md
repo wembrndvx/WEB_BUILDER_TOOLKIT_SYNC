@@ -60,8 +60,8 @@
 
 | Event | Payload | 설명 |
 |-------|---------|------|
-| `@hierarchyNodeSelected` | `{ nodeId, node, locale }` | 트리 노드 선택 |
-| `@hierarchyChildrenRequested` | `{ nodeId, locale }` | Lazy Loading 요청 |
+| `@hierarchyNodeSelected` | `{ assetId, node, locale }` | 트리 노드 선택 |
+| `@hierarchyChildrenRequested` | `{ assetId, locale }` | Lazy Loading 요청 |
 | `@localeChanged` | `{ locale }` | locale 변경 알림 |
 
 ### 행 클릭 → Modal 흐름
@@ -85,10 +85,10 @@
 
 | 타입 | Dataset | API |
 |------|---------|-----|
-| ups | ups | GET /api/ups/:id?locale=ko |
-| pdu | pdu | GET /api/pdu/:id?locale=ko |
-| crac | crac | GET /api/crac/:id?locale=ko |
-| sensor | sensor | GET /api/sensor/:id?locale=ko |
+| ups | ups | GET /api/ups/:assetId?locale=ko |
+| pdu | pdu | GET /api/pdu/:assetId?locale=ko |
+| crac | crac | GET /api/crac/:assetId?locale=ko |
+| sensor | sensor | GET /api/sensor/:assetId?locale=ko |
 
 ### API 응답 구조
 
@@ -122,11 +122,11 @@
 {
     response: {
         data: {
-            nodeId: "room-001-01-01",
-            nodeName: "서버실 A",
-            nodePath: "본관 > 1층 > 서버실 A",
-            nodeType: "room",
-            nodeTypeLabel: "방",
+            assetId: "room-001-01-01",
+            assetName: "서버실 A",
+            assetPath: "본관 > 1층 > 서버실 A",
+            assetType: "room",
+            assetTypeLabel: "방",
             assets: [
                 {
                     id: "server-001",

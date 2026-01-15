@@ -581,12 +581,12 @@ function renderTable({ response }) {
     const { data } = response;
     if (!data) return;
 
-    const { nodePath, assets = [], summary } = data;
+    const { assetPath, assets = [], summary } = data;
 
     // 선택 노드 정보 업데이트
     const pathEl = this.appendElement.querySelector('.node-path');
     const countEl = this.appendElement.querySelector('.selected-node-info .node-count');
-    if (pathEl) pathEl.textContent = nodePath || '전체 자산';
+    if (pathEl) pathEl.textContent = assetPath || '전체 자산';
     if (countEl) countEl.textContent = `${assets.length}개`;
 
     this._allAssets = assets;
