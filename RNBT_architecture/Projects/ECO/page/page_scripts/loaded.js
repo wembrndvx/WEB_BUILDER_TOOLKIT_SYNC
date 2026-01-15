@@ -78,41 +78,9 @@ GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hiera
     .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
 
 // ======================
-// EVENT HANDLERS (컴포넌트 이벤트 구독)
+// EVENT HANDLERS
+// 모든 이벤트 핸들러는 before_load.js에서 onEventBusHandlers로 등록됨
 // ======================
-
-// 트리 노드 선택 시 → hierarchyAssets 데이터 요청
-Weventbus.on('@hierarchyNodeSelected', ({ event }) => {
-    const { nodeId, locale } = event;
-    this.currentParams['hierarchyAssets'] = { nodeId, locale };
-    GlobalDataPublisher.fetchAndPublish('hierarchyAssets', this, { nodeId, locale })
-        .catch(err => console.error('[fetchAndPublish:hierarchyAssets]', err));
-});
-
-// Lazy Loading 요청 시 → hierarchyChildren 데이터 요청
-Weventbus.on('@hierarchyChildrenRequested', ({ event }) => {
-    const { nodeId, locale } = event;
-    this.currentParams['hierarchyChildren'] = { nodeId, locale };
-    GlobalDataPublisher.fetchAndPublish('hierarchyChildren', this, { nodeId, locale })
-        .catch(err => console.error('[fetchAndPublish:hierarchyChildren]', err));
-});
-
-// Locale 변경 시 → hierarchy 재로드
-Weventbus.on('@localeChanged', ({ event }) => {
-    const { locale } = event;
-    this.currentParams['hierarchy'] = { ...this.currentParams['hierarchy'], locale };
-    GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hierarchy'])
-        .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
-
-    // locale topic 발행 (구독자에게 locale 변경 알림)
-    GlobalDataPublisher.publish('locale', { data: { locale } });
-});
-
-// Refresh 버튼 클릭 시 → hierarchy 재로드
-Weventbus.on('@refreshClicked', () => {
-    GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hierarchy'])
-        .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
-});
 
 // ======================
 // INTERVAL MANAGEMENT (필요 시 활성화)

@@ -8,7 +8,8 @@
  *
  * 이벤트 핸들러:
  * - 3D 클릭: @assetClicked (모든 자기완결 컴포넌트 공통)
- * - AssetList: @assetSelected (행 클릭), @refreshClicked (새로고침)
+ * - AssetList: @hierarchyNodeSelected, @hierarchyChildrenRequested, @assetSelected, @refreshClicked
+ * - i18n: @localeChanged
  */
 
 const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, getInstanceById, getInstanceByName } = Wkit;
@@ -33,15 +34,26 @@ this.eventBusHandlers = {
 
     // 트리 노드 선택 → 해당 노드의 자산 목록 요청
     '@hierarchyNodeSelected': ({ event }) => {
-        const { nodeId } = event;
+        const { nodeId, locale } = event;
         console.log('[Page] Hierarchy node selected:', nodeId);
 
-        // hierarchyAssets 데이터 요청
         this.currentParams = this.currentParams || {};
-        this.currentParams['hierarchyAssets'] = { nodeId };
+        this.currentParams['hierarchyAssets'] = { nodeId, locale };
 
-        GlobalDataPublisher.fetchAndPublish('hierarchyAssets', this, { nodeId })
+        GlobalDataPublisher.fetchAndPublish('hierarchyAssets', this, { nodeId, locale })
             .catch(err => console.error('[fetchAndPublish:hierarchyAssets]', err));
+    },
+
+    // Lazy Loading 요청 → hierarchyChildren 데이터 요청
+    '@hierarchyChildrenRequested': ({ event }) => {
+        const { nodeId, locale } = event;
+        console.log('[Page] Hierarchy children requested:', nodeId);
+
+        this.currentParams = this.currentParams || {};
+        this.currentParams['hierarchyChildren'] = { nodeId, locale };
+
+        GlobalDataPublisher.fetchAndPublish('hierarchyChildren', this, { nodeId, locale })
+            .catch(err => console.error('[fetchAndPublish:hierarchyChildren]', err));
     },
 
     // 자산 행 선택 → 해당 3D 컴포넌트 팝업 표시
@@ -59,6 +71,25 @@ this.eventBusHandlers = {
         console.log('[Page] Refresh clicked - fetching hierarchy');
         GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams?.hierarchy || {})
             .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
+    },
+
+    // ─────────────────────────────────────────
+    // i18n 이벤트
+    // ─────────────────────────────────────────
+
+    // Locale 변경 → hierarchy 재로드
+    '@localeChanged': ({ event }) => {
+        const { locale } = event;
+        console.log('[Page] Locale changed:', locale);
+
+        this.currentParams = this.currentParams || {};
+        this.currentParams['hierarchy'] = { ...this.currentParams['hierarchy'], locale };
+
+        GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hierarchy'])
+            .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
+
+        // locale topic 발행 (구독자에게 locale 변경 알림)
+        GlobalDataPublisher.publish('locale', { data: { locale } });
     }
 };
 
