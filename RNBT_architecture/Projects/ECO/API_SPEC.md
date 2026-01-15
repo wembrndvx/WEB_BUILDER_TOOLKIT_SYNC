@@ -386,8 +386,12 @@ GET /api/hierarchy/:nodeId/assets?locale={locale}
 ### Request
 
 ```
-GET /api/ups/:id
+GET /api/ups/:id?locale={locale}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -395,17 +399,22 @@ GET /api/ups/:id
 {
   "data": {
     "id": "ups-001",
-    "name": "UPS 001",
+    "name": "UPS 0001",
+    "type": "ups",
+    "typeLabel": "UPS",
     "parentId": "room-001-01-01",
-    "inputVoltage": 220.5,
-    "outputVoltage": 220.0,
-    "load": 65.2,
-    "batteryLevel": 100,
-    "batteryHealth": 98,
-    "runtime": 45,
-    "temperature": 32.5,
     "status": "normal",
-    "mode": "online",
+    "statusLabel": "정상",
+    "fields": [
+      { "key": "load", "label": "부하율", "value": 65.2, "unit": "%", "order": 1 },
+      { "key": "batteryLevel", "label": "배터리 잔량", "value": 100, "unit": "%", "order": 2 },
+      { "key": "batteryHealth", "label": "배터리 상태", "value": 98, "unit": "%", "order": 3 },
+      { "key": "inputVoltage", "label": "입력 전압", "value": 220.5, "unit": "V", "order": 4 },
+      { "key": "outputVoltage", "label": "출력 전압", "value": 220.0, "unit": "V", "order": 5 },
+      { "key": "runtime", "label": "예상 런타임", "value": 45, "unit": "min", "order": 6 },
+      { "key": "temperature", "label": "온도", "value": 32.5, "unit": "°C", "order": 7 },
+      { "key": "mode", "label": "운전 모드", "value": "online", "valueLabel": "온라인", "order": 8 }
+    ],
     "threshold": {
       "loadWarning": 70,
       "loadCritical": 90,
@@ -413,6 +422,9 @@ GET /api/ups/:id
       "batteryCritical": 15
     },
     "lastUpdated": "2025-12-22T08:30:00.000Z"
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -423,16 +435,19 @@ GET /api/ups/:id
 |-------|------|-------------|
 | id | string | UPS ID |
 | name | string | UPS 이름 |
+| type | string | 자산 타입 |
+| typeLabel | string | 타입 라벨 (locale에 따라 번역됨) |
 | parentId | string | 부모 자산 ID (Room, Rack 등) |
-| inputVoltage | number | 입력 전압 (V) |
-| outputVoltage | number | 출력 전압 (V) |
-| load | number | 부하율 (%) |
-| batteryLevel | number | 배터리 잔량 (%) |
-| batteryHealth | number | 배터리 건강도 (%) |
-| runtime | number | 예상 가동 시간 (분) |
-| temperature | number | 내부 온도 (°C) |
 | status | string | 상태 (`normal` \| `warning` \| `critical`) |
-| mode | string | 운전 모드 (`online` \| `bypass` \| `battery`) |
+| statusLabel | string | 상태 라벨 (locale에 따라 번역됨) |
+| fields | array | 필드 메타데이터 배열 (동적 렌더링용) |
+| fields[].key | string | 필드 키 |
+| fields[].label | string | 필드 라벨 (locale에 따라 번역됨) |
+| fields[].value | any | 필드 값 |
+| fields[].unit | string | 단위 (선택적) |
+| fields[].valueLabel | string | 값 라벨 (enum 타입일 경우, locale에 따라 번역됨) |
+| fields[].order | number | 정렬 순서 |
+| meta.locale | string | 응답에 적용된 언어 코드 |
 
 ### 상태 판정 로직
 
@@ -478,8 +493,12 @@ GET /api/ups/:id/history?period=7d
 ### Request
 
 ```
-GET /api/pdu/:id
+GET /api/pdu/:id?locale={locale}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -487,20 +506,28 @@ GET /api/pdu/:id
 {
   "data": {
     "id": "pdu-001",
-    "name": "PDU 001",
+    "name": "PDU 0001",
+    "type": "pdu",
+    "typeLabel": "PDU",
     "parentId": "room-001-01-01",
-    "totalPower": 12.5,
-    "totalCurrent": 56.8,
-    "voltage": 220.0,
-    "circuitCount": 24,
-    "activeCircuits": 18,
-    "powerFactor": 0.95,
     "status": "normal",
+    "statusLabel": "정상",
+    "fields": [
+      { "key": "totalPower", "label": "총 전력", "value": 12.5, "unit": "kW", "order": 1 },
+      { "key": "totalCurrent", "label": "총 전류", "value": 56.8, "unit": "A", "order": 2 },
+      { "key": "voltage", "label": "전압", "value": 220.0, "unit": "V", "order": 3 },
+      { "key": "circuitCount", "label": "회로 수", "value": 24, "order": 4 },
+      { "key": "activeCircuits", "label": "활성 회로", "value": 18, "order": 5 },
+      { "key": "powerFactor", "label": "역률", "value": 0.95, "order": 6 }
+    ],
     "threshold": {
       "powerWarning": 15,
       "powerCritical": 18
     },
     "lastUpdated": "2025-12-22T08:30:00.000Z"
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -567,8 +594,12 @@ GET /api/pdu/:id/history
 ### Request
 
 ```
-GET /api/crac/:id
+GET /api/crac/:id?locale={locale}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -576,18 +607,23 @@ GET /api/crac/:id
 {
   "data": {
     "id": "crac-001",
-    "name": "CRAC 001",
+    "name": "CRAC 0001",
+    "type": "crac",
+    "typeLabel": "항온항습기",
     "parentId": "room-001-01-01",
-    "supplyTemp": 18.5,
-    "returnTemp": 24.8,
-    "setpoint": 18.0,
-    "humidity": 45,
-    "humiditySetpoint": 50,
-    "fanSpeed": 75,
-    "compressorStatus": "running",
-    "coolingCapacity": 85,
     "status": "normal",
-    "mode": "cooling",
+    "statusLabel": "정상",
+    "fields": [
+      { "key": "supplyTemp", "label": "공급 온도", "value": 18.5, "unit": "°C", "order": 1 },
+      { "key": "returnTemp", "label": "환기 온도", "value": 24.8, "unit": "°C", "order": 2 },
+      { "key": "setpoint", "label": "설정 온도", "value": 18.0, "unit": "°C", "order": 3 },
+      { "key": "humidity", "label": "습도", "value": 45, "unit": "%", "order": 4 },
+      { "key": "humiditySetpoint", "label": "습도 설정", "value": 50, "unit": "%", "order": 5 },
+      { "key": "fanSpeed", "label": "팬 속도", "value": 75, "unit": "%", "order": 6 },
+      { "key": "compressorStatus", "label": "압축기 상태", "value": "running", "valueLabel": "가동중", "order": 7 },
+      { "key": "coolingCapacity", "label": "냉각 용량", "value": 85, "unit": "%", "order": 8 },
+      { "key": "mode", "label": "운전 모드", "value": "cooling", "valueLabel": "냉방", "order": 9 }
+    ],
     "threshold": {
       "tempWarning": 28,
       "tempCritical": 32,
@@ -595,6 +631,9 @@ GET /api/crac/:id
       "humidityHigh": 70
     },
     "lastUpdated": "2025-12-22T08:30:00.000Z"
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
@@ -631,8 +670,12 @@ GET /api/crac/:id/history
 ### Request
 
 ```
-GET /api/sensor/:id
+GET /api/sensor/:id?locale={locale}
 ```
+
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| locale | string | "ko" | 다국어 코드 (`ko`, `en`, `ja`) |
 
 ### Response
 
@@ -640,12 +683,17 @@ GET /api/sensor/:id
 {
   "data": {
     "id": "sensor-001",
-    "name": "Sensor 001",
+    "name": "Sensor 00001",
+    "type": "sensor",
+    "typeLabel": "센서",
     "parentId": "room-001-01-01",
-    "temperature": 24.5,
-    "humidity": 45,
-    "dewpoint": 12.3,
     "status": "normal",
+    "statusLabel": "정상",
+    "fields": [
+      { "key": "temperature", "label": "온도", "value": 24.5, "unit": "°C", "order": 1 },
+      { "key": "humidity", "label": "습도", "value": 45, "unit": "%", "order": 2 },
+      { "key": "dewpoint", "label": "이슬점", "value": 12.3, "unit": "°C", "order": 3 }
+    ],
     "threshold": {
       "tempWarning": 28,
       "tempCritical": 32,
@@ -653,6 +701,9 @@ GET /api/sensor/:id
       "humidityHigh": 70
     },
     "lastUpdated": "2025-12-22T08:30:00.000Z"
+  },
+  "meta": {
+    "locale": "ko"
   }
 }
 ```
