@@ -51,17 +51,20 @@ page/
 │                                                                  │
 │  globalDataMappings → GlobalDataPublisher.fetchAndPublish        │
 │       ↓                                                          │
-│  'assets' topic 발행                                              │
+│  'hierarchy' topic 발행                                           │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  AssetList (subscribe)                                           │
 │                                                                  │
-│  구독: 'assets' → renderTable()                                   │
+│  구독: 'hierarchy' → renderTree()                                 │
+│        'hierarchyAssets' → renderTable()                         │
+│        'hierarchyChildren' → appendChildren() (Lazy Loading)     │
+│                                                                  │
 │  내부: 검색/필터 → 로컬 상태 변경 → 테이블 필터링                      │
-│  외부: @refreshClicked → 페이지가 재발행                            │
-│        @assetSelected → 페이지가 처리 (현재 로그만 출력)             │
+│  외부: @hierarchyNodeSelected → 페이지가 hierarchyAssets 발행       │
+│        행 클릭 → 타입별 API 호출 → Modal 표시                        │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -69,6 +72,7 @@ page/
 │                                                                  │
 │  @assetClicked → before_load.js 핸들러                            │
 │       → targetInstance.showDetail()                              │
+│       → fetchData → API 응답의 fields 배열로 동적 렌더링            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -304,12 +308,37 @@ npm start  # port 4004
 
 | 엔드포인트 | 설명 |
 |------------|------|
-| GET /api/assets | 전체 자산 목록 |
-| GET /api/ups/:id | UPS 상태 |
-| GET /api/ups/:id/history | UPS 히스토리 |
-| GET /api/pdu/:id | PDU 상태 |
-| GET /api/pdu/:id/history | PDU 히스토리 |
-| GET /api/crac/:id | CRAC 상태 |
-| GET /api/crac/:id/history | CRAC 히스토리 |
-| GET /api/sensor/:id | 센서 상태 |
-| GET /api/sensor/:id/history | 센서 히스토리 |
+| GET /api/hierarchy?depth=n&locale=ko | 계층 트리 (depth 제한, i18n) |
+| GET /api/hierarchy/:nodeId/children | 노드 하위 자산 (Lazy Loading) |
+| GET /api/hierarchy/:nodeId/assets | 노드 하위 전체 자산 (테이블용) |
+| GET /api/ups/:id?locale=ko | UPS 상태 + fields 메타데이터 |
+| GET /api/ups/:id/history | UPS 부하/배터리 히스토리 |
+| GET /api/pdu/:id?locale=ko | PDU 상태 + fields 메타데이터 |
+| GET /api/pdu/:id/circuits | PDU 회로 목록 |
+| GET /api/pdu/:id/history | PDU 전력 히스토리 |
+| GET /api/crac/:id?locale=ko | CRAC 상태 + fields 메타데이터 |
+| GET /api/crac/:id/history | CRAC 온습도 히스토리 |
+| GET /api/sensor/:id?locale=ko | 센서 상태 + fields 메타데이터 |
+| GET /api/sensor/:id/history | 센서 온습도 히스토리 |
+
+### 자산 상세 API 응답 구조 (fields 메타데이터)
+
+자산 상세 API는 `fields` 배열로 필드 메타정보를 제공합니다:
+
+```json
+{
+  "data": {
+    "id": "ups-001",
+    "name": "UPS 0001",
+    "status": "normal",
+    "statusLabel": "정상",
+    "fields": [
+      { "key": "load", "label": "부하율", "value": 75, "unit": "%", "order": 1 },
+      { "key": "batteryLevel", "label": "배터리 잔량", "value": 90, "unit": "%", "order": 2 },
+      { "key": "mode", "label": "운전 모드", "value": "online", "valueLabel": "온라인", "order": 3 }
+    ]
+  }
+}
+```
+
+컴포넌트는 이 `fields` 배열을 동적으로 렌더링하여 하드코딩 없이 다국어를 지원합니다.

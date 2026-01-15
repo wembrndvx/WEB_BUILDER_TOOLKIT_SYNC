@@ -15,6 +15,7 @@
 - **검색**: 자산 이름/ID로 텍스트 검색
 - **필터**: 타입별(UPS/PDU/CRAC/Sensor 등), 상태별(Normal/Warning/Critical)
 - **가상 스크롤**: Tabulator 기반 대용량 데이터 처리
+- **행 클릭 → Modal**: 자산 타입별 API 호출 후 상세 정보 Modal 표시
 
 ### 다국어(i18n) 지원
 - **locale 파라미터**: API 요청 시 locale 전달
@@ -61,8 +62,33 @@
 |-------|---------|------|
 | `@hierarchyNodeSelected` | `{ nodeId, node, locale }` | 트리 노드 선택 |
 | `@hierarchyChildrenRequested` | `{ nodeId, locale }` | Lazy Loading 요청 |
-| `@assetSelected` | `{ asset }` | 테이블 행 클릭 |
 | `@localeChanged` | `{ locale }` | locale 변경 알림 |
+
+### 행 클릭 → Modal 흐름
+
+테이블 행 클릭 시 자산 타입에 따라 API를 호출하고 Modal로 상세 정보를 표시합니다:
+
+```
+행 클릭 → onRowClick(asset)
+    │
+    ├─→ 타입 확인 (ups/pdu/crac/sensor)
+    │
+    ├─→ fetchData(datasetName, { assetId, locale })
+    │       예: fetchData('ups', { assetId: 'ups-001', locale: 'ko' })
+    │
+    └─→ showModal(type, detail)
+            │
+            └─→ API 응답의 fields 배열로 동적 렌더링
+```
+
+**지원 타입 및 API 매핑**:
+
+| 타입 | Dataset | API |
+|------|---------|-----|
+| ups | ups | GET /api/ups/:id?locale=ko |
+| pdu | pdu | GET /api/pdu/:id?locale=ko |
+| crac | crac | GET /api/crac/:id?locale=ko |
+| sensor | sensor | GET /api/sensor/:id?locale=ko |
 
 ### API 응답 구조
 

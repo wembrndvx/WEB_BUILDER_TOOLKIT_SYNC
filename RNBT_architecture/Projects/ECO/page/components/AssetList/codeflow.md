@@ -217,6 +217,42 @@ selectNode(nodeId)
                             └─→ tableInstance.setData(filtered)
 ```
 
+### C. 테이블 행 클릭 → Modal 표시
+
+```
+테이블 행 클릭 (rowClick 이벤트)
+    │
+    └─→ onRowClick(asset)
+            │
+            ├─→ 타입 확인 (ups/pdu/crac/sensor)
+            │       └─→ 지원 타입 아니면 return
+            │
+            ├─→ fetchData(datasetName, { assetId, locale })
+            │       │
+            │       └─→ API 응답: { response: { data: { fields: [...] } } }
+            │
+            └─→ showModal(type, detail)
+                    │
+                    ├─→ Modal 표시 (.asset-modal.show)
+                    │
+                    └─→ renderModalContent(detail)
+                            │
+                            └─→ detail.fields 배열로 동적 렌더링
+                                    (label, value, unit, valueLabel 사용)
+```
+
+**Modal 필드 렌더링 구조**:
+```html
+<div class="field-grid">
+    <!-- fields 배열을 order 기준 정렬 후 렌더링 -->
+    <div class="field-item">
+        <span class="field-label">부하율</span>
+        <span class="field-value">75%</span>
+    </div>
+    ...
+</div>
+```
+
 ---
 
 ## 6. 상태 관리
