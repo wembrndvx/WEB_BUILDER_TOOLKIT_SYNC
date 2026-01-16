@@ -819,7 +819,7 @@ console.log('[ComponentName] Destroyed');
 - config.chart에 ECharts 설정 정의
 ```
 
-**이유**: create-figma-component의 목적은 "동적 컴포넌트" 생성이다. 정적 SVG 차트는 데이터 변경 시 업데이트가 불가능하여 컴포넌트의 목적에 맞지 않는다.
+**이유**: create-standard-component의 목적은 "동적 컴포넌트" 생성이다. 정적 SVG 차트는 데이터 변경 시 업데이트가 불가능하여 컴포넌트의 목적에 맞지 않는다.
 
 ### 차트 변환 예시
 

@@ -995,7 +995,7 @@ open preview.html
 ### 컴포넌트별 README.md
 
 각 컴포넌트에 README.md를 작성하여 동작과 사용법을 문서화합니다.
-(create-figma-component 스킬의 README.md 템플릿 참고)
+(create-standard-component 스킬의 README.md 템플릿 참고)
 
 ---
 
@@ -1004,7 +1004,7 @@ open preview.html
 | 문서 | 내용 |
 |------|------|
 | [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
-| [create-figma-component/SKILL.md](../../2-component/create-figma-component/SKILL.md) | 컴포넌트 생성 지침 (컴포넌트 작성 시 참고) |
+| [create-standard-component/SKILL.md](../../2-component/create-standard-component/SKILL.md) | 컴포넌트 생성 지침 (컴포넌트 작성 시 참고) |
 
 ---
 

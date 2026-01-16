@@ -259,5 +259,5 @@ const { chromium } = require('playwright');
 
 ## 다음 단계
 
-변환이 완료되면 **create-figma-component** Skill을 사용하여
+변환이 완료되면 **create-standard-component** Skill을 사용하여
 정적 HTML/CSS를 RNBT 동적 컴포넌트로 변환할 수 있습니다.
