@@ -2645,9 +2645,6 @@ RNBT 아키텍처에서 컴포넌트는 수동적(passive)이고, 페이지가 �
 - `_onViewerReady()` - 로드 시점 로직
 - `_onViewerDestroy()` - 정리 시점 로직
 
-**프레임워크 내부 메서드 (건드리지 않음):**
-- `onLoadPage()` - WVDOMComponent에서 처리
-
 ```javascript
 class MyComponent extends WVDOMComponent {
   constructor() {
@@ -2666,23 +2663,29 @@ class MyComponent extends WVDOMComponent {
 }
 ```
 
-### 패턴 1: 자기 완결 컴포넌트의 직접 fetch
+### 패턴 1: 컴포넌트가 직접 fetch
 
-컴포넌트가 자체적으로 데이터를 가져와야 하는 경우:
+컴포넌트가 자체적으로 데이터를 가져오는 경우:
 
 ```javascript
+// datasetInfo 정의
+this.datasetInfo = [
+  { datasetName: 'myDataset', param: { id: this.id } }
+];
+
 _onViewerReady() {
   // element가 준비된 시점이므로 fetch 실행
-  this.fetchData();
+  this.fetchAllData();
 }
 
-async fetchData() {
-  try {
-    const data = await fetch(this.properties.apiEndpoint);
-    const json = await data.json();
-    this.renderData(json);
-  } catch (error) {
-    console.error('[MyComponent] fetch error:', error);
+async fetchAllData() {
+  for (const { datasetName, param } of this.datasetInfo) {
+    try {
+      const data = await fetchData(this.page, datasetName, param);
+      this.renderData(data);
+    } catch (error) {
+      console.error(`[MyComponent] fetch error (${datasetName}):`, error);
+    }
   }
 }
 ```
@@ -2706,9 +2709,14 @@ _onViewerReady() {
 ```javascript
 this.eventBusHandlers = {
   '@componentReady': async ({ event, targetInstance }) => {
-    // 컴포넌트가 준비되면 데이터 fetch 후 전달
-    const data = await fetchData(this, 'myapi', { id: event.componentId });
-    targetInstance.setData(data);
+    // 컴포넌트의 datasetInfo를 사용하여 데이터 fetch
+    const { datasetInfo } = targetInstance;
+    if (datasetInfo?.length) {
+      for (const { datasetName, param } of datasetInfo) {
+        const data = await fetchData(this, datasetName, param);
+        targetInstance.setData(data);
+      }
+    }
   }
 };
 
@@ -2719,7 +2727,7 @@ onEventBusHandlers(this.eventBusHandlers);
 
 | 시나리오 | 권장 패턴 | 이유 |
 |----------|----------|------|
-| 컴포넌트가 자체 API 엔드포인트를 가짐 | 패턴 1: 직접 fetch | 완전한 자기 완결성 |
+| 컴포넌트가 자체 API 엔드포인트를 가짐 | 패턴 1: 직접 fetch | 컴포넌트 독립성 |
 | 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 2: emit | 페이지가 오케스트레이션 |
 | 브라우저 이벤트를 기다려야 함 | 패턴 2: emit | 정확한 시점 제어 |
 
