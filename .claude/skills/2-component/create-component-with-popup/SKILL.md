@@ -1,25 +1,39 @@
 ---
-name: create-data-fetching-component
-description: 컴포넌트가 직접 데이터를 fetch하는 자기완결 컴포넌트를 생성합니다. 페이지 제어 없이 datasetInfo와 Wkit.fetchData로 독립 동작합니다. Use when creating components that fetch their own data via datasetInfo, independent widgets, or 3D scene components.
+name: create-component-with-popup
+description: Shadow DOM 팝업을 가진 컴포넌트를 생성합니다. 컴포넌트가 직접 데이터를 fetch하고 팝업으로 표시합니다. 3D 씬, 독립 위젯 등에 사용합니다. Use when creating popup components for 3D scenes or independent widgets that fetch their own data.
 ---
 
-# 자기완결 컴포넌트 생성
+# 팝업 컴포넌트 생성
 
-**자기완결 컴포넌트**를 생성하는 Skill입니다.
-페이지 오케스트레이션 없이 컴포넌트가 직접 데이터를 fetch합니다.
+**팝업 컴포넌트**를 생성하는 Skill입니다.
+컴포넌트가 직접 데이터를 fetch하고 Shadow DOM 팝업으로 표시합니다.
 Figma MCP는 필요하지 않습니다.
 
+> **설계 원칙**: 컴포넌트가 스스로 데이터를 fetch하는 것은 **팝업이 있을 때만** 허용됩니다.
+> 팝업 없이 컴포넌트가 직접 fetch하는 것은 안티패턴입니다.
+
 ---
 
-## 일반 컴포넌트 vs 자기완결 컴포넌트
+## 일반 컴포넌트 vs 팝업 컴포넌트
 
-| 구분 | 일반 컴포넌트 | 자기완결 컴포넌트 |
-|------|--------------|------------------|
+| 구분 | 일반 컴포넌트 | 팝업 컴포넌트 |
+|------|--------------|--------------|
 | **데이터 소스** | 페이지에서 발행 (GlobalDataPublisher) | 컴포넌트가 직접 fetch (Wkit.fetchData) |
 | **구독 방식** | `this.subscriptions` | `this.datasetInfo` |
 | **렌더링 트리거** | 토픽 발행 시 자동 호출 | Public Method 호출 시 fetch → render |
-| **사용 환경** | 대시보드 (페이지가 데이터 관리) | 독립 위젯, 3D 씬 등 (컴포넌트가 자율적) |
-| **팝업 방식** | 일반 DOM | Shadow DOM (스타일 격리) |
+| **사용 환경** | 대시보드 (페이지가 데이터 관리) | 3D 씬, 독립 위젯 (클릭 시 팝업 표시) |
+| **팝업** | 선택적 | **필수** (Shadow DOM) |
+
+---
+
+## 필수 vs 옵션 구성
+
+| 구성 | 필수/옵션 | 설명 |
+|------|----------|------|
+| `applyShadowPopupMixin` | **필수** | Shadow DOM 팝업 기능 |
+| `datasetInfo` + `Wkit.fetchData` | **필수** | 컴포넌트가 직접 데이터 fetch |
+| `applyEChartsMixin` | 옵션 | 차트가 필요한 경우 |
+| Tabulator | 옵션 | 테이블이 필요한 경우 |
 
 ---
 

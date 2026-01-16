@@ -1,16 +1,21 @@
 ---
-name: create-figma-component
-description: Figma에서 변환된 정적 HTML/CSS를 RNBT 동적 컴포넌트로 변환합니다. 페이지가 GlobalDataPublisher로 데이터를 제어하는 컴포넌트입니다. Use when converting Figma-based static HTML to dynamic components with GlobalDataPublisher data binding.
+name: create-standard-component
+description: 표준 RNBT 컴포넌트를 생성합니다. 페이지가 GlobalDataPublisher로 데이터를 제어합니다. Figma 입력이 있으면 변환, 없으면 처음부터 작성합니다. Use when creating standard components where page controls data via GlobalDataPublisher.
 ---
 
-# RNBT 동적 컴포넌트 생성
+# 표준 컴포넌트 생성
 
-정적 HTML/CSS를 **RNBT 동적 컴포넌트**로 변환하는 Skill입니다.
+**표준 컴포넌트**를 생성하는 Skill입니다.
+페이지가 GlobalDataPublisher로 데이터를 제어하고, 컴포넌트는 구독만 합니다.
 Figma MCP는 필요하지 않습니다.
 
+> **설계 원칙**: 컴포넌트는 스스로 데이터를 fetch하지 않습니다. 페이지가 데이터를 발행하고, 컴포넌트는 구독합니다.
+
 ---
 
-## 입력
+## 입력 분기
+
+### A. Figma 디자인이 있는 경우
 
 Figma Conversion에서 생성된 정적 파일:
 ```
@@ -20,12 +25,34 @@ Figma_Conversion/Static_Components/[프로젝트명]/[컴포넌트명]/
 └── [컴포넌트명].css
 ```
 
-## 출력
+### B. Figma 디자인이 없는 경우
 
-RNBT_architecture 동적 컴포넌트:
+- 입력 없음 (처음부터 작성)
+- 요구사항 기반으로 HTML/CSS + register.js 작성
+- TBD 패턴으로 외부 인터페이스 정의
+
+---
+
+## 출력 분기
+
+### 프로젝트 전용 컴포넌트
 ```
 RNBT_architecture/Projects/[프로젝트명]/page/components/[ComponentName]/
-├── assets/                    # SVG, 이미지 등 (Figma_Conversion에서 복사)
+```
+
+### 재사용 라이브러리 (Components/)
+```
+RNBT_architecture/Components/[ComponentName]/
+```
+- Components/README.md 목록 업데이트 필요
+
+---
+
+## 출력 구조
+
+```
+[ComponentName]/
+├── assets/                    # SVG, 이미지 등 (Figma 있는 경우 복사)
 ├── views/component.html       # 데이터 바인딩 마크업
 ├── styles/component.css       # 스타일 (.component-name 스코프)
 ├── scripts/
@@ -39,6 +66,8 @@ RNBT_architecture/Projects/[프로젝트명]/page/components/[ComponentName]/
 
 ## 워크플로우
 
+### A. Figma 입력이 있는 경우
+
 ```
 1. 정적 HTML 분석
    └─ Figma Conversion에서 생성된 HTML/CSS
@@ -51,19 +80,27 @@ RNBT_architecture/Projects/[프로젝트명]/page/components/[ComponentName]/
    <div class="value" data-bind="tps"></div>
 
 3. register.js 작성
-   - subscriptions 정의
-   - customEvents 정의
-   - Config 정의
-   - 렌더 함수 바인딩
-
 4. beforeDestroy.js 작성
-   - unsubscribe
-   - removeCustomEvents
-   - 참조 제거
-
 5. preview.html 작성
-   - Mock 데이터로 독립 테스트
-   - 서버 없이 브라우저에서 확인 가능
+```
+
+### B. Figma 입력이 없는 경우
+
+```
+1. 요구사항 분석
+   └─ 컴포넌트 용도, 데이터 구조, 필요한 이벤트
+
+2. HTML 구조 설계
+   └─ views/component.html 작성
+
+3. CSS 스타일 작성
+   └─ styles/component.css 작성
+
+4. register.js 작성
+   └─ TBD 패턴으로 외부 인터페이스 정의
+
+5. beforeDestroy.js 작성
+6. preview.html 작성
 ```
 
 ---
