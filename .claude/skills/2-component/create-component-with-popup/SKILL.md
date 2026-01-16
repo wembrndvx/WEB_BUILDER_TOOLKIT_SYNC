@@ -711,6 +711,7 @@ this.templateConfig = {
 | 문서 | 내용 |
 |------|------|
 | [CODING_STYLE.md](../../../guides/CODING_STYLE.md) | 함수형 코딩 지침 (필수 참고) |
+| [PopupMixin.js](../../../../RNBT_architecture/Utils/PopupMixin.js) | applyShadowPopupMixin, applyEChartsMixin 구현체 |
 
 ---
 

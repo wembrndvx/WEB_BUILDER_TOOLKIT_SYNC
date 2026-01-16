@@ -540,7 +540,7 @@ function renderList(config, { response }) {
 | 유형 | 특징 | 패턴 |
 |------|------|------|
 | **고정 개수** | 아이템 수가 정해짐 (예: 2개 섹션) | `querySelectorAll` + 인덱스 매칭 |
-| **동적 개수** | 아이템 수가 데이터에 따라 변함 | `template` + `cloneNode` |
+| **동적 개수** | 아이템 수가 데이터에 따라 변함 | `template` + `cloneNode` 또는 `innerHTML` |
 
 ```javascript
 // 고정 개수: BusinessStatus 방식
@@ -550,12 +550,20 @@ data.sections.forEach((sectionData, i) => {
     // 값 업데이트만
 });
 
-// 동적 개수: PerformanceMonitoring 방식
+// 동적 개수 방법 1: template + cloneNode
 list.querySelectorAll('.list__item').forEach(item => item.remove());
 data.items.forEach(itemData => {
     const clone = template.content.cloneNode(true);
     // 값 설정 후 appendChild
 });
+
+// 동적 개수 방법 2: innerHTML
+list.innerHTML = data.items.map(item => `
+    <div class="list__item">
+        <span class="name">${item.name}</span>
+        <span class="value">${item.value}</span>
+    </div>
+`).join('');
 ```
 
 ---
