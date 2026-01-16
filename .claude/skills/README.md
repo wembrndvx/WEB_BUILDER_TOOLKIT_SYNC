@@ -42,8 +42,10 @@ RNBT 컴포넌트 개발을 위한 Skills 사용 가이드입니다.
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │ 독립 경로 (Figma 없이)                                        │    │
 │  │                                                              │    │
-│  │  [create-standalone-component] → 일반 컴포넌트               │    │
-│  │  [create-data-fetching-component] → 자기완결 컴포넌트          │    │
+│  │  [create-standalone-component]                               │    │
+│  │      → 페이지가 데이터 제어 (subscribe 패턴)                   │    │
+│  │  [create-data-fetching-component]                            │    │
+│  │      → 컴포넌트가 직접 fetch (datasetInfo)                    │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -70,8 +72,8 @@ RNBT 컴포넌트 개발을 위한 Skills 사용 가이드입니다.
 
 | Skill | 입력 | 출력 | 설명 |
 |-------|------|------|------|
-| **create-standalone-component** | 없음 | RNBT 컴포넌트 | Components/ 폴더용 재사용 컴포넌트 |
-| **create-data-fetching-component** | 없음 | 자기완결 컴포넌트 | 컴포넌트가 직접 데이터 fetch (datasetInfo) |
+| **create-standalone-component** | 없음 | RNBT 컴포넌트 | 페이지가 데이터 제어 (subscribe 패턴), Components/ 폴더용 |
+| **create-data-fetching-component** | 없음 | 자기완결 컴포넌트 | 컴포넌트가 직접 데이터 fetch (datasetInfo + fetchData) |
 
 ### 프로젝트 생성
 
@@ -98,9 +100,11 @@ Figma 링크/node-id
 ```
 요구사항만 있음
     │
-    ├─ 재사용 가능한 UI 컴포넌트 → create-standalone-component
+    ├─ 페이지가 데이터 제어 (subscribe 패턴)
+    │   └─ create-standalone-component
     │
-    └─ 독립적으로 데이터 fetch하는 컴포넌트 → create-data-fetching-component
+    └─ 컴포넌트가 직접 데이터 fetch (datasetInfo)
+        └─ create-data-fetching-component
 ```
 
 ### "전체 프로젝트를 새로 만든다"
