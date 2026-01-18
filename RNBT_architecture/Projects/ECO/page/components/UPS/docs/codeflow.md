@@ -2,7 +2,7 @@
 
 ## 개요
 
-UPS(Uninterruptible Power Supply) 컴포넌트는 3D 환경에서 사용되는 **자기완결(Self-Contained) 컴포넌트**입니다. Shadow DOM 팝업을 통해 UPS 상세 정보와 히스토리 차트를 표시합니다.
+UPS(Uninterruptible Power Supply) 컴포넌트는 3D 환경에서 사용되는 **팝업 컴포넌트(Component With Popup)**입니다. Shadow DOM 팝업을 통해 UPS 상세 정보와 히스토리 차트를 표시합니다.
 
 ---
 

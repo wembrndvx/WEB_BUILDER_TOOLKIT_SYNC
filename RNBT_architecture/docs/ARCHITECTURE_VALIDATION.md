@@ -77,7 +77,7 @@
 
 ---
 
-### 1.3 자기완결 컴포넌트 (3D)
+### 1.3 팝업 컴포넌트 (3D)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -304,7 +304,7 @@ async fetchAndPublish(topic, page, paramUpdates) {
 
 ---
 
-### 3.3 자기완결 컴포넌트 구현
+### 3.3 팝업 컴포넌트 구현
 
 **설계:**
 ```
@@ -426,7 +426,7 @@ Page → GlobalDataPublisher.fetchAndPublish → subscribe → Component Handler
 
 ---
 
-#### 흐름 3: 자기완결 컴포넌트 (3D 에셋 등)
+#### 흐름 3: 팝업 컴포넌트 (3D 에셋 등)
 
 ```
 datasetInfo 정의 → showDetail() → fetchData → render (Shadow DOM)
@@ -542,7 +542,7 @@ subscribe(topic, instance, handler) { ... }
 │                                                                 │
 │  ✅ 이벤트 흐름: 올바른 설계 (컴포넌트 → 페이지 단방향)             │
 │  ✅ 데이터 흐름: 올바른 설계 (Pub-Sub 패턴)                        │
-│  ✅ 자기완결 컴포넌트: 올바른 설계 (캡슐화 + Shadow DOM)            │
+│  ✅ 팝업 컴포넌트: 올바른 설계 (캡슐화 + Shadow DOM)            │
 │  ⚠️  개선 가능: 에러 처리, 로딩 상태, 타입 안전성 (선택적)          │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -557,7 +557,7 @@ subscribe(topic, instance, handler) { ... }
 |------|------|------|
 | 이벤트 흐름 분리 | ✅ | 컴포넌트(발행) ↔ 페이지(처리) |
 | 데이터 흐름 분리 | ✅ | 페이지(발행) ↔ 컴포넌트(구독) |
-| 자기완결 컴포넌트 | ✅ | 독립적 데이터 호출 + Shadow DOM |
+| 팝업 컴포넌트 | ✅ | 독립적 데이터 호출 + Shadow DOM |
 | 느슨한 결합 | ✅ | Topic 기반 Pub-Sub |
 
 ### 5.2 문법 관점
@@ -576,7 +576,7 @@ subscribe(topic, instance, handler) { ... }
 |------|------|------|
 | 이벤트 흐름 구현 | ✅ | customEvents → emit → handler |
 | 데이터 흐름 구현 | ✅ | registerMapping → fetchAndPublish → subscribe |
-| 자기완결 컴포넌트 구현 | ✅ | datasetInfo → fetchData → render |
+| 팝업 컴포넌트 구현 | ✅ | datasetInfo → fetchData → render |
 | 생성/정리 매칭 | ✅ | 모든 리소스 1:1 매칭 |
 
 ---

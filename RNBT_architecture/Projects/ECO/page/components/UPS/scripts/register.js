@@ -1,7 +1,7 @@
 /*
- * UPS - Self-Contained 3D Component
+ * UPS - 3D Popup Component
  *
- * applyShadowPopupMixin을 사용한 자기 완결 컴포넌트
+ * applyShadowPopupMixin을 사용한 팝업 컴포넌트
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의

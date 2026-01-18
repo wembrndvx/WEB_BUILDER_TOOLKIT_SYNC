@@ -1,5 +1,5 @@
 /*
- * PDU - Self-Contained 3D Component (Tabbed UI)
+ * PDU - 3D Popup Component (Tabbed UI)
  *
  * applyShadowPopupMixin을 사용한 탭 팝업 컴포넌트
  *

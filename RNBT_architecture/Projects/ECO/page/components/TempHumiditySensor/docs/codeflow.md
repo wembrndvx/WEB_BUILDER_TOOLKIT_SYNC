@@ -2,7 +2,7 @@
 
 ## 개요
 
-TempHumiditySensor(온습도 센서) 컴포넌트는 3D 환경에서 사용되는 **자기완결(Self-Contained) 컴포넌트**입니다. Shadow DOM 팝업을 통해 센서의 상세 정보와 온도/습도 히스토리 차트를 표시합니다.
+TempHumiditySensor(온습도 센서) 컴포넌트는 3D 환경에서 사용되는 **팝업 컴포넌트(Component With Popup)**입니다. Shadow DOM 팝업을 통해 센서의 상세 정보와 온도/습도 히스토리 차트를 표시합니다.
 
 ---
 
@@ -326,7 +326,7 @@ TempHumiditySensor/
 
 ## 컴포넌트 간 공통점
 
-모든 3D Self-Contained 컴포넌트(UPS, PDU, CRAC, TempHumiditySensor)는 동일한 패턴을 공유합니다:
+모든 3D 팝업 컴포넌트(UPS, PDU, CRAC, TempHumiditySensor)는 동일한 패턴을 공유합니다:
 
 | 항목 | 설명 |
 |------|------|

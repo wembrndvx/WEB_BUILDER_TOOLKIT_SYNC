@@ -7,7 +7,7 @@
  * - Setup 3D raycasting
  *
  * 이벤트 핸들러:
- * - 3D 클릭: @assetClicked (모든 자기완결 컴포넌트 공통)
+ * - 3D 클릭: @assetClicked (모든 3D 팝업 컴포넌트 공통)
  * - AssetList: @hierarchyNodeSelected, @hierarchyChildrenRequested, @assetSelected, @refreshClicked
  * - i18n: @localeChanged
  */
@@ -20,7 +20,7 @@ const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, get
 
 this.eventBusHandlers = {
     // ─────────────────────────────────────────
-    // 3D 클릭 이벤트 (자기완결 컴포넌트 공통)
+    // 3D 클릭 이벤트 (3D 팝업 컴포넌트 공통)
     // ─────────────────────────────────────────
 
     '@assetClicked': ({ event, targetInstance }) => {

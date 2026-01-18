@@ -69,7 +69,7 @@ this.globalDataMappings = [
     { topic: 'upsData', datasetName: 'ups', param: { id: 1 } }
 ];
 
-// 자기완결 방식
+// 팝업 컴포넌트 방식
 // component/scripts/register.js
 this.datasetInfo = [
     { datasetName: 'ups', param: { id: assetId }, render: ['renderUPSInfo'] },
@@ -106,7 +106,7 @@ applyShadowPopupMixin(this, {
 
 ### 4. 이벤트 처리 방식 결정 원칙
 
-자기완결 컴포넌트의 이벤트도 **내부 동작**과 **외부 알림**으로 구분됩니다.
+팝업 컴포넌트의 이벤트도 **내부 동작**과 **외부 알림**으로 구분됩니다.
 
 **질문: "이 동작의 결과를 페이지가 알아야 하는가?"**
 
@@ -172,7 +172,7 @@ publishCode에서 template 태그로 팝업 HTML 제공:
 /**
  * [ComponentName] - Component With Popup
  *
- * applyShadowPopupMixin을 사용한 자기완결 컴포넌트
+ * applyShadowPopupMixin을 사용한 팝업 컴포넌트
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의
@@ -586,7 +586,7 @@ this.templateConfig = {
 
 ```
 ❌ GlobalDataPublisher 구독 사용
-- 자기완결 컴포넌트는 datasetInfo + fetchData 사용
+- 팝업 컴포넌트는 datasetInfo + fetchData 사용
 - subscribe/unsubscribe 패턴 사용 금지
 
 ❌ 페이지에서 데이터 발행
@@ -641,12 +641,12 @@ this.templateConfig = {
 
 ## README.md 템플릿 (필수)
 
-자기완결 컴포넌트의 동작과 사용법을 문서화합니다.
+팝업 컴포넌트의 동작과 사용법을 문서화합니다.
 
 ```markdown
 # [ComponentName]
 
-[컴포넌트 한 줄 설명] - 자기완결 컴포넌트
+[컴포넌트 한 줄 설명] - 팝업 컴포넌트
 
 ## 데이터 구조
 
@@ -717,6 +717,6 @@ this.templateConfig = {
 
 ## 참고 예제
 
-- `RNBT_architecture/Projects/ECO/page/components/UPS/` - UPS 자기완결 컴포넌트
+- `RNBT_architecture/Projects/ECO/page/components/UPS/` - UPS 팝업 컴포넌트
 - `RNBT_architecture/Projects/ECO/datasetList.json` - API 엔드포인트
 - `RNBT_architecture/Projects/ECO/page/page_scripts/before_load.js` - 이벤트 핸들러

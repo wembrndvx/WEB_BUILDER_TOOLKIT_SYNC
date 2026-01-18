@@ -8,10 +8,10 @@
 page/
 ├── components/
 │   ├── AssetList/           # 자산 목록 (일반 2D 컴포넌트)
-│   ├── UPS/                 # 무정전 전원장치 (자기완결 3D 컴포넌트)
-│   ├── PDU/                 # 분전반 (자기완결 3D 컴포넌트)
-│   ├── CRAC/                # 항온항습기 (자기완결 3D 컴포넌트)
-│   └── TempHumiditySensor/  # 온습도 센서 (자기완결 3D 컴포넌트)
+│   ├── UPS/                 # 무정전 전원장치 (3D 팝업 컴포넌트)
+│   ├── PDU/                 # 분전반 (3D 팝업 컴포넌트)
+│   ├── CRAC/                # 항온항습기 (3D 팝업 컴포넌트)
+│   └── TempHumiditySensor/  # 온습도 센서 (3D 팝업 컴포넌트)
 └── page_scripts/
     ├── before_load.js       # 이벤트 핸들러 등록 + 3D raycasting
     ├── loaded.js            # GlobalDataPublisher 데이터 발행
@@ -32,7 +32,7 @@ page/
 - **내부 이벤트**: 검색, 타입 필터, 상태 필터 (컴포넌트 자체 UI 상태 관리)
 - **외부 이벤트**: 새로고침 버튼(`@refreshClicked`), 행 클릭(`@assetSelected`)
 
-### 자기완결 3D 컴포넌트 (UPS, PDU, CRAC, TempHumiditySensor)
+### 3D 팝업 컴포넌트 (UPS, PDU, CRAC, TempHumiditySensor)
 
 **역할**: 3D 모델링된 실제 장비 표현 + 상세 팝업
 
@@ -41,7 +41,7 @@ page/
 - Shadow DOM 팝업 생성/관리
 - `showDetail(assetId?)` - 파라미터로 다른 자산도 팝업 가능
 
-**공통 이벤트**: `@assetClicked` (모든 자기완결 컴포넌트 동일)
+**공통 이벤트**: `@assetClicked` (모든 3D 팝업 컴포넌트 동일)
 
 ## 데이터 흐름
 
@@ -88,7 +88,7 @@ page/
 
 ```javascript
 this.eventBusHandlers = {
-    // 3D 클릭 이벤트 (모든 자기완결 컴포넌트 공통)
+    // 3D 클릭 이벤트 (모든 3D 팝업 컴포넌트 공통)
     '@assetClicked': ({ event, targetInstance }) => {
         targetInstance.showDetail();
     },

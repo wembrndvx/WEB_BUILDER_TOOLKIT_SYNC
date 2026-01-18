@@ -1,5 +1,5 @@
 /**
- * CRAC (Computer Room Air Conditioning) - Self-Contained 3D Component
+ * CRAC (Computer Room Air Conditioning) - 3D Popup Component
  *
  * 항온항습기 컴포넌트
  * - 급기/환기 온도, 습도 실시간 표시

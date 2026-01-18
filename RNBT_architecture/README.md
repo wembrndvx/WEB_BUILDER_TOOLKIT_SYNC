@@ -695,7 +695,7 @@ bind3DEvents(this, this.customEvents);
 >   - subscriptions 해제
 >   - customEvents, datasetInfo 참조 제거
 >   - geometry, material, texture dispose
-> - DOM 리소스: 자기완결 컴포넌트(Shadow DOM 팝업 등)는 `beforeDestroy.js`에서 직접 정리
+> - DOM 리소스: 팝업 컴포넌트(Shadow DOM 팝업 등)는 `beforeDestroy.js`에서 직접 정리
 >   - `this.destroyPopup()` 등 컴포넌트가 생성한 DOM 리소스 정리
 
 ### 3. 페이지 Default JS

@@ -29,7 +29,7 @@ TEST_SCENARIOS.md          TESTING_GUIDE.md
 4. [Interval 관리 테스트](#4-interval-관리-테스트)
 5. [리소스 정리 테스트](#5-리소스-정리-테스트)
 6. [PopupMixin 테스트](#6-popupmixin-테스트)
-7. [자기완결 컴포넌트 테스트](#7-자기완결-컴포넌트-테스트)
+7. [팝업 컴포넌트 테스트](#7-팝업-컴포넌트-테스트)
 8. [fx.go 에러 핸들링 테스트](#8-fxgo-에러-핸들링-테스트)
 
 ---
@@ -4442,9 +4442,9 @@ console.assert(cleanupOrder[2] === 'base', '세 번째: base (처음 적용)');
 
 ---
 
-## 7. 자기완결 컴포넌트 테스트
+## 7. 팝업 컴포넌트 테스트
 
-자기완결 컴포넌트(Component With Popup)는 데이터 fetch, 렌더링, 이벤트, UI(팝업)를 모두 내부에서 관리하는 컴포넌트입니다.
+팝업 컴포넌트(Component With Popup)는 데이터 fetch, 렌더링, 이벤트, UI(팝업)를 모두 내부에서 관리하는 컴포넌트입니다.
 
 **핵심 요소:**
 - `datasetInfo`: 데이터 정의 (무엇을 fetch하고 어떻게 render할지)
@@ -5414,7 +5414,7 @@ console.assert(this.datasetInfo === null, 'datasetInfo null');
 
 ### 7.7 통합 테스트
 
-#### TC-SC-016: 자기완결 컴포넌트 전체 흐름 검증
+#### TC-SC-016: 팝업 컴포넌트 전체 흐름 검증
 
 **목적:** 생성 → 이벤트 → 팝업 표시 → 데이터 로드 → 렌더링 → 정리 전체 흐름 검증
 
@@ -5527,7 +5527,7 @@ console.assert(this.datasetInfo === null, 'datasetInfo 정리됨');
 
 ---
 
-### 7.8 자기완결 컴포넌트 체크리스트
+### 7.8 팝업 컴포넌트 체크리스트
 
 | TC ID | 테스트 항목 | 상태 |
 |-------|------------|------|
@@ -5546,7 +5546,7 @@ console.assert(this.datasetInfo === null, 'datasetInfo 정리됨');
 | TC-SC-013 | extractTemplate 없는 템플릿 처리 검증 | ☐ |
 | TC-SC-014 | beforeDestroy에서 destroyPopup 호출 검증 | ☐ |
 | TC-SC-015 | 3D 컴포넌트 customEvents/datasetInfo 참조 정리 검증 | ☐ |
-| TC-SC-016 | 자기완결 컴포넌트 전체 흐름 검증 | ☐ |
+| TC-SC-016 | 팝업 컴포넌트 전체 흐름 검증 | ☐ |
 
 ---
 

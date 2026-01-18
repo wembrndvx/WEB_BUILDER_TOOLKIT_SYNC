@@ -2,7 +2,7 @@
 
 ## 개요
 
-PDU(Power Distribution Unit) 컴포넌트는 3D 환경에서 사용되는 **자기완결(Self-Contained) 컴포넌트**입니다. Shadow DOM 팝업을 통해 PDU 상세 정보, 회로 테이블, 히스토리 차트를 **탭 UI**로 표시합니다.
+PDU(Power Distribution Unit) 컴포넌트는 3D 환경에서 사용되는 **팝업 컴포넌트(Component With Popup)**입니다. Shadow DOM 팝업을 통해 PDU 상세 정보, 회로 테이블, 히스토리 차트를 **탭 UI**로 표시합니다.
 
 ---
 
