@@ -1,0 +1,95 @@
+/* TaskList Component Styles - TaskMonitor */
+/* px 단위 사용 (rem/em 지양) */
+#task-list-container {
+    flex: 1;
+    min-height: 0;
+
+    .task-list-panel {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 24px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Header */
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+
+    .panel-title-group {
+        flex: 1;
+    }
+
+    .panel-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 4px 0;
+    }
+
+    .panel-subtitle {
+        font-size: 12px;
+        color: #64748b;
+        margin: 0;
+    }
+
+    .panel-meta {
+        display: flex;
+        align-items: center;
+    }
+
+    .task-count {
+        font-size: 14px;
+        color: #64748b;
+    }
+
+    /* Tabulator Container */
+    .table-container {
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Tabulator Overrides */
+    .tabulator {
+        border: none;
+        background: transparent;
+    }
+
+    .tabulator-header {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .tabulator-col {
+        background: transparent;
+        border-right: none;
+    }
+
+    .tabulator-col-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+
+    .tabulator-row {
+        border-bottom: 1px solid #f1f5f9;
+
+        &:hover {
+            background: #f8fafc;
+        }
+    }
+
+    .tabulator-cell {
+        border-right: none;
+        font-size: 14px;
+        color: #1e293b;
+    }
+}

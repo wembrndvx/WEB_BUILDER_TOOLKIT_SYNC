@@ -1,0 +1,108 @@
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "App information API (Master/Header) - static",
+      "dataset_id": "app-info-001",
+      "name": "appInfoApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/app-info\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "Filter options API (Master/Sidebar) - static",
+      "dataset_id": "filters-001",
+      "name": "filtersApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/filters\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "status",
+          "param_type": "string",
+          "default_value": "all"
+        },
+        {
+          "param_name": "priority",
+          "param_type": "string",
+          "default_value": "all"
+        },
+        {
+          "param_name": "type",
+          "param_type": "string",
+          "default_value": "all"
+        },
+        {
+          "param_name": "assignee",
+          "param_type": "string",
+          "default_value": "all"
+        }
+      ],
+      "data_type": "1",
+      "interval": "10000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Task list API (Page/TaskList) - refresh every 10s",
+      "dataset_id": "tasks-001",
+      "name": "tasksApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/tasks?status=#{status}&priority=#{priority}&type=#{type}&assignee=#{assignee}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "15000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Status summary API (Page/StatusChart) - refresh every 15s",
+      "dataset_id": "status-001",
+      "name": "statusApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "limit",
+          "param_type": "number",
+          "default_value": "10"
+        }
+      ],
+      "data_type": "1",
+      "interval": "8000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Activity log API (Page/ActivityLog) - refresh every 8s",
+      "dataset_id": "activity-001",
+      "name": "activityApi",
+      "rest_api": "{\"url\":\"http://localhost:3004/api/activity?limit=#{limit}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    }
+  ],
+  "datasource": []
+}

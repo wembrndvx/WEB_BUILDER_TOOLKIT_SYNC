@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMonitor - Preview</title>
+
+    <!-- External Libraries -->
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+    <!-- Page Styles -->
+    <link rel="stylesheet" href="master/page/page_styles/container.css">
+    <link rel="stylesheet" href="page/page_styles/container.css">
+
+    <!-- Component Styles -->
+    <link rel="stylesheet" href="master/page/components/Header/styles/component.css">
+    <link rel="stylesheet" href="master/page/components/Sidebar/styles/component.css">
+    <link rel="stylesheet" href="page/components/TaskList/styles/component.css">
+    <link rel="stylesheet" href="page/components/StatusChart/styles/component.css">
+    <link rel="stylesheet" href="page/components/ActivityLog/styles/component.css">
+
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Master Container -->
+    <div id="master-container">
+        <!-- Header -->
+        <div id="header-container"></div>
+
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+    </div>
+
+    <!-- Page Container -->
+    <div id="page-container">
+        <!-- TaskList -->
+        <div id="task-list-container"></div>
+
+        <!-- StatusChart -->
+        <div id="status-chart-container"></div>
+
+        <!-- ActivityLog -->
+        <div id="activity-log-container"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3004';
+
+        // ============================================
+        // Data Fetching
+        // ============================================
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`[Fetch Error] ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        // ============================================
+        // Header Rendering
+        // ============================================
+
+        async function renderHeader() {
+            const result = await fetchData('/api/app-info');
+            if (!result?.data) return;
+
+            const container = document.getElementById('header-container');
+            const { appName, version, serverStatus, lastSync, totalTasks, activeTasks } = result.data;
+
+            container.innerHTML = `
+                <div class="header">
+                    <div class="header-logo">
+                        <span class="logo-icon">T</span>
+                        <span class="logo-text">${appName}</span>
+                        <span class="version-badge">v${version}</span>
+                    </div>
+                    <div class="header-status">
+                        <span class="status-indicator ${serverStatus}"></span>
+                        <span class="status-text">${serverStatus}</span>
+                        <span class="task-count">${activeTasks}/${totalTasks} active</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-refresh" id="refresh-all-btn">↻ Refresh</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('refresh-all-btn').addEventListener('click', () => {
+                console.log('[Header] Refresh clicked');
+                refreshAll();
+            });
+
+            console.log('[Header] Rendered');
+        }
+
+        // ============================================
+        // Sidebar Rendering
+        // ============================================
+
+        let currentFilters = {
+            status: 'all',
+            priority: 'all',
+            type: 'all',
+            assignee: 'all'
+        };
+
+        async function renderSidebar() {
+            const result = await fetchData('/api/filters');
+            if (!result?.data) return;
+
+            const container = document.getElementById('sidebar-container');
+            const { statuses, priorities, types, assignees } = result.data;
+
+            const renderSelect = (label, name, options) => `
+                <div class="filter-group">
+                    <label class="filter-label">${label}</label>
+                    <select class="filter-select" id="filter-${name}" data-filter="${name}">
+                        ${options.map(opt => `
+                            <option value="${opt.value}">${opt.label}</option>
+                        `).join('')}
+                    </select>
+                </div>
+            `;
+
+            container.innerHTML = `
+                <div class="sidebar">
+                    <div class="sidebar-header">
+                        <h3 class="sidebar-title">Filters</h3>
+                    </div>
+                    <div class="sidebar-content">
+                        ${renderSelect('Status', 'status', statuses)}
+                        ${renderSelect('Priority', 'priority', priorities)}
+                        ${renderSelect('Type', 'type', types)}
+                        ${renderSelect('Assignee', 'assignee', assignees)}
+                    </div>
+                    <div class="sidebar-actions">
+                        <button class="btn-apply" id="apply-filters-btn">Apply Filters</button>
+                        <button class="btn-reset" id="reset-filters-btn">Reset</button>
+                    </div>
+                </div>
+            `;
+
+            // Filter change events
+            container.querySelectorAll('.filter-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    currentFilters[e.target.dataset.filter] = e.target.value;
+                });
+            });
+
+            // Apply button
+            document.getElementById('apply-filters-btn').addEventListener('click', () => {
+                console.log('[Sidebar] Filters applied:', currentFilters);
+                renderTaskList();
+            });
+
+            // Reset button
+            document.getElementById('reset-filters-btn').addEventListener('click', () => {
+                currentFilters = { status: 'all', priority: 'all', type: 'all', assignee: 'all' };
+                container.querySelectorAll('.filter-select').forEach(select => {
+                    select.value = 'all';
+                });
+                console.log('[Sidebar] Filters reset');
+                renderTaskList();
+            });
+
+            console.log('[Sidebar] Rendered');
+        }
+
+        // ============================================
+        // TaskList Rendering (Tabulator)
+        // ============================================
+
+        let tableInstance = null;
+
+        async function renderTaskList() {
+            const params = new URLSearchParams(currentFilters).toString();
+            const result = await fetchData(`/api/tasks?${params}`);
+            if (!result?.data) return;
+
+            const tasks = result.data;
+            const total = result.meta?.total || tasks.length;
+            const container = document.getElementById('task-list-container');
+
+            // Ensure container has panel structure
+            if (!container.querySelector('.task-list-panel')) {
+                container.innerHTML = `
+                    <div class="task-list-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3 class="panel-title">Tasks</h3>
+                                <p class="panel-subtitle">Task management overview</p>
+                            </div>
+                            <div class="panel-meta">
+                                <span class="task-count">Total: ${total} tasks</span>
+                            </div>
+                        </div>
+                        <div class="table-container" id="tasks-table"></div>
+                    </div>
+                `;
+            } else {
+                container.querySelector('.task-count').textContent = `Total: ${total} tasks`;
+            }
+
+            const statusColors = {
+                pending: '#f59e0b',
+                in_progress: '#3b82f6',
+                completed: '#10b981',
+                failed: '#ef4444'
+            };
+
+            const priorityColors = {
+                low: '#94a3b8',
+                medium: '#f59e0b',
+                high: '#f97316',
+                critical: '#ef4444'
+            };
+
+            if (!tableInstance) {
+                tableInstance = new Tabulator('#tasks-table', {
+                    layout: 'fitColumns',
+                    height: '100%',
+                    placeholder: 'No tasks available',
+                    columns: [
+                        { title: 'ID', field: 'id', width: 80, hozAlign: 'center' },
+                        { title: 'Title', field: 'title', widthGrow: 2 },
+                        { title: 'Status', field: 'status', width: 110,
+                            formatter: cell => {
+                                const val = cell.getValue();
+                                const color = statusColors[val] || '#64748b';
+                                return `<span style="color:${color};font-weight:500">${val}</span>`;
+                            }
+                        },
+                        { title: 'Priority', field: 'priority', width: 100,
+                            formatter: cell => {
+                                const val = cell.getValue();
+                                const color = priorityColors[val] || '#64748b';
+                                return `<span style="color:${color};font-weight:500">${val}</span>`;
+                            }
+                        },
+                        { title: 'Type', field: 'type', width: 110 },
+                        { title: 'Assignee', field: 'assignee', width: 100 },
+                        { title: 'Progress', field: 'progress', width: 100, hozAlign: 'right',
+                            formatter: cell => `${cell.getValue()}%`
+                        }
+                    ],
+                    data: tasks
+                });
+
+                tableInstance.on('rowClick', (e, row) => {
+                    console.log('[TaskList] Row clicked:', row.getData());
+                });
+            } else {
+                tableInstance.setData(tasks);
+            }
+
+            console.log('[TaskList] Rendered:', tasks.length, 'tasks');
+        }
+
+        // ============================================
+        // StatusChart Rendering (ECharts)
+        // ============================================
+
+        let chartInstance = null;
+
+        async function renderStatusChart() {
+            const result = await fetchData('/api/status');
+            if (!result?.data) return;
+
+            const container = document.getElementById('status-chart-container');
+
+            // Ensure container has panel structure
+            if (!container.querySelector('.status-chart-panel')) {
+                container.innerHTML = `
+                    <div class="status-chart-panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Status Distribution</h3>
+                        </div>
+                        <div class="chart-container" id="status-pie-chart"></div>
+                    </div>
+                `;
+            }
+
+            const chartEl = document.getElementById('status-pie-chart');
+
+            if (!chartInstance) {
+                chartInstance = echarts.init(chartEl);
+
+                const resizeObserver = new ResizeObserver(() => {
+                    chartInstance && chartInstance.resize();
+                });
+                resizeObserver.observe(chartEl);
+            }
+
+            // API returns { byStatus: [{ name, value, color }], byPriority: [...] }
+            const chartData = result.data.byStatus.map(item => ({
+                name: item.name,
+                value: item.value,
+                itemStyle: { color: item.color }
+            }));
+
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: {c} ({d}%)'
+                },
+                legend: {
+                    orient: 'horizontal',
+                    bottom: 0,
+                    textStyle: { fontSize: 11 }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 4,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: '{b}\n{c}'
+                    },
+                    data: chartData
+                }]
+            };
+
+            chartInstance.setOption(option, true);
+            console.log('[StatusChart] Rendered');
+        }
+
+        // ============================================
+        // ActivityLog Rendering
+        // ============================================
+
+        async function renderActivityLog() {
+            const result = await fetchData('/api/activity?limit=10');
+            if (!result?.data) return;
+
+            const activities = result.data;
+            const container = document.getElementById('activity-log-container');
+
+            const actionIcons = {
+                created: '➕',
+                updated: '✏️',
+                completed: '✅',
+                failed: '❌',
+                assigned: '👤',
+                commented: '💬'
+            };
+
+            const formatTime = (timestamp) => {
+                const date = new Date(timestamp);
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            };
+
+            container.innerHTML = `
+                <div class="activity-log-panel">
+                    <div class="panel-header">
+                        <h3 class="panel-title">Recent Activity</h3>
+                    </div>
+                    <div class="activity-list">
+                        ${activities.map(item => `
+                            <div class="activity-item">
+                                <span class="activity-icon">${actionIcons[item.action] || '📌'}</span>
+                                <div class="activity-content">
+                                    <span class="activity-user">${item.user}</span>
+                                    <span class="activity-action">${item.action}</span>
+                                    <span class="activity-target">${item.taskId}</span>
+                                </div>
+                                <span class="activity-time">${formatTime(item.timestamp)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            console.log('[ActivityLog] Rendered:', activities.length, 'items');
+        }
+
+        // ============================================
+        // Refresh All
+        // ============================================
+
+        async function refreshAll() {
+            console.log('[Dashboard] Refreshing all...');
+            await Promise.all([
+                renderHeader(),
+                renderTaskList(),
+                renderStatusChart(),
+                renderActivityLog()
+            ]);
+            console.log('[Dashboard] Refresh complete');
+        }
+
+        // ============================================
+        // Initialize Dashboard
+        // ============================================
+
+        async function initDashboard() {
+            console.log('[Dashboard] Initializing...');
+
+            await Promise.all([
+                renderHeader(),
+                renderSidebar(),
+                renderTaskList(),
+                renderStatusChart(),
+                renderActivityLog()
+            ]);
+
+            // Auto-refresh intervals
+            setInterval(renderTaskList, 10000);      // 10s
+            setInterval(renderStatusChart, 15000);   // 15s
+            setInterval(renderActivityLog, 8000);    // 8s
+
+            console.log('[Dashboard] Initialized');
+        }
+
+        // Start
+        initDashboard();
+    </script>
+</body>
+</html>

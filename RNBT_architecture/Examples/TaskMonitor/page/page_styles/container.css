@@ -1,0 +1,18 @@
+/* Page Container Styles */
+/* 페이지 크기: 1920 x 1080 (Master 아래에 겹쳐짐) */
+/* Flexbox 레이아웃 사용 (Grid 지양) */
+#page-container {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    padding-top: 60px;
+    padding-left: 260px;
+    padding-right: 24px;
+    padding-bottom: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+/* 실제 콘텐츠 영역: 1636 x 996 (Header 60px, Sidebar 260px, padding 24px 제외) */

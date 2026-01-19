@@ -1,0 +1,11 @@
+/* Master Container Styles */
+/* 페이지 크기: 1920 x 1080 */
+/* Flexbox 레이아웃 사용 (Grid 지양) */
+#master-container {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    display: flex;
+    flex-direction: column;
+}
