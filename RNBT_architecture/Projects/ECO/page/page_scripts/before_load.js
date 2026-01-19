@@ -87,9 +87,6 @@ this.eventBusHandlers = {
 
         GlobalDataPublisher.fetchAndPublish('hierarchy', this, this.currentParams['hierarchy'])
             .catch(err => console.error('[fetchAndPublish:hierarchy]', err));
-
-        // locale topic 발행 (구독자에게 locale 변경 알림)
-        GlobalDataPublisher.publish('locale', { data: { locale } });
     }
 };
 
