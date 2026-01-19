@@ -15,7 +15,7 @@
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents, fetchData } = Wkit;
-const { each, go } = fx;
+const { each, go, map, filter, find } = fx;
 
 initComponent.call(this);
 
@@ -296,10 +296,9 @@ function renderTreeNodes(items, searchTerm = '') {
 
     go(
         items,
-        each(item => {
-            const nodeEl = createTreeNode.call(this, item, normalized);
-            if (nodeEl) rootEl.appendChild(nodeEl);
-        })
+        map(item => createTreeNode.call(this, item, normalized)),
+        filter(nodeEl => nodeEl),
+        each(nodeEl => rootEl.appendChild(nodeEl))
     );
 }
 
@@ -383,10 +382,9 @@ function createTreeNode(item, searchTerm) {
         if (hasLoadedChildren) {
             go(
                 children,
-                each(child => {
-                    const childEl = createTreeNode.call(this, child, searchTerm);
-                    if (childEl) childrenUl.appendChild(childEl);
-                })
+                map(child => createTreeNode.call(this, child, searchTerm)),
+                filter(childEl => childEl),
+                each(childEl => childrenUl.appendChild(childEl))
             );
         } else if (needsLazyLoad) {
             // Lazy Loading 필요한 경우 로딩 표시
@@ -600,14 +598,18 @@ function applyFilters() {
     const typeFilter = this._typeFilter;
     const statusFilter = this._statusFilter;
 
-    const filtered = this._allAssets.filter(asset => {
-        const matchesSearch = !searchTerm ||
-            asset.name.toLowerCase().includes(searchTerm) ||
-            asset.id.toLowerCase().includes(searchTerm);
-        const matchesType = typeFilter === 'all' || asset.type === typeFilter;
-        const matchesStatus = statusFilter === 'all' || asset.status === statusFilter;
-        return matchesSearch && matchesType && matchesStatus;
-    });
+    const matchesSearch = asset => !searchTerm ||
+        asset.name.toLowerCase().includes(searchTerm) ||
+        asset.id.toLowerCase().includes(searchTerm);
+    const matchesType = asset => typeFilter === 'all' || asset.type === typeFilter;
+    const matchesStatus = asset => statusFilter === 'all' || asset.status === statusFilter;
+
+    const filtered = go(
+        this._allAssets,
+        filter(matchesSearch),
+        filter(matchesType),
+        filter(matchesStatus)
+    );
 
     if (this._tableInstance) {
         this._tableInstance.setData(filtered);
@@ -943,25 +945,31 @@ function applyUITexts(texts) {
     this._uiTexts = texts;
 
     // data-i18n 속성으로 텍스트 적용
-    root.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        const value = getNestedValue(texts, key);
-        if (value) el.textContent = value;
-    });
+    go(
+        root.querySelectorAll('[data-i18n]'),
+        each(el => {
+            const value = getNestedValue(texts, el.dataset.i18n);
+            if (value) el.textContent = value;
+        })
+    );
 
     // data-i18n-placeholder 속성으로 placeholder 적용
-    root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.dataset.i18nPlaceholder;
-        const value = getNestedValue(texts, key);
-        if (value) el.placeholder = value;
-    });
+    go(
+        root.querySelectorAll('[data-i18n-placeholder]'),
+        each(el => {
+            const value = getNestedValue(texts, el.dataset.i18nPlaceholder);
+            if (value) el.placeholder = value;
+        })
+    );
 
     // data-i18n-title 속성으로 title 적용
-    root.querySelectorAll('[data-i18n-title]').forEach(el => {
-        const key = el.dataset.i18nTitle;
-        const value = getNestedValue(texts, key);
-        if (value) el.title = value;
-    });
+    go(
+        root.querySelectorAll('[data-i18n-title]'),
+        each(el => {
+            const value = getNestedValue(texts, el.dataset.i18nTitle);
+            if (value) el.title = value;
+        })
+    );
 
     // 테이블 컬럼 헤더 업데이트
     if (this._tableInstance && texts.table?.columns) {
@@ -982,13 +990,22 @@ function applyUITexts(texts) {
 function updateTableColumns(texts) {
     if (!this._tableInstance) return;
 
+    const columnTitleMap = {
+        id: texts.table.columns.id,
+        name: texts.table.columns.name,
+        typeLabel: texts.table.columns.type,
+        statusLabel: texts.table.columns.status
+    };
+
     const columns = this._tableInstance.getColumnDefinitions();
-    columns.forEach(col => {
-        if (col.field === 'id') col.title = texts.table.columns.id;
-        if (col.field === 'name') col.title = texts.table.columns.name;
-        if (col.field === 'typeLabel') col.title = texts.table.columns.type;
-        if (col.field === 'statusLabel') col.title = texts.table.columns.status;
-    });
+    go(
+        columns,
+        each(col => {
+            if (columnTitleMap[col.field]) {
+                col.title = columnTitleMap[col.field];
+            }
+        })
+    );
     this._tableInstance.setColumns(columns);
 }
 
