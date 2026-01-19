@@ -303,7 +303,7 @@ function renderTreeNodes(items, searchTerm = '') {
 }
 
 function createTreeNode(item, searchTerm) {
-    const { id, name, type, status, children = [], hasChildren: apiHasChildren, assetCount } = item;
+    const { id, type, children = [], hasChildren: apiHasChildren } = item;
     // hasChildren: API에서 제공된 값이 있으면 사용, 없으면 children 배열로 판단
     const hasChildren = apiHasChildren !== undefined ? apiHasChildren : children.length > 0;
     const hasLoadedChildren = children.length > 0;
@@ -312,13 +312,14 @@ function createTreeNode(item, searchTerm) {
     const needsLazyLoad = hasChildren && !hasLoadedChildren && !this._loadedNodes.has(id);
 
     // 검색 필터
-    const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm);
+    const matchesSearch = !searchTerm || item.name.toLowerCase().includes(searchTerm);
     const hasMatchingDescendants = hasLoadedChildren && checkDescendants(children, searchTerm);
 
     if (searchTerm && !matchesSearch && !hasMatchingDescendants) {
         return null;
     }
 
+    // li 요소 생성
     const li = document.createElement('li');
     li.className = 'tree-node';
     li.dataset.nodeId = id;
@@ -326,48 +327,8 @@ function createTreeNode(item, searchTerm) {
     li.dataset.hasChildren = hasChildren;
     li.dataset.needsLazyLoad = needsLazyLoad;
 
-    // Node Content
-    const content = document.createElement('div');
-    content.className = 'node-content';
-    if (isSelected) content.classList.add('selected');
-
-    // Toggle
-    const toggle = document.createElement('span');
-    toggle.className = 'node-toggle';
-    if (hasChildren) {
-        toggle.textContent = '▶';
-        if (isExpanded) toggle.classList.add('expanded');
-    } else {
-        toggle.classList.add('leaf');
-    }
-
-    // Icon
-    const icon = document.createElement('span');
-    icon.className = 'node-icon';
-    icon.dataset.type = type;
-
-    // Label
-    const label = document.createElement('span');
-    label.className = 'node-label';
-    label.textContent = name;
-
-    content.appendChild(toggle);
-    content.appendChild(icon);
-    content.appendChild(label);
-
-    // Count (방에만 표시)
-    if (type === 'room' && assetCount !== undefined) {
-        const count = document.createElement('span');
-        count.className = 'node-asset-count';
-        count.textContent = `(${assetCount})`;
-        content.appendChild(count);
-    }
-
-    // Status indicator
-    const statusDot = document.createElement('span');
-    statusDot.className = `node-status ${status}`;
-    content.appendChild(statusDot);
-
+    // node-content 생성 (분리된 함수)
+    const content = createNodeContent(item, { isSelected, isExpanded, hasChildren });
     li.appendChild(content);
 
     // Children
@@ -398,6 +359,57 @@ function createTreeNode(item, searchTerm) {
     }
 
     return li;
+}
+
+/**
+ * 트리 노드의 content 영역 생성
+ * - toggle, icon, label, count, status 요소 포함
+ */
+function createNodeContent(item, { isSelected, isExpanded, hasChildren }) {
+    const { name, type, status, assetCount } = item;
+
+    const content = document.createElement('div');
+    content.className = 'node-content';
+    if (isSelected) content.classList.add('selected');
+
+    // Toggle
+    const toggle = document.createElement('span');
+    toggle.className = 'node-toggle';
+    if (hasChildren) {
+        toggle.textContent = '▶';
+        if (isExpanded) toggle.classList.add('expanded');
+    } else {
+        toggle.classList.add('leaf');
+    }
+
+    // Icon
+    const icon = document.createElement('span');
+    icon.className = 'node-icon';
+    icon.dataset.type = type;
+
+    // Label
+    const label = document.createElement('span');
+    label.className = 'node-label';
+    label.textContent = name;
+
+    content.appendChild(toggle);
+    content.appendChild(icon);
+    content.appendChild(label);
+
+    // Count (room만)
+    if (type === 'room' && assetCount !== undefined) {
+        const count = document.createElement('span');
+        count.className = 'node-asset-count';
+        count.textContent = `(${assetCount})`;
+        content.appendChild(count);
+    }
+
+    // Status indicator
+    const statusDot = document.createElement('span');
+    statusDot.className = `node-status ${status}`;
+    content.appendChild(statusDot);
+
+    return content;
 }
 
 function checkDescendants(children, searchTerm) {
@@ -739,7 +751,6 @@ async function onRowClick(asset) {
 
 /**
  * Modal 표시
- * API 응답의 fields 배열을 직접 사용 (하드코딩 제거)
  */
 function showModal({ asset, detail, loading, noApi, error }) {
     const modal = this.appendElement.querySelector('.asset-modal');
@@ -758,54 +769,9 @@ function showModal({ asset, detail, loading, noApi, error }) {
     statusEl.textContent = displayStatusLabel;
     statusEl.dataset.status = displayStatus;
 
-    // 바디 업데이트
+    // 바디 업데이트 (분리된 함수)
     const grid = modal.querySelector('.modal-info-grid');
-
-    if (loading) {
-        grid.innerHTML = '<div class="modal-loading"></div>';
-    } else if (noApi) {
-        grid.innerHTML = `
-            <div class="modal-no-api wide">
-                <div class="modal-no-api-icon">📋</div>
-                <div class="modal-no-api-text">No detailed API available for "${displayTypeLabel}"</div>
-            </div>
-        `;
-    } else if (error) {
-        grid.innerHTML = `
-            <div class="modal-no-api wide">
-                <div class="modal-no-api-icon">⚠️</div>
-                <div class="modal-no-api-text">Failed to load data</div>
-            </div>
-        `;
-    } else if (detail) {
-        // API 응답의 fields 배열을 직접 사용 (하드코딩 제거)
-        const fields = detail.fields || [];
-
-        if (fields.length === 0) {
-            grid.innerHTML = `
-                <div class="modal-no-api wide">
-                    <div class="modal-no-api-icon">📋</div>
-                    <div class="modal-no-api-text">No field data available</div>
-                </div>
-            `;
-        } else {
-            // fields 배열을 order 순으로 정렬 후 렌더링
-            const sortedFields = [...fields].sort((a, b) => (a.order || 0) - (b.order || 0));
-
-            grid.innerHTML = sortedFields.map(({ label, value, unit, valueLabel }) => {
-                // valueLabel이 있으면 사용 (enum 타입), 없으면 value + unit
-                const displayValue = valueLabel
-                    ? valueLabel
-                    : (unit ? `${value}${unit}` : value);
-                return `
-                    <div class="modal-info-item">
-                        <div class="modal-info-label">${label}</div>
-                        <div class="modal-info-value">${displayValue ?? '-'}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-    }
+    renderModalBody(grid, { loading, noApi, error, detail, displayTypeLabel });
 
     // Modal 표시
     modal.hidden = false;
@@ -819,6 +785,72 @@ function showModal({ asset, detail, loading, noApi, error }) {
         };
         modal.addEventListener('click', this._modalCloseHandler);
     }
+}
+
+/**
+ * Modal 바디 렌더링
+ * - 상태(loading, noApi, error, detail)에 따라 다른 내용 표시
+ */
+function renderModalBody(grid, { loading, noApi, error, detail, displayTypeLabel }) {
+    if (loading) {
+        grid.innerHTML = '<div class="modal-loading"></div>';
+        return;
+    }
+
+    if (noApi) {
+        grid.innerHTML = `
+            <div class="modal-no-api wide">
+                <div class="modal-no-api-icon">📋</div>
+                <div class="modal-no-api-text">No detailed API available for "${displayTypeLabel}"</div>
+            </div>
+        `;
+        return;
+    }
+
+    if (error) {
+        grid.innerHTML = `
+            <div class="modal-no-api wide">
+                <div class="modal-no-api-icon">⚠️</div>
+                <div class="modal-no-api-text">Failed to load data</div>
+            </div>
+        `;
+        return;
+    }
+
+    if (detail) {
+        grid.innerHTML = renderFieldsGrid(detail.fields);
+    }
+}
+
+/**
+ * fields 배열을 HTML 그리드로 변환
+ * - order 순으로 정렬
+ * - valueLabel 또는 value + unit 표시
+ */
+function renderFieldsGrid(fields) {
+    if (!fields || fields.length === 0) {
+        return `
+            <div class="modal-no-api wide">
+                <div class="modal-no-api-icon">📋</div>
+                <div class="modal-no-api-text">No field data available</div>
+            </div>
+        `;
+    }
+
+    return go(
+        fields,
+        arr => [...arr].sort((a, b) => (a.order || 0) - (b.order || 0)),
+        map(({ label, value, unit, valueLabel }) => {
+            const displayValue = valueLabel ? valueLabel : (unit ? `${value}${unit}` : value);
+            return `
+                <div class="modal-info-item">
+                    <div class="modal-info-label">${label}</div>
+                    <div class="modal-info-value">${displayValue ?? '-'}</div>
+                </div>
+            `;
+        }),
+        arr => arr.join('')
+    );
 }
 
 /**
