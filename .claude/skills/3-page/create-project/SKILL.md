@@ -61,6 +61,22 @@ Examples/[project_name]/
 | **Master** | 앱 전역 | 공통 UI, 네비게이션 | Header, Sidebar |
 | **Page** | 페이지별 | 페이지 고유 콘텐츠 | StatsCards, DataTable, Chart |
 
+### `this` 공유
+
+Master와 Page는 **동일한 `this` 인스턴스를 공유**합니다.
+
+```javascript
+// Page loaded.js에서 초기화
+this.currentParams = {};
+
+// Master before_load.js에서 접근/수정 가능
+this.currentParams.tasks = { ...filters };
+```
+
+- Master와 Page는 별도 레이어지만 하나의 페이지 인스턴스
+- Page에서 초기화한 상태를 Master에서 직접 수정 가능
+- 이벤트 핸들러는 등록 시점이 아닌 실행 시점에 `this` 참조
+
 ---
 
 ## 라이프사이클 흐름
