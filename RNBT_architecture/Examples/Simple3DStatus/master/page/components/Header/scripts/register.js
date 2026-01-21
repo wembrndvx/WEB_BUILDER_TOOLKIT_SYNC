@@ -75,7 +75,7 @@ function renderUserInfo(config, { response }) {
 
             const value = data[key];
             if (attr) {
-                el.setAttribute(attr, value);
+                el.setAttribute(attr, value ?? '');
             } else {
                 el.textContent = value;
             }
