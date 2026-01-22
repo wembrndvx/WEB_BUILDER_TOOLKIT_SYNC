@@ -29,12 +29,12 @@ const { bind3DEvents } = Wkit;
  * 이 config를 통해 어떤 mesh가 어떤 장비의 상태를 표시할지 결정
  */
 this.meshStatusConfig = [
-    { meshName: 'OctahedronComponent', equipmentId: 'eq-001' },
-    { meshName: 'SphereComponent', equipmentId: 'eq-002' },
-    { meshName: 'TorusComponent', equipmentId: 'eq-003' },
-    { meshName: 'BoxComponent', equipmentId: 'eq-004' },
-    { meshName: 'ConeComponent', equipmentId: 'eq-005' },
-    { meshName: 'CylinderComponent', equipmentId: 'eq-006' }
+    { meshName: 'G-1', equipmentId: 'eq-001' },
+    { meshName: 'G-2', equipmentId: 'eq-002' },
+    { meshName: 'G-3', equipmentId: 'eq-003' },
+    { meshName: 'G-4', equipmentId: 'eq-004' },
+    { meshName: 'G-5', equipmentId: 'eq-005' },
+    { meshName: 'G-6', equipmentId: 'eq-006' }
 ];
 
 // ======================
