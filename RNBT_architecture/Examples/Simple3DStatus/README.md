@@ -190,73 +190,32 @@ this.customEvents = {
     → disposeAllThreeResources()
 ```
 
-## 설계 분석: datasetInfo의 param vs getParam
+## 설계 분석: datasetInfo 확장
 
-### 두 가지 패턴
+### 자유로운 메소드 구현
 
-RNBT에서 API 호출 시 param을 전달하는 방식은 두 가지가 있습니다.
-
-#### 1. 정적 param 패턴
+datasetInfo에 필요한 메소드를 자유롭게 추가할 수 있습니다:
 
 ```javascript
-// 컴포넌트 등록 시점에 param이 확정됨
-this.datasetInfo = [
-    { datasetName: 'userListApi', param: { page: 1, limit: 10 } }
-];
-
-// 사용: fetchAndPublish(context, datasetName, param) 직접 호출
-fetchAndPublish(this, 'userListApi', datasetInfo[0].param);
-```
-
-**사용 시점**: 버튼 클릭, 페이지 로드 등 param이 미리 결정된 경우
-
-#### 2. 동적 param 패턴 (getParam)
-
-```javascript
-// 런타임에 param을 생성하는 함수 제공
 this.datasetInfo = [
     {
         datasetName: 'equipmentDetailApi',
-        getParam: (intersectedObject, meshStatusConfig) => {
-            const meshName = intersectedObject?.name;
-            const config = meshStatusConfig?.find(c => c.meshName === meshName);
-            return config ? { id: config.equipmentId } : null;
-        }
+        getParam: (obj, config) => { ... },  // 이 예제의 방식
+        validate: (obj) => { ... },          // 필요하면 추가 가능
     }
 ];
-
-// 사용: 이벤트 발생 시 param 동적 생성
-const param = info.getParam(clickedObject, meshStatusConfig);
-fetchData(this, info.datasetName, param);
 ```
 
-**사용 시점**: 3D 클릭, 테이블 행 선택 등 런타임 컨텍스트에 따라 param이 달라지는 경우
+### param key가 필수인 경우
 
-### 이 예제에서 getParam을 사용한 이유
+런타임 API가 `param` key를 직접 참조할 때:
 
-```
-3D 클릭 이벤트
-    ↓
-intersectedObject (클릭된 mesh)
-    ↓
-meshStatusConfig에서 ID 조회  ← 런타임에 결정
-    ↓
-{ id: 'eq-001' } 생성
-    ↓
-fetchData 호출
+```javascript
+// fetchAndPublish 내부에서 datasetInfo[0].param을 사용하는 경우
+fetchAndPublish(this, datasetName, datasetInfo[0].param);
 ```
 
-- 어떤 mesh가 클릭될지 **등록 시점에 알 수 없음**
-- 클릭된 객체의 `name`을 기반으로 **런타임에 param 생성** 필요
-- `getParam`이 `null`을 반환하면 해당 API 호출을 건너뜀 (유효성 검사 내장)
-
-### 선택 기준
-
-| 상황 | 패턴 | 예시 |
-|------|------|------|
-| param이 고정됨 | `param` | 전체 목록 조회, 고정 필터 |
-| param이 이벤트에 따라 달라짐 | `getParam` | 3D 클릭, 행 선택, 동적 필터 |
-| param 생성에 유효성 검사 필요 | `getParam` | 조건부 API 호출 |
+이 예제에서는 `getParam` 함수로 param을 생성한 후 전달하므로 `param` key 불필요
 
 ## 확장 포인트
 
