@@ -4,4 +4,4 @@
  */
 
 this.destroyPopup();
-console.log('[PDU] Destroyed:', this.setter?.ecoAssetInfo?.assetId);
+console.log('[PDU] Destroyed:', this.setter?.assetInfo?.assetId);

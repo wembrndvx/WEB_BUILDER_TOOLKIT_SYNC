@@ -4,4 +4,4 @@
  */
 
 this.destroyPopup();
-console.log('[UPS] Destroyed:', this.setter?.ecoAssetInfo?.assetId);
+console.log('[UPS] Destroyed:', this.setter?.assetInfo?.assetId);

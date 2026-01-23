@@ -360,7 +360,7 @@
                 id: 'preview-sensor',
                 page: { element: document.getElementById('popup-host') },
                 properties: { publishCode: { htmlCode, cssCode } },
-                setter: { ecoAssetInfo: { assetId: 'mock-sensor-001' } }
+                setter: { assetInfo: { assetId: 'mock-sensor-001' } }
             };
 
             initComponent.call(instance);
@@ -381,7 +381,7 @@
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
             // register.js와 동일한 구조
-            this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
+            this._defaultAssetId = this.setter?.assetInfo?.assetId || this.id;
 
             this.datasetInfo = [
                 { datasetName: 'sensor', render: ['renderSensorInfo'] },

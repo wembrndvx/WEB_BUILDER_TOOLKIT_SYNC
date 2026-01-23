@@ -4,4 +4,4 @@
  */
 
 this.destroyPopup();
-console.log('[CRAC] Destroyed:', this.setter?.ecoAssetInfo?.assetId);
+console.log('[CRAC] Destroyed:', this.setter?.assetInfo?.assetId);

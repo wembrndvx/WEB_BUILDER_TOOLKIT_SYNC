@@ -32,7 +32,7 @@ function initComponent() {
     // ======================
     // DATA DEFINITION (동적 assetId 지원)
     // ======================
-    this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
+    this._defaultAssetId = this.setter?.assetInfo?.assetId || this.id;
 
     this.datasetInfo = [
         { datasetName: 'crac', render: ['renderCRACInfo'] },

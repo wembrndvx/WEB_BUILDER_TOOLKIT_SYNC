@@ -40,7 +40,7 @@ function initComponent() {
     // ======================
     // 1. 데이터 정의 (동적 assetId 지원)
     // ======================
-    this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
+    this._defaultAssetId = this.setter?.assetInfo?.assetId || this.id;
 
     this.datasetInfo = [
         { datasetName: 'pdu', render: ['renderPDUInfo'] },
