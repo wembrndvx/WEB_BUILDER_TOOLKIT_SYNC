@@ -31,9 +31,16 @@ function initComponent() {
   // ======================
   // 2. STATE
   // ======================
-  this._assets = [];           // 전체 자산 목록 (Asset API)
-  this._relations = [];        // 전체 관계 목록 (Relation API)
-  this._treeData = null;       // 빌드된 트리 데이터
+  // 캐시 구조 (AssetTreePanel 방식)
+  this._cache = {
+    assets: new Map(),      // assetKey → Asset (전체 자산 캐시)
+    children: new Set(),    // 자식이 있는 assetKey 집합 (toAssetKey로 등록된 자산)
+    childKeys: new Set(),   // 자식인 assetKey 집합 (fromAssetKey로 등록된 자산)
+    parent: new Map(),      // childKey → parentKey (부모 찾기용)
+    loading: new Set(),     // 로딩 중인 노드
+  };
+
+  this._treeData = [];         // 루트 노드만 (Lazy Loading)
   this._expandedNodes = new Set();
   this._selectedNodeId = null;
   this._filteredAssets = [];   // 선택된 노드 하위 자산
@@ -79,6 +86,8 @@ function initComponent() {
   this.search = search.bind(this);
   this.filterByType = filterByType.bind(this);
   this.filterByStatus = filterByStatus.bind(this);
+  this.getAncestorKeys = getAncestorKeys.bind(this);
+  this.expandToNode = expandToNode.bind(this);
 
   // ======================
   // 5. SUBSCRIBE
@@ -123,15 +132,19 @@ function initComponent() {
 // ======================
 
 /**
- * assetList 데이터 수신
+ * assetList 데이터 수신 → assetsCache에 저장
  */
 function onAssetListReceived({ response }) {
   const { data } = response;
   if (!data) return;
 
-  this._assets = data;
+  // assetsCache에 저장
+  data.forEach((asset) => {
+    this._cache.assets.set(asset.assetKey, asset);
+  });
+
   this._dataReady.assets = true;
-  console.log('[AssetList] Assets received:', data.length);
+  console.log('[AssetList] Assets cached:', this._cache.assets.size);
 
   // 두 데이터가 모두 준비되면 트리 빌드
   if (this._dataReady.assets && this._dataReady.relations) {
@@ -140,15 +153,23 @@ function onAssetListReceived({ response }) {
 }
 
 /**
- * relationList 데이터 수신
+ * relationList 데이터 수신 (LOCATED_IN만) → childrenCache, parentCache에 저장
  */
 function onRelationListReceived({ response }) {
   const { data } = response;
   if (!data) return;
 
-  this._relations = data;
+  // childKeys: fromAssetKey 집합 (누군가의 자식인 자산)
+  // children: toAssetKey 집합 (자식이 있는 자산)
+  // parent: childKey → parentKey
+  data.forEach(({ fromAssetKey, toAssetKey }) => {
+    this._cache.childKeys.add(fromAssetKey);
+    this._cache.children.add(toAssetKey);
+    this._cache.parent.set(fromAssetKey, toAssetKey);
+  });
+
   this._dataReady.relations = true;
-  console.log('[AssetList] Relations received:', data.length);
+  console.log('[AssetList] Relations processed:', data.length, '/ Children nodes:', this._cache.children.size);
 
   // 두 데이터가 모두 준비되면 트리 빌드
   if (this._dataReady.assets && this._dataReady.relations) {
@@ -161,46 +182,33 @@ function onRelationListReceived({ response }) {
 // ======================
 
 /**
- * Asset + Relation 데이터로 트리 구조 빌드
+ * 트리 구조 빌드 (Lazy Loading 방식)
+ * - 루트 노드만 초기 렌더링
+ * - 자식 존재 여부는 childrenCache로 판별
  */
 function buildTree() {
-  const { _assets: assets, _relations: relations } = this;
+  const { _cache: cache } = this;
 
-  // 1. assetKey → asset 맵 생성
-  const assetMap = new Map();
-  assets.forEach((asset) => assetMap.set(asset.assetKey, { ...asset, children: [] }));
-
-  // 2. Relation으로 부모-자식 관계 설정
-  // fromAssetKey = 자식, toAssetKey = 부모
-  const childToParent = new Map();
-  relations.forEach(({ fromAssetKey, toAssetKey }) => {
-    childToParent.set(fromAssetKey, toAssetKey);
-  });
-
-  // 3. 트리 구조 빌드
+  // 루트 노드: childKeys에 포함되지 않은 자산 (아무도 자신을 자식으로 가리키지 않음)
   const rootNodes = [];
-  assetMap.forEach((asset, assetKey) => {
-    const parentKey = childToParent.get(assetKey);
-    if (parentKey && assetMap.has(parentKey)) {
-      // 부모가 있으면 부모의 children에 추가
-      assetMap.get(parentKey).children.push(asset);
-    } else {
-      // 부모가 없으면 루트 노드
-      rootNodes.push(asset);
+  cache.assets.forEach((asset, assetKey) => {
+    if (!cache.childKeys.has(assetKey)) {
+      // hasChildren: toAssetKey로 등록된 적 있으면 자식 존재
+      const hasChildren = cache.children.has(assetKey);
+      rootNodes.push({
+        ...asset,
+        hasChildren,
+        children: [],  // Lazy Loading - 확장 시 로드
+        loaded: false,
+      });
     }
   });
 
-  // 4. children 정렬 (이름순)
-  const sortChildren = (nodes) => {
-    nodes.sort((a, b) => a.name.localeCompare(b.name));
-    nodes.forEach((node) => {
-      if (node.children.length > 0) sortChildren(node.children);
-    });
-  };
-  sortChildren(rootNodes);
+  // 이름순 정렬
+  rootNodes.sort((a, b) => a.name.localeCompare(b.name));
 
   this._treeData = rootNodes;
-  console.log('[AssetList] Tree built:', rootNodes.length, 'root nodes');
+  console.log('[AssetList] Tree built (Lazy):', rootNodes.length, 'root nodes');
 
   // 트리 렌더링
   this.renderTree();
@@ -347,14 +355,14 @@ function renderTreeNodes(items, searchTerm = '') {
 }
 
 function createTreeNode(item, searchTerm) {
-  const { assetKey, assetType, children = [] } = item;
-  const hasChildren = children.length > 0;
+  const { assetKey, assetType, hasChildren = false, children = [], loaded = false } = item;
   const isExpanded = this._expandedNodes.has(assetKey);
   const isSelected = this._selectedNodeId === assetKey;
+  const isLoading = this._cache.loading.has(assetKey);
 
-  // 검색 필터
+  // 검색 필터 (로드된 자식만 검색 가능)
   const matchesSearch = !searchTerm || item.name.toLowerCase().includes(searchTerm);
-  const hasMatchingDescendants = hasChildren && checkDescendants(children, searchTerm);
+  const hasMatchingDescendants = loaded && children.length > 0 && checkDescendants(children, searchTerm);
 
   if (searchTerm && !matchesSearch && !hasMatchingDescendants) {
     return null;
@@ -366,9 +374,10 @@ function createTreeNode(item, searchTerm) {
   li.dataset.nodeType = assetType;
   li.dataset.hasChildren = hasChildren;
 
-  const content = createNodeContent(item, { isSelected, isExpanded, hasChildren });
+  const content = createNodeContent(item, { isSelected, isExpanded, hasChildren, isLoading });
   li.appendChild(content);
 
+  // 자식 컨테이너 (hasChildren이면 생성, loaded된 경우만 렌더링)
   if (hasChildren) {
     const childrenUl = document.createElement('ul');
     childrenUl.className = 'node-children';
@@ -376,12 +385,21 @@ function createTreeNode(item, searchTerm) {
       childrenUl.classList.add('expanded');
     }
 
-    go(
-      children,
-      map((child) => createTreeNode.call(this, child, searchTerm)),
-      filter((childEl) => childEl),
-      each((childEl) => childrenUl.appendChild(childEl))
-    );
+    if (loaded && children.length > 0) {
+      // 로드된 자식 렌더링
+      go(
+        children,
+        map((child) => createTreeNode.call(this, child, searchTerm)),
+        filter((childEl) => childEl),
+        each((childEl) => childrenUl.appendChild(childEl))
+      );
+    } else if (isLoading) {
+      // 로딩 중 표시
+      const loadingEl = document.createElement('li');
+      loadingEl.className = 'tree-node-loading';
+      loadingEl.innerHTML = '<span class="loading-spinner"></span> Loading...';
+      childrenUl.appendChild(loadingEl);
+    }
 
     li.appendChild(childrenUl);
   }
@@ -389,8 +407,8 @@ function createTreeNode(item, searchTerm) {
   return li;
 }
 
-function createNodeContent(item, { isSelected, isExpanded, hasChildren }) {
-  const { name, assetType, statusType, children = [] } = item;
+function createNodeContent(item, { isSelected, isExpanded, hasChildren, isLoading }) {
+  const { name, assetType, statusType, children = [], loaded = false } = item;
 
   const content = document.createElement('div');
   content.className = 'node-content';
@@ -400,8 +418,12 @@ function createNodeContent(item, { isSelected, isExpanded, hasChildren }) {
   const toggle = document.createElement('span');
   toggle.className = 'node-toggle';
   if (hasChildren) {
-    toggle.textContent = '▶';
-    if (isExpanded) toggle.classList.add('expanded');
+    if (isLoading) {
+      toggle.innerHTML = '<span class="loading-spinner-small"></span>';
+    } else {
+      toggle.textContent = '▶';
+      if (isExpanded) toggle.classList.add('expanded');
+    }
   } else {
     toggle.classList.add('leaf');
   }
@@ -420,8 +442,8 @@ function createNodeContent(item, { isSelected, isExpanded, hasChildren }) {
   content.appendChild(icon);
   content.appendChild(label);
 
-  // Count (컨테이너 노드만)
-  if (hasChildren) {
+  // Count (로드된 경우만 표시)
+  if (hasChildren && loaded && children.length > 0) {
     const count = document.createElement('span');
     count.className = 'node-asset-count';
     count.textContent = `(${children.length})`;
@@ -448,13 +470,85 @@ function checkDescendants(children, searchTerm) {
 // NODE ACTIONS
 // ======================
 
-function toggleNode(nodeId) {
-  if (this._expandedNodes.has(nodeId)) {
-    this._expandedNodes.delete(nodeId);
-  } else {
-    this._expandedNodes.add(nodeId);
+/**
+ * 노드 토글 (Lazy Loading)
+ * - 확장 시 자식이 로드되지 않았으면 API 호출
+ */
+async function toggleNode(nodeId) {
+  const { _cache: cache, _expandedNodes: expanded } = this;
+
+  // 접기
+  if (expanded.has(nodeId)) {
+    expanded.delete(nodeId);
+    updateNodeVisuals.call(this, nodeId);
+    return;
   }
+
+  // 펼치기
+  expanded.add(nodeId);
+
+  // 노드 찾기
+  const node = findNodeByKey(this._treeData, nodeId);
+  if (!node) {
+    updateNodeVisuals.call(this, nodeId);
+    return;
+  }
+
+  // 이미 로드됨
+  if (node.loaded) {
+    updateNodeVisuals.call(this, nodeId);
+    return;
+  }
+
+  // 자식 없음
+  if (!node.hasChildren) {
+    updateNodeVisuals.call(this, nodeId);
+    return;
+  }
+
+  // Lazy Loading 시작
+  cache.loading.add(nodeId);
   updateNodeVisuals.call(this, nodeId);
+
+  try {
+    // Relation API로 자식 관계 조회 (toAssetKey = 현재 노드)
+    const relResult = await fetchData(this.page, 'relationList', {
+      filter: { toAssetKey: nodeId, relationType: 'LOCATED_IN' },
+    });
+    const relations = relResult?.response?.data || [];
+    console.log(`[AssetList] Children relations for ${nodeId}:`, relations.length);
+
+    // 자식 assetKey 추출
+    const childKeys = relations.map((r) => r.fromAssetKey);
+
+    // 캐시에서 자식 자산 정보 가져오기
+    const children = childKeys
+      .map((key) => {
+        const asset = cache.assets.get(key);
+        if (!asset) return null;
+        return {
+          ...asset,
+          hasChildren: cache.children.has(key),
+          children: [],
+          loaded: false,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // 노드에 자식 추가
+    node.children = children;
+    node.loaded = true;
+
+    console.log(`[AssetList] Children loaded for ${nodeId}:`, children.length);
+  } catch (error) {
+    console.error(`[AssetList] Failed to load children for ${nodeId}:`, error);
+  } finally {
+    cache.loading.delete(nodeId);
+  }
+
+  // 트리 재렌더링 (해당 노드만)
+  renderTreeNodes.call(this, this._treeData, this._treeSearchTerm);
 }
 
 function selectNode(nodeId) {
@@ -529,6 +623,48 @@ function updateNodeVisuals(nodeId) {
   if (children) children.classList.toggle('expanded', isExpanded);
 }
 
+/**
+ * 특정 노드의 조상 경로 반환 (3D 동기화용)
+ * @param {string} assetKey
+ * @returns {string[]} 루트부터 해당 노드까지의 assetKey 배열
+ */
+function getAncestorKeys(assetKey) {
+  const ancestors = [];
+  let current = assetKey;
+
+  while (current) {
+    ancestors.unshift(current);
+    current = this._cache.parent.get(current);
+  }
+
+  return ancestors;
+}
+
+/**
+ * 특정 노드까지 경로 확장 후 선택 (3D 컴포넌트 선택 시 사용)
+ * @param {string} assetKey
+ */
+async function expandToNode(assetKey) {
+  const ancestors = this.getAncestorKeys(assetKey);
+
+  // 루트를 제외한 조상 노드들을 순차적으로 펼치기
+  for (let i = 0; i < ancestors.length - 1; i++) {
+    const key = ancestors[i];
+    if (!this._expandedNodes.has(key)) {
+      await this.toggleNode(key);
+    }
+  }
+
+  // 최종 노드 선택
+  this.selectNode(assetKey);
+
+  // 스크롤
+  const nodeEl = this.appendElement.querySelector(`[data-node-id="${assetKey}"]`);
+  if (nodeEl) {
+    nodeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 // ======================
 // TABLE RENDER
 // ======================
@@ -543,7 +679,7 @@ function renderTable() {
     if (countEl) countEl.textContent = `${this._filteredAssets.length}개`;
   } else {
     if (pathEl) pathEl.textContent = '전체 자산';
-    if (countEl) countEl.textContent = `${this._assets.length}개`;
+    if (countEl) countEl.textContent = `${this._cache.assets.size}개`;
   }
 
   applyFilters.call(this);
@@ -554,7 +690,9 @@ function applyFilters() {
   const typeFilter = this._typeFilter;
   const statusFilter = this._statusFilter;
 
-  const sourceData = this._selectedNodeId ? this._filteredAssets : this._assets;
+  // 전체 자산은 캐시에서 배열로 변환
+  const allAssets = Array.from(this._cache.assets.values());
+  const sourceData = this._selectedNodeId ? this._filteredAssets : allAssets;
 
   const matchesSearch = (asset) =>
     !searchTerm ||
@@ -575,7 +713,7 @@ function applyFilters() {
 function updateCount(count) {
   const countEl = this.appendElement.querySelector('.count-value');
   if (countEl) {
-    countEl.textContent = count !== undefined ? count : this._assets.length;
+    countEl.textContent = count !== undefined ? count : this._cache.assets.size;
   }
 }
 

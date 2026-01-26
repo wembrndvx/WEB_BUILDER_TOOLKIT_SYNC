@@ -32,7 +32,9 @@ this.globalDataMappings = [
         topic: 'relationList',
         datasetInfo: {
             datasetName: 'relationList',
-            param: {}
+            param: {
+                filter: { relationType: 'LOCATED_IN' }  // 트리 구조용 위치 관계만
+            }
         },
         refreshInterval: null  // 트리 구조 빌드용
     }

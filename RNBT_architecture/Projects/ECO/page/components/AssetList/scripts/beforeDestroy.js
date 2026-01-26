@@ -74,11 +74,21 @@ if (this._tableInstance) {
 this.tableConfig = null;
 
 // ======================
-// 6. 상태 초기화 (Asset API v1)
+// 6. 캐시 정리 (AssetTreePanel 방식)
+// ======================
+if (this._cache) {
+    this._cache.assets.clear();
+    this._cache.children.clear();
+    this._cache.childKeys.clear();
+    this._cache.parent.clear();
+    this._cache.loading.clear();
+    this._cache = null;
+}
+
+// ======================
+// 7. 상태 초기화
 // ======================
 // 데이터 상태
-this._assets = null;
-this._relations = null;
 this._filteredAssets = null;
 this._dataReady = null;
 
@@ -93,4 +103,4 @@ this._treeSearchTerm = null;
 this._typeFilter = null;
 this._statusFilter = null;
 
-console.log('[AssetList] Destroyed - Asset API v1 mode cleanup complete');
+console.log('[AssetList] Destroyed - Lazy Loading mode cleanup complete');
