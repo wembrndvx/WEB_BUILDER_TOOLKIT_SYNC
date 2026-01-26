@@ -74,24 +74,23 @@ if (this._tableInstance) {
 this.tableConfig = null;
 
 // ======================
-// 6. 상태 초기화
+// 6. 상태 초기화 (Asset API v1)
 // ======================
+// 데이터 상태
+this._assets = null;
+this._relations = null;
+this._filteredAssets = null;
+this._dataReady = null;
+
 // 트리 상태
 this._treeData = null;
 this._expandedNodes = null;
-this._loadedNodes = null;
 this._selectedNodeId = null;
 
 // 테이블 상태
-this._allAssets = null;
 this._searchTerm = null;
 this._treeSearchTerm = null;
 this._typeFilter = null;
 this._statusFilter = null;
 
-// i18n 상태
-this._locale = null;
-this._uiTexts = null;
-this._uiTextsCache = null;
-
-console.log('[AssetList] Destroyed - tree, table, modal, subscriptions, events cleaned up');
+console.log('[AssetList] Destroyed - Asset API v1 mode cleanup complete');
