@@ -161,7 +161,7 @@ function getAssetApiData() {
         ownerUserId: null,
         serviceType: 'DCM',
         domainType: 'FACILITY',
-        assetCategoryType: asset.canHaveChildren ? 'LOCATION' : 'EQUIPMENT',
+        assetCategoryType: asset.type.toUpperCase(),
         assetType: asset.type.toUpperCase(),
         usageCode: null,
         serialNumber: `SN-${asset.id}`,
@@ -259,6 +259,50 @@ function createErrorResponse(key, message, path) {
         },
         timestamp: new Date().toISOString(),
         path: path
+    };
+}
+
+// ======================
+// PROPERTY META & FIELD LABEL DATA (for /api/v1/ast/detail)
+// ======================
+
+const PROPERTY_META_DATA = [
+    // UPS 카테고리
+    { id: 1, assetCategoryType: 'UPS', fieldKey: 'rated_power_kw', description: '정격 전력 (kW)', isVisible: true, displayOrder: 1 },
+    { id: 2, assetCategoryType: 'UPS', fieldKey: 'battery_capacity_ah', description: '배터리 용량 (Ah)', isVisible: true, displayOrder: 2 },
+    { id: 3, assetCategoryType: 'UPS', fieldKey: 'efficiency_percent', description: '효율 (%)', isVisible: true, displayOrder: 3 },
+    { id: 4, assetCategoryType: 'UPS', fieldKey: 'input_voltage_v', description: '입력 전압 (V)', isVisible: true, displayOrder: 4 },
+    { id: 5, assetCategoryType: 'UPS', fieldKey: 'output_voltage_v', description: '출력 전압 (V)', isVisible: true, displayOrder: 5 },
+    { id: 6, assetCategoryType: 'UPS', fieldKey: 'backup_time_min', description: '백업 시간 (분)', isVisible: true, displayOrder: 6 },
+];
+
+const FIELD_LABEL_DATA = [
+    // UPS - Korean
+    { id: 1, assetPropertyMetaId: 1, assetCategoryType: 'UPS', fieldKey: 'rated_power_kw', locale: 'ko', label: '정격 전력', helpText: 'UPS 명판 기준 정격 전력 (kW)' },
+    { id: 2, assetPropertyMetaId: 2, assetCategoryType: 'UPS', fieldKey: 'battery_capacity_ah', locale: 'ko', label: '배터리 용량', helpText: '배터리 총 용량 (Ah)' },
+    { id: 3, assetPropertyMetaId: 3, assetCategoryType: 'UPS', fieldKey: 'efficiency_percent', locale: 'ko', label: '효율', helpText: '정격 부하 시 효율 (%)' },
+    { id: 4, assetPropertyMetaId: 4, assetCategoryType: 'UPS', fieldKey: 'input_voltage_v', locale: 'ko', label: '입력 전압', helpText: '입력 전압 (V)' },
+    { id: 5, assetPropertyMetaId: 5, assetCategoryType: 'UPS', fieldKey: 'output_voltage_v', locale: 'ko', label: '출력 전압', helpText: '출력 전압 (V)' },
+    { id: 6, assetPropertyMetaId: 6, assetCategoryType: 'UPS', fieldKey: 'backup_time_min', locale: 'ko', label: '백업 시간', helpText: '정전 시 백업 가능 시간 (분)' },
+    // UPS - English
+    { id: 7, assetPropertyMetaId: 1, assetCategoryType: 'UPS', fieldKey: 'rated_power_kw', locale: 'en', label: 'Rated Power', helpText: 'Rated power capacity (kW)' },
+    { id: 8, assetPropertyMetaId: 2, assetCategoryType: 'UPS', fieldKey: 'battery_capacity_ah', locale: 'en', label: 'Battery Capacity', helpText: 'Total battery capacity (Ah)' },
+    { id: 9, assetPropertyMetaId: 3, assetCategoryType: 'UPS', fieldKey: 'efficiency_percent', locale: 'en', label: 'Efficiency', helpText: 'Efficiency at rated load (%)' },
+    { id: 10, assetPropertyMetaId: 4, assetCategoryType: 'UPS', fieldKey: 'input_voltage_v', locale: 'en', label: 'Input Voltage', helpText: 'Input voltage (V)' },
+    { id: 11, assetPropertyMetaId: 5, assetCategoryType: 'UPS', fieldKey: 'output_voltage_v', locale: 'en', label: 'Output Voltage', helpText: 'Output voltage (V)' },
+    { id: 12, assetPropertyMetaId: 6, assetCategoryType: 'UPS', fieldKey: 'backup_time_min', locale: 'en', label: 'Backup Time', helpText: 'Backup time during outage (min)' },
+];
+
+// UPS용 property mock 데이터 생성 함수
+function generateUPSProperty(assetKey) {
+    const idx = parseInt(assetKey.replace(/\D/g, '')) || 1;
+    return {
+        rated_power_kw: 50 + (idx * 25) + Math.round(Math.random() * 10),
+        battery_capacity_ah: 100 + (idx * 50),
+        efficiency_percent: 92 + Math.round(Math.random() * 5 * 10) / 10,
+        input_voltage_v: 220,
+        output_voltage_v: 220,
+        backup_time_min: 15 + (idx * 5)
     };
 }
 
@@ -412,6 +456,92 @@ app.post('/api/v1/rel/g', (req, res) => {
     res.json(createSingleResponse(relation, '/api/v1/rel/g'));
 });
 
+/**
+ * POST /api/v1/ast/detail - 자산 상세 조회 (통합 API)
+ * Request: { assetKey, locale }
+ * Response: { asset, properties[] }
+ */
+app.post('/api/v1/ast/detail', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/ast/detail`);
+
+    const { assetKey, locale = 'ko' } = req.body;
+
+    if (!assetKey) {
+        return res.status(400).json(createErrorResponse(
+            'INVALID_REQUEST',
+            'assetKey is required',
+            '/api/v1/ast/detail'
+        ));
+    }
+
+    // 1. Asset 조회
+    const assets = getAssetApiData();
+    const asset = assets.find(a => a.assetKey === assetKey);
+
+    if (!asset) {
+        return res.status(404).json(createErrorResponse(
+            'ASSET_NOT_FOUND',
+            `Asset not found: ${assetKey}`,
+            '/api/v1/ast/detail'
+        ));
+    }
+
+    // 2. assetCategoryType 기반 PropertyMeta 조회
+    const categoryType = asset.assetCategoryType;
+    const propertyMetas = PROPERTY_META_DATA.filter(
+        pm => pm.assetCategoryType === categoryType && pm.isVisible
+    ).sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // 3. locale 기반 FieldLabel 조회
+    const fieldLabels = FIELD_LABEL_DATA.filter(
+        fl => fl.assetCategoryType === categoryType && fl.locale === locale
+    );
+
+    // 4. property 값 파싱 (UPS인 경우 동적 생성)
+    let propertyValues = {};
+    if (categoryType === 'UPS') {
+        propertyValues = generateUPSProperty(assetKey);
+    } else {
+        try {
+            propertyValues = JSON.parse(asset.property || '{}');
+        } catch (e) {
+            propertyValues = {};
+        }
+    }
+
+    // 5. properties 배열 조합
+    const properties = propertyMetas.map(meta => {
+        const label = fieldLabels.find(fl => fl.fieldKey === meta.fieldKey);
+        return {
+            fieldKey: meta.fieldKey,
+            value: propertyValues[meta.fieldKey] ?? null,
+            label: label?.label || meta.description,
+            helpText: label?.helpText || null,
+            displayOrder: meta.displayOrder
+        };
+    });
+
+    // 6. 응답 생성
+    const responseData = {
+        asset: {
+            assetKey: asset.assetKey,
+            name: asset.name,
+            assetType: asset.assetType,
+            assetCategoryType: categoryType,
+            statusType: asset.statusType,
+            locationLabel: asset.locationLabel,
+            serialNumber: asset.serialNumber,
+            assetModelKey: asset.assetModelKey,
+            installDate: asset.installDate,
+            ownerUserId: asset.ownerUserId,
+            description: asset.description
+        },
+        properties: properties
+    };
+
+    res.json(createSingleResponse(responseData, '/api/v1/ast/detail'));
+});
+
 // ======================
 // SERVER START
 // ======================
@@ -425,11 +555,12 @@ app.listen(PORT, () => {
     console.log(`========================================`);
     console.log(`\nAsset Summary: ${ALL_ASSETS.length} total assets`);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  POST /api/v1/ast/l   - Asset list (all)`);
-    console.log(`  POST /api/v1/ast/la  - Asset list (paged)`);
-    console.log(`  POST /api/v1/ast/g   - Asset single`);
-    console.log(`  POST /api/v1/rel/l   - Relation list (all)`);
-    console.log(`  POST /api/v1/rel/la  - Relation list (paged)`);
-    console.log(`  POST /api/v1/rel/g   - Relation single`);
+    console.log(`  POST /api/v1/ast/l      - Asset list (all)`);
+    console.log(`  POST /api/v1/ast/la     - Asset list (paged)`);
+    console.log(`  POST /api/v1/ast/g      - Asset single`);
+    console.log(`  POST /api/v1/ast/detail - Asset detail (unified API)`);
+    console.log(`  POST /api/v1/rel/l      - Relation list (all)`);
+    console.log(`  POST /api/v1/rel/la     - Relation list (paged)`);
+    console.log(`  POST /api/v1/rel/g      - Relation single`);
     console.log(`\n`);
 });
