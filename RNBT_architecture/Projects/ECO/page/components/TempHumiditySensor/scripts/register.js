@@ -94,6 +94,7 @@ function initComponent() {
   this.renderBaseInfo = renderBaseInfo.bind(this);          // 자산 기본 정보 (Asset API)
   this.renderSensorFields = renderSensorFields.bind(this);  // 센서 상세 필드
   this.renderChart = renderChart.bind(this, this.chartConfig);
+  this.renderError = renderError.bind(this);                // 에러 상태 렌더링
 
   // ======================
   // 5. Public Methods
@@ -156,19 +157,62 @@ function showDetail() {
     fx.each(({ datasetName, render }) =>
       fx.go(
         fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, assetId: this._defaultAssetKey }),
-        (response) => response && fx.each((fn) => this[fn](response), render)
+        (response) => {
+          // response가 없거나 response.response가 없는 경우 에러 표시
+          if (!response || !response.response) {
+            this.renderError('데이터를 불러올 수 없습니다.');
+            return;
+          }
+          // response.response.data가 null/undefined인 경우 에러 표시
+          if (response.response.data === null || response.response.data === undefined) {
+            this.renderError('자산 정보가 존재하지 않습니다.');
+            return;
+          }
+          fx.each((fn) => this[fn](response), render);
+        }
       )
     )
   ).catch((e) => {
     console.error('[TempHumiditySensor]', e);
-    this.hidePopup();
+    this.renderError('데이터 로드 중 오류가 발생했습니다.');
   });
+}
+
+// 에러 상태 렌더링
+function renderError(message) {
+  // 헤더 영역에 에러 표시
+  const nameEl = this.popupQuery('.sensor-name');
+  const zoneEl = this.popupQuery('.sensor-zone');
+  const statusEl = this.popupQuery('.sensor-status');
+
+  if (nameEl) nameEl.textContent = '데이터 없음';
+  if (zoneEl) zoneEl.textContent = message;
+  if (statusEl) {
+    statusEl.textContent = 'Error';
+    statusEl.dataset.status = 'critical';
+  }
+
+  // fields-container에 에러 메시지 표시
+  const container = this.popupQuery(this.fieldsContainerSelector);
+  if (container) {
+    container.innerHTML = `
+      <div class="value-card" style="grid-column: 1 / -1; text-align: center;">
+        <div class="value-label">오류</div>
+        <div class="value-data" style="font-size: 14px; color: #ef4444;">${message}</div>
+      </div>
+    `;
+  }
+
+  console.warn('[TempHumiditySensor] renderError:', message);
 }
 
 // 자산 기본 정보 렌더링 (Asset API v1 - assetDetail)
 function renderBaseInfo({ response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    renderError.call(this, '자산 데이터가 없습니다.');
+    return;
+  }
 
   // 1. 헤더 영역 고정 필드 렌더링
   fx.go(
@@ -216,10 +260,17 @@ function formatDate(dateStr) {
 // 센서 상세 필드 렌더링 (sensor 데이터셋 - fields 배열)
 function renderSensorFields({ response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    console.warn('[TempHumiditySensor] renderSensorFields: data is null');
+    return;
+  }
 
   const container = this.popupQuery(this.fieldsContainerSelector);
-  if (!container || !data.fields) return;
+  if (!container) return;
+  if (!data.fields) {
+    console.warn('[TempHumiditySensor] renderSensorFields: fields is null');
+    return;
+  }
 
   const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
   container.innerHTML = sortedFields
@@ -235,7 +286,14 @@ function renderSensorFields({ response }) {
 
 function renderChart(config, { response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    console.warn('[TempHumiditySensor] renderChart: data is null');
+    return;
+  }
+  if (!data.fields || !data[config.valuesKey]) {
+    console.warn('[TempHumiditySensor] renderChart: chart data is incomplete');
+    return;
+  }
   const { optionBuilder, ...chartConfig } = config;
   const option = optionBuilder(chartConfig, data);
   this.updateChart('.chart-container', option);

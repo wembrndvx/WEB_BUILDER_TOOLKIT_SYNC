@@ -136,6 +136,7 @@ function initComponent() {
   this.renderPDUFields = renderPDUFields.bind(this);    // PDU 상세 필드
   this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
   this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
+  this.renderError = renderError.bind(this);            // 에러 상태 렌더링
 
   // ======================
   // 7. Public Methods
@@ -205,13 +206,53 @@ function showDetail() {
     fx.each(({ datasetName, render }) =>
       fx.go(
         fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, assetId: this._defaultAssetKey }),
-        (response) => response && fx.each((fn) => this[fn](response), render)
+        (response) => {
+          // response가 없거나 response.response가 없는 경우 에러 표시
+          if (!response || !response.response) {
+            this.renderError('데이터를 불러올 수 없습니다.');
+            return;
+          }
+          // response.response.data가 null/undefined인 경우 에러 표시
+          if (response.response.data === null || response.response.data === undefined) {
+            this.renderError('자산 정보가 존재하지 않습니다.');
+            return;
+          }
+          fx.each((fn) => this[fn](response), render);
+        }
       )
     )
   ).catch((e) => {
     console.error('[PDU]', e);
-    this.hidePopup();
+    this.renderError('데이터 로드 중 오류가 발생했습니다.');
   });
+}
+
+// 에러 상태 렌더링
+function renderError(message) {
+  // 헤더 영역에 에러 표시
+  const nameEl = this.popupQuery('.pdu-name');
+  const zoneEl = this.popupQuery('.pdu-zone');
+  const statusEl = this.popupQuery('.pdu-status');
+
+  if (nameEl) nameEl.textContent = '데이터 없음';
+  if (zoneEl) zoneEl.textContent = message;
+  if (statusEl) {
+    statusEl.textContent = 'Error';
+    statusEl.dataset.status = 'critical';
+  }
+
+  // summary-bar에 에러 메시지 표시
+  const container = this.popupQuery(this.fieldsContainerSelector);
+  if (container) {
+    container.innerHTML = `
+      <div class="summary-item" style="grid-column: 1 / -1; text-align: center;">
+        <span class="summary-label">오류</span>
+        <span class="summary-value" style="color: #ef4444;">${message}</span>
+      </div>
+    `;
+  }
+
+  console.warn('[PDU] renderError:', message);
 }
 
 function hideDetail() {
@@ -259,7 +300,10 @@ function onPopupCreated(popupConfig, tableConfig) {
 // 자산 기본 정보 렌더링 (Asset API v1 - assetDetail)
 function renderBaseInfo({ response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    renderError.call(this, '자산 데이터가 없습니다.');
+    return;
+  }
 
   // 1. 헤더 영역 고정 필드 렌더링
   fx.go(
@@ -307,10 +351,17 @@ function formatDate(dateStr) {
 // PDU 상세 필드 렌더링 (pdu 데이터셋 - fields 배열)
 function renderPDUFields({ response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    console.warn('[PDU] renderPDUFields: data is null');
+    return;
+  }
 
   const container = this.popupQuery(this.fieldsContainerSelector);
-  if (!container || !data.fields) return;
+  if (!container) return;
+  if (!data.fields) {
+    console.warn('[PDU] renderPDUFields: fields is null');
+    return;
+  }
 
   const sortedFields = [...data.fields].sort((a, b) => (a.order || 0) - (b.order || 0));
   container.innerHTML = sortedFields
@@ -326,14 +377,24 @@ function renderPDUFields({ response }) {
 
 function renderCircuitTable(config, { response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    console.warn('[PDU] renderCircuitTable: data is null');
+    return;
+  }
   const circuits = data.circuits || data;
   this.updateTable(config.selector, circuits);
 }
 
 function renderPowerChart(config, { response }) {
   const { data } = response;
-  if (!data) return;
+  if (!data) {
+    console.warn('[PDU] renderPowerChart: data is null');
+    return;
+  }
+  if (!data.fields || !data[config.valuesKey]) {
+    console.warn('[PDU] renderPowerChart: chart data is incomplete');
+    return;
+  }
   const option = config.optionBuilder(config, data);
   this.updateChart('.chart-container', option);
 }
