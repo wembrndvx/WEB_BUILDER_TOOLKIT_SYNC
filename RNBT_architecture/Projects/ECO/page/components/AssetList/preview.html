@@ -117,65 +117,182 @@
         </div>
     </div>
 
-    <!-- API Client (Asset API v1) -->
+    <!-- Mock Data & API -->
     <script>
         // ======================
-        // API Configuration (Asset API v1)
+        // MOCK DATA (서버 없이 프리뷰 동작)
         // ======================
-        const API_BASE = 'http://localhost:4004/api/v1';
+
+        // Mock Asset 목록 - 트리 구조를 위한 계층적 데이터
+        const mockAssets = [
+            // Root: Data Center
+            { assetKey: 'DC-001', name: 'Data Center', assetType: 'FACILITY', statusType: 'ACTIVE' },
+
+            // Level 1: Zones
+            { assetKey: 'ZONE-A', name: 'Zone A', assetType: 'ZONE', statusType: 'ACTIVE' },
+            { assetKey: 'ZONE-B', name: 'Zone B', assetType: 'ZONE', statusType: 'WARNING' },
+            { assetKey: 'ZONE-C', name: 'Zone C', assetType: 'ZONE', statusType: 'CRITICAL' },
+
+            // Level 2: Equipment in Zone A
+            { assetKey: 'UPS-A01', name: 'UPS-A01', assetType: 'UPS', statusType: 'ACTIVE' },
+            { assetKey: 'PDU-A01', name: 'PDU-A01', assetType: 'PDU', statusType: 'ACTIVE' },
+            { assetKey: 'CRAC-A01', name: 'CRAC-A01', assetType: 'CRAC', statusType: 'ACTIVE' },
+            { assetKey: 'SENSOR-A01', name: 'Sensor-A01', assetType: 'SENSOR', statusType: 'ACTIVE' },
+
+            // Level 2: Equipment in Zone B
+            { assetKey: 'UPS-B01', name: 'UPS-B01', assetType: 'UPS', statusType: 'WARNING' },
+            { assetKey: 'PDU-B01', name: 'PDU-B01', assetType: 'PDU', statusType: 'ACTIVE' },
+            { assetKey: 'CRAC-B01', name: 'CRAC-B01', assetType: 'CRAC', statusType: 'WARNING' },
+            { assetKey: 'SENSOR-B01', name: 'Sensor-B01', assetType: 'SENSOR', statusType: 'WARNING' },
+
+            // Level 2: Equipment in Zone C
+            { assetKey: 'UPS-C01', name: 'UPS-C01', assetType: 'UPS', statusType: 'CRITICAL' },
+            { assetKey: 'PDU-C01', name: 'PDU-C01', assetType: 'PDU', statusType: 'CRITICAL' },
+            { assetKey: 'CRAC-C01', name: 'CRAC-C01', assetType: 'CRAC', statusType: 'CRITICAL' },
+            { assetKey: 'SENSOR-C01', name: 'Sensor-C01', assetType: 'SENSOR', statusType: 'CRITICAL' },
+        ];
+
+        // Mock Relation 목록 - 부모-자식 관계 (fromAssetKey = 자식, toAssetKey = 부모)
+        const mockRelations = [
+            // Zones → Data Center
+            { fromAssetKey: 'ZONE-A', toAssetKey: 'DC-001' },
+            { fromAssetKey: 'ZONE-B', toAssetKey: 'DC-001' },
+            { fromAssetKey: 'ZONE-C', toAssetKey: 'DC-001' },
+
+            // Equipment → Zone A
+            { fromAssetKey: 'UPS-A01', toAssetKey: 'ZONE-A' },
+            { fromAssetKey: 'PDU-A01', toAssetKey: 'ZONE-A' },
+            { fromAssetKey: 'CRAC-A01', toAssetKey: 'ZONE-A' },
+            { fromAssetKey: 'SENSOR-A01', toAssetKey: 'ZONE-A' },
+
+            // Equipment → Zone B
+            { fromAssetKey: 'UPS-B01', toAssetKey: 'ZONE-B' },
+            { fromAssetKey: 'PDU-B01', toAssetKey: 'ZONE-B' },
+            { fromAssetKey: 'CRAC-B01', toAssetKey: 'ZONE-B' },
+            { fromAssetKey: 'SENSOR-B01', toAssetKey: 'ZONE-B' },
+
+            // Equipment → Zone C
+            { fromAssetKey: 'UPS-C01', toAssetKey: 'ZONE-C' },
+            { fromAssetKey: 'PDU-C01', toAssetKey: 'ZONE-C' },
+            { fromAssetKey: 'CRAC-C01', toAssetKey: 'ZONE-C' },
+            { fromAssetKey: 'SENSOR-C01', toAssetKey: 'ZONE-C' },
+        ];
+
+        // Mock AssetDetailUnified - 통합 API 응답 구조 (assetKey별)
+        const mockAssetDetails = {
+            'UPS-A01': {
+                asset: { name: 'UPS-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
+                properties: [
+                    { label: 'Load', value: '45%', helpText: 'Current load percentage', displayOrder: 1 },
+                    { label: 'Battery', value: '100%', helpText: 'Battery charge level', displayOrder: 2 },
+                    { label: 'Input', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '120min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
+                ]
+            },
+            'UPS-B01': {
+                asset: { name: 'UPS-B01', locationLabel: 'Zone-B', statusType: 'WARNING' },
+                properties: [
+                    { label: 'Load', value: '78%', helpText: 'Current load - HIGH', displayOrder: 1 },
+                    { label: 'Battery', value: '65%', helpText: 'Battery charge level', displayOrder: 2 },
+                    { label: 'Input', value: '218V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '45min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Online', helpText: 'Operating mode', displayOrder: 6 }
+                ]
+            },
+            'UPS-C01': {
+                asset: { name: 'UPS-C01', locationLabel: 'Zone-C', statusType: 'CRITICAL' },
+                properties: [
+                    { label: 'Load', value: '95%', helpText: 'Current load - CRITICAL', displayOrder: 1 },
+                    { label: 'Battery', value: '15%', helpText: 'Battery LOW', displayOrder: 2 },
+                    { label: 'Input', value: '0V', helpText: 'Power Failure', displayOrder: 3 },
+                    { label: 'Output', value: '220V', helpText: 'Output voltage', displayOrder: 4 },
+                    { label: 'Runtime', value: '8min', helpText: 'Estimated runtime', displayOrder: 5 },
+                    { label: 'Mode', value: 'Battery', helpText: 'Operating mode', displayOrder: 6 }
+                ]
+            },
+            'PDU-A01': {
+                asset: { name: 'PDU-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
+                properties: [
+                    { label: 'Power', value: '45.2kW', helpText: 'Total power consumption', displayOrder: 1 },
+                    { label: 'Current', value: '65.5A', helpText: 'Total current draw', displayOrder: 2 },
+                    { label: 'Voltage', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
+                    { label: 'Active', value: '18/24', helpText: 'Active circuits', displayOrder: 4 },
+                    { label: 'PF', value: '0.95', helpText: 'Power factor', displayOrder: 5 }
+                ]
+            },
+            'CRAC-A01': {
+                asset: { name: 'CRAC-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
+                properties: [
+                    { label: 'Supply Temp', value: '18.2°C', helpText: 'Supply air temperature', displayOrder: 1 },
+                    { label: 'Return Temp', value: '24.5°C', helpText: 'Return air temperature', displayOrder: 2 },
+                    { label: 'Humidity', value: '48%', helpText: 'Relative humidity', displayOrder: 3 },
+                    { label: 'Fan Speed', value: '75%', helpText: 'Fan speed percentage', displayOrder: 4 },
+                    { label: 'Setpoint', value: '18.0°C', helpText: 'Temperature setpoint', displayOrder: 5 },
+                    { label: 'Mode', value: 'Cooling', helpText: 'Operating mode', displayOrder: 6 }
+                ]
+            },
+            'SENSOR-A01': {
+                asset: { name: 'Sensor-A01', locationLabel: 'Zone-A', statusType: 'ACTIVE' },
+                properties: [
+                    { label: 'Temperature', value: '24.5°C', helpText: 'Current temperature', displayOrder: 1 },
+                    { label: 'Humidity', value: '48%', helpText: 'Current humidity', displayOrder: 2 }
+                ]
+            }
+        };
+
+        // 기본 properties 생성 (상세 데이터가 없는 자산용)
+        function getDefaultProperties(asset) {
+            return {
+                asset: { name: asset.name, locationLabel: 'Unknown', statusType: asset.statusType },
+                properties: [
+                    { label: 'Asset Key', value: asset.assetKey, helpText: 'Unique identifier', displayOrder: 1 },
+                    { label: 'Type', value: asset.assetType, helpText: 'Asset type', displayOrder: 2 },
+                    { label: 'Status', value: asset.statusType, helpText: 'Current status', displayOrder: 3 }
+                ]
+            };
+        }
+
+        // ======================
+        // MOCK API Functions
+        // ======================
 
         /**
-         * POST /api/v1/ast/l - 자산 전체 목록
+         * Mock: POST /api/v1/ast/l - 자산 전체 목록
          */
         async function fetchAssetList() {
-            try {
-                const res = await fetch(`${API_BASE}/ast/l`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                const json = await res.json();
-                return { response: json };
-            } catch (error) {
-                console.error('[API] fetchAssetList error:', error);
-                return { response: { data: [] } };
-            }
+            console.log('[Mock API] fetchAssetList');
+            return { response: { data: mockAssets } };
         }
 
         /**
-         * POST /api/v1/rel/l - 관계 전체 목록
+         * Mock: POST /api/v1/rel/l - 관계 전체 목록
          */
         async function fetchRelationList() {
-            try {
-                const res = await fetch(`${API_BASE}/rel/l`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                const json = await res.json();
-                return { response: json };
-            } catch (error) {
-                console.error('[API] fetchRelationList error:', error);
-                return { response: { data: [] } };
-            }
+            console.log('[Mock API] fetchRelationList');
+            return { response: { data: mockRelations } };
         }
 
         /**
-         * POST /api/v1/ast/g - 자산 상세 조회
+         * Mock: POST /api/v1/ast/gx - 자산 통합 상세 조회 (assetDetailUnified)
          */
-        async function fetchAssetDetail(assetKey) {
-            try {
-                const res = await fetch(`${API_BASE}/ast/g`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ assetKey })
-                });
-                const json = await res.json();
-                return { response: json };
-            } catch (error) {
-                console.error('[API] fetchAssetDetail error:', error);
-                return { response: { data: null } };
+        async function fetchAssetDetailUnified(assetKey) {
+            console.log('[Mock API] fetchAssetDetailUnified:', assetKey);
+
+            // 상세 데이터가 있으면 반환
+            if (mockAssetDetails[assetKey]) {
+                return { response: { data: mockAssetDetails[assetKey] } };
             }
+
+            // 없으면 기본 데이터 생성
+            const asset = mockAssets.find(a => a.assetKey === assetKey);
+            if (asset) {
+                return { response: { data: getDefaultProperties(asset) } };
+            }
+
+            return { response: { data: null } };
         }
 
         // ======================
@@ -522,9 +639,29 @@
                 ]
             });
 
-            tableInstance.on('rowClick', (e, row) => {
+            tableInstance.on('rowClick', async (e, row) => {
                 const asset = row.getData();
-                showModal(asset);
+                const { assetKey } = asset;
+
+                // Modal 열기 (로딩 상태) - register.js와 동일
+                showModal({ asset, loading: true });
+
+                // assetDetailUnified API 호출 (/api/v1/ast/gx)
+                try {
+                    console.log(`[AssetList] Fetching assetDetailUnified for: ${assetKey}`);
+                    const { response } = await fetchAssetDetailUnified(assetKey);
+                    const data = response?.data;
+
+                    if (data && data.asset) {
+                        console.log(`[AssetList] Asset detail (unified):`, data);
+                        showModal({ asset: data.asset, properties: data.properties || [] });
+                    } else {
+                        showModal({ asset, error: true });
+                    }
+                } catch (error) {
+                    console.error(`[AssetList] Failed to fetch assetDetailUnified for ${assetKey}:`, error);
+                    showModal({ asset, error: true });
+                }
             });
         }
 
@@ -532,13 +669,17 @@
         // MODAL
         // ==================
 
-        function showModal(asset) {
+        /**
+         * 모달 표시 - register.js의 showModal과 동일한 구조
+         * @param {{ asset, properties?, loading?, error? }} params
+         */
+        function showModal({ asset, properties, loading, error }) {
             const modal = panel.querySelector('.asset-modal');
             if (!modal) return;
 
             const { assetKey, name, assetType, statusType } = asset;
 
-            // 헤더 업데이트
+            // 헤더 업데이트 (register.js와 동일)
             modal.querySelector('.modal-title').textContent = name || assetKey;
             modal.querySelector('.modal-subtitle').textContent = `${assetType} · ${assetKey}`;
             const statusEl = modal.querySelector('.modal-status');
@@ -547,25 +688,10 @@
 
             // 바디 업데이트
             const grid = modal.querySelector('.modal-info-grid');
-            grid.innerHTML = '<div class="modal-loading"></div>';
+            renderModalBody(grid, { loading, error, properties });
 
             // Modal 표시
             modal.hidden = false;
-
-            // assetDetail API 호출
-            fetchAssetDetail(assetKey).then(({ response }) => {
-                const data = response?.data;
-                if (data) {
-                    grid.innerHTML = renderAssetDetailGrid(data);
-                } else {
-                    grid.innerHTML = `
-                        <div class="modal-no-api wide">
-                            <div class="modal-no-api-icon">⚠️</div>
-                            <div class="modal-no-api-text">Failed to load data</div>
-                        </div>
-                    `;
-                }
-            });
 
             // 닫기 이벤트
             modal.onclick = (e) => {
@@ -575,23 +701,45 @@
             };
         }
 
-        function renderAssetDetailGrid(data) {
-            const fields = [
-                { key: 'assetKey', label: 'Asset Key' },
-                { key: 'assetType', label: 'Type' },
-                { key: 'assetCategoryType', label: 'Category' },
-                { key: 'serviceType', label: 'Service' },
-                { key: 'serialNumber', label: 'Serial No.' },
-                { key: 'locationLabel', label: 'Location' },
-                { key: 'installDate', label: 'Install Date' },
-                { key: 'description', label: 'Description' },
-            ];
+        /**
+         * 모달 바디 렌더링 - register.js의 renderModalBody와 동일
+         */
+        function renderModalBody(grid, { loading, error, properties }) {
+            if (loading) {
+                grid.innerHTML = '<div class="modal-loading"></div>';
+                return;
+            }
 
-            return fields
-                .map(({ key, label }) => {
-                    const value = data[key];
+            if (error) {
+                grid.innerHTML = `
+                    <div class="modal-no-api wide">
+                        <div class="modal-no-api-icon">⚠️</div>
+                        <div class="modal-no-api-text">Failed to load data</div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (properties && properties.length > 0) {
+                grid.innerHTML = renderPropertiesGrid(properties);
+            } else {
+                grid.innerHTML = `
+                    <div class="modal-no-api wide">
+                        <div class="modal-no-api-text">No properties available</div>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * 통합 API properties[] 배열을 HTML 그리드로 변환 - register.js와 동일
+         */
+        function renderPropertiesGrid(properties) {
+            const sortedProperties = [...properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+            return sortedProperties
+                .map(({ label, value, helpText }) => {
                     return `
-                        <div class="modal-info-item">
+                        <div class="modal-info-item" title="${helpText || ''}">
                             <div class="modal-info-label">${label}</div>
                             <div class="modal-info-value">${value ?? '-'}</div>
                         </div>
