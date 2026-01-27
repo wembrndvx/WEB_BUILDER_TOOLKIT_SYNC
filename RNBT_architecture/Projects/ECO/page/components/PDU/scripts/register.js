@@ -42,10 +42,9 @@ function initComponent() {
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
-  // 현재 활성화된 데이터셋 (기본 정보만)
+  // 현재 활성화된 데이터셋 (통합 API 사용)
   this.datasetInfo = [
-    { datasetName: 'assetDetail', render: ['renderBaseInfo'] },  // Asset API v1 - 자산 기본 정보
-    // { datasetName: 'pdu', render: ['renderPDUFields'] },        // PDU 상세 필드 (추후 활성화)
+    { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },  // 통합 API: asset + properties
     // { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
     // { datasetName: 'pduHistory', render: ['renderPowerChart'] },
   ];
@@ -71,17 +70,7 @@ function initComponent() {
   // 동적 필드 컨테이너 selector (Summary Bar)
   this.fieldsContainerSelector = '.summary-bar';
 
-  // fields-container에 카드로 표시할 Asset API 필드들
-  this.assetFieldsConfig = [
-    { key: 'assetType', label: 'Type' },
-    { key: 'assetCategoryType', label: 'Category' },
-    { key: 'serviceType', label: 'Service' },
-    { key: 'serialNumber', label: 'Serial No.' },
-    { key: 'assetModelKey', label: 'Model' },
-    { key: 'installDate', label: 'Install Date', transform: this.formatDate },
-    { key: 'ownerUserId', label: 'Owner' },
-    { key: 'description', label: 'Description' },
-  ];
+  // assetFieldsConfig 제거됨 - 통합 API의 properties 배열에서 동적으로 렌더링
 
   // ======================
   // 4. Table Config - Tabulator 옵션 빌더
@@ -132,8 +121,8 @@ function initComponent() {
   // ======================
   // 6. 렌더링 함수 바인딩
   // ======================
-  this.renderBaseInfo = renderBaseInfo.bind(this);      // 자산 기본 정보 (Asset API)
-  this.renderPDUFields = renderPDUFields.bind(this);    // PDU 상세 필드
+  this.renderAssetInfo = renderAssetInfo.bind(this);    // 자산 기본 정보 (통합 API - data.asset)
+  this.renderProperties = renderProperties.bind(this);  // 동적 프로퍼티 (통합 API - data.properties[])
   this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
   this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
   this.renderError = renderError.bind(this);            // 에러 상태 렌더링
@@ -205,7 +194,7 @@ function showDetail() {
     this.datasetInfo,
     fx.each(({ datasetName, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, assetId: this._defaultAssetKey }),
+        fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
         (response) => {
           // response가 없거나 response.response가 없는 경우 에러 표시
           if (!response || !response.response) {
@@ -297,21 +286,23 @@ function onPopupCreated(popupConfig, tableConfig) {
 // RENDER FUNCTIONS
 // ======================
 
-// 자산 기본 정보 렌더링 (Asset API v1 - assetDetail)
-function renderBaseInfo({ response }) {
+// 자산 기본 정보 렌더링 (통합 API - data.asset)
+function renderAssetInfo({ response }) {
   const { data } = response;
-  if (!data) {
+  if (!data || !data.asset) {
     renderError.call(this, '자산 데이터가 없습니다.');
     return;
   }
 
-  // 1. 헤더 영역 고정 필드 렌더링
+  const asset = data.asset;
+
+  // 헤더 영역 고정 필드 렌더링
   fx.go(
     this.baseInfoConfig,
     fx.each(({ key, selector, dataAttr, transform }) => {
       const el = this.popupQuery(selector);
       if (!el) return;
-      let value = data[key];
+      let value = asset[key];
       if (transform) value = transform(value);
       if (dataAttr) {
         el.dataset[dataAttr] = value;
@@ -320,16 +311,25 @@ function renderBaseInfo({ response }) {
       }
     })
   );
+}
 
-  // 2. summary-bar에 카드 형태로 Asset 필드들 렌더링
+// 동적 프로퍼티 렌더링 (통합 API - data.properties[])
+function renderProperties({ response }) {
+  const { data } = response;
+  if (!data || !data.properties) {
+    console.warn('[PDU] renderProperties: properties is null');
+    return;
+  }
+
   const container = this.popupQuery(this.fieldsContainerSelector);
-  if (!container || !this.assetFieldsConfig) return;
+  if (!container) return;
 
-  container.innerHTML = this.assetFieldsConfig
-    .map(({ key, label, transform }) => {
-      let value = data[key];
-      if (transform) value = transform(value);
-      return `<div class="summary-item">
+  // displayOrder로 정렬된 properties 배열을 카드로 렌더링
+  const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+
+  container.innerHTML = sortedProperties
+    .map(({ label, value, helpText }) => {
+      return `<div class="summary-item" title="${helpText || ''}">
         <span class="summary-label">${label}</span>
         <span class="summary-value">${value ?? '-'}</span>
       </div>`;
