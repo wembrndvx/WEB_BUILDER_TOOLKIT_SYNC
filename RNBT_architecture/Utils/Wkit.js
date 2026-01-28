@@ -323,7 +323,9 @@ function disposeMaterial(material) {
 /*Internal only: utils for general */
 function* combineIterators(iterables) {
   for (const iterable of iterables) {
-    yield* iterable;
+    if (iterable?.[Symbol.iterator]) {
+      yield* iterable;
+    }
   }
 }
 
