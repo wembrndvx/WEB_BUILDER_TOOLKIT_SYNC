@@ -736,6 +736,8 @@ disposeAllThreeResources(this);
 
 ## fx.go 기반 에러 핸들링 가이드
 
+> **fx.js 출처:** [indongyoo/functional-javascript-01](https://github.com/indongyoo/functional-javascript-01)
+
 ### 목적
 
 이 문서는 fx.go / reduce 기반 파이프라인에서 에러가 어떻게 전파되고, 어디에서 처리해야 하는지를 명확히 정의한다.

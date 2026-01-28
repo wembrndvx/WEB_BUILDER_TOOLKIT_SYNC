@@ -2,6 +2,8 @@
 
 함수형 프로그래밍 유틸리티. 지연 평가(Lazy Evaluation)와 Promise 지원.
 
+> **출처:** [indongyoo/functional-javascript-01](https://github.com/indongyoo/functional-javascript-01)
+
 ---
 
 ## 핵심 함수
