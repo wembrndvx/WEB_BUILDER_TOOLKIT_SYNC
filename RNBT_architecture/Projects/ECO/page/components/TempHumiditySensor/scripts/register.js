@@ -333,18 +333,14 @@ function renderMetrics({ response }) {
 function renderProperties({ response }) {
   const { data } = response;
   const container = this.popupQuery(this.propertiesContainerSelector);
-  const section = this.popupQuery(this.propertiesSectionSelector);
 
   if (!container) return;
 
-  // properties가 없거나 빈 배열인 경우 섹션 숨김
+  // properties가 없거나 빈 배열인 경우 empty-state 표시
   if (!data?.properties || data.properties.length === 0) {
-    if (section) section.classList.add('hidden');
+    container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
     return;
   }
-
-  // 섹션 표시
-  if (section) section.classList.remove('hidden');
 
   // displayOrder로 정렬
   const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
