@@ -469,6 +469,8 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
+            const BASE_URL = 'http://10.23.128.140:8811';
+
             // register.js와 동일한 구조 (통합 API)
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
@@ -578,7 +580,7 @@
                 this.datasetInfo,
                 fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
                         (response) => {
                             // response가 없거나 response.response가 없는 경우 에러 표시
                             if (!response || !response.response) {

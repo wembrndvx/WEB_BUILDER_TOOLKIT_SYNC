@@ -15,6 +15,8 @@
 
 const { each } = fx;
 
+const BASE_URL = 'http://10.23.128.140:8811';
+
 // ======================
 // DATA MAPPINGS (Asset API v1)
 // ======================
@@ -24,7 +26,7 @@ this.globalDataMappings = [
         topic: 'assetList',
         datasetInfo: {
             datasetName: 'assetList',
-            param: {}
+            param: { baseUrl: BASE_URL }
         },
         refreshInterval: null  // 수동 갱신만
     },
@@ -33,6 +35,7 @@ this.globalDataMappings = [
         datasetInfo: {
             datasetName: 'relationList',
             param: {
+                baseUrl: BASE_URL,
                 relationType: 'LOCATED_IN'  // 트리 구조용 위치 관계만
             }
         },

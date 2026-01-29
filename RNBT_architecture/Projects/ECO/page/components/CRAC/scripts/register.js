@@ -9,6 +9,8 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+const BASE_URL = 'http://10.23.128.140:8811';
+
 // ======================
 // TEMPLATE HELPER
 // ======================
@@ -144,7 +146,7 @@ function showDetail() {
     this.datasetInfo,
     fx.each(({ datasetName, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+        fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
         (response) => {
           // response가 없거나 response.response가 없는 경우 에러 표시
           if (!response || !response.response) {

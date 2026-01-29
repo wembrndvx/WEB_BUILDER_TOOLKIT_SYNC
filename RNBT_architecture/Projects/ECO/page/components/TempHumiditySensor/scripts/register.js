@@ -14,6 +14,8 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+const BASE_URL = 'http://10.23.128.140:8811';
+
 // ======================
 // TEMPLATE HELPER
 // ======================
@@ -191,7 +193,7 @@ function showDetail() {
     this.datasetInfo,
     fx.each(({ datasetName, render }) =>
       fx.go(
-        fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+        fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
         (response) => {
           if (!response || !response.response) {
             this.renderError('데이터를 불러올 수 없습니다.');
@@ -229,7 +231,7 @@ function hideDetail() {
  */
 function refreshMetrics() {
   fx.go(
-    fetchData(this.page, 'metricLatest', { assetKey: this._defaultAssetKey }),
+    fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
     (response) => {
       if (!response || !response.response) return;
       const data = response.response.data;

@@ -17,6 +17,8 @@ const { subscribe } = GlobalDataPublisher;
 const { bindEvents, fetchData } = Wkit;
 const { each, go, map, filter } = fx;
 
+const BASE_URL = 'http://10.23.128.140:8811';
+
 initComponent.call(this);
 
 function initComponent() {
@@ -511,6 +513,7 @@ async function toggleNode(nodeId) {
   try {
     // Relation API로 자식 관계 조회 (toAssetKey = 현재 노드)
     const relResult = await fetchData(this.page, 'relationChildren', {
+      baseUrl: BASE_URL,
       toAssetKey: nodeId,
       relationType: 'LOCATED_IN',
     });
@@ -715,7 +718,7 @@ async function onRowClick(asset) {
   // assetDetailUnified API 호출 (통합 API: asset + properties)
   try {
     console.log(`[AssetList] Fetching assetDetailUnified for: ${assetKey}`);
-    const result = await fetchData(this.page, 'assetDetailUnified', { assetKey, locale: 'ko' });
+    const result = await fetchData(this.page, 'assetDetailUnified', { baseUrl: BASE_URL, assetKey, locale: 'ko' });
     const data = result?.response?.data;
 
     if (data && data.asset) {

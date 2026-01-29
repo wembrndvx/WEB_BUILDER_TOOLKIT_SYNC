@@ -409,6 +409,8 @@
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
+            const BASE_URL = 'http://10.23.128.140:8811';
+
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
 
             // 데이터셋 정의
@@ -587,7 +589,7 @@
                 this.datasetInfo,
                 fx.each(({ datasetName, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
                         (response) => {
                             if (!response || !response.response) {
                                 this.renderError('데이터를 불러올 수 없습니다.');
@@ -620,7 +622,7 @@
 
         function refreshMetricsOnly() {
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', { assetKey: this._defaultAssetKey }),
+                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;
