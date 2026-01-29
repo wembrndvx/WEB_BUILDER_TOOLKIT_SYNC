@@ -14,7 +14,7 @@
       "description": "App information API (Master/Header) - static",
       "dataset_id": "app-info-001",
       "name": "appInfoApi",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/app-info\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/app-info\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -29,7 +29,7 @@
       "description": "Filter options API (Master/Sidebar) - static",
       "dataset_id": "filters-001",
       "name": "filtersApi",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/filters\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/filters\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -65,7 +65,7 @@
       "description": "Task list API (Page/TaskList) - refresh every 10s",
       "dataset_id": "tasks-001",
       "name": "tasksApi",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/tasks?status=#{status}&priority=#{priority}&type=#{type}&assignee=#{assignee}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/tasks?status=#{status}&priority=#{priority}&type=#{type}&assignee=#{assignee}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -80,7 +80,7 @@
       "description": "Status summary API (Page/StatusChart) - refresh every 15s",
       "dataset_id": "status-001",
       "name": "statusApi",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -101,7 +101,7 @@
       "description": "Activity log API (Page/ActivityLog) - refresh every 8s",
       "dataset_id": "activity-001",
       "name": "activityApi",
-      "rest_api": "{\"url\":\"http://10.23.128.125:4005/api/activity?limit=#{limit}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://10.23.128.125:4004/api/activity?limit=#{limit}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []

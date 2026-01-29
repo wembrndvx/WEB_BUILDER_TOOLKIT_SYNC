@@ -8,14 +8,14 @@
  * - GET /api/status      : Status summary (PAGE)
  * - GET /api/activity    : Activity log (PAGE)
  *
- * Port: 4005
+ * Port: 4004
  */
 
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = 4005;
+const PORT = 4004;
 
 app.use(cors());
 app.use(express.json());
