@@ -14,7 +14,7 @@ const { each } = fx;
 // DATA MAPPINGS
 // ======================
 
-this.globalDataMappings = [
+this.masterDataMappings = [
     {
         topic: 'userInfo',
         datasetInfo: {
@@ -36,7 +36,7 @@ this.globalDataMappings = [
 // ======================
 
 fx.go(
-    this.globalDataMappings,
+    this.masterDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => {
         GlobalDataPublisher.fetchAndPublish(topic, this, {});

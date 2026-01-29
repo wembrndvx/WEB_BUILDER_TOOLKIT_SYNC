@@ -16,17 +16,17 @@ const { each } = fx;
 // CLEANUP
 // ======================
 
-if (this.eventBusHandlers) {
-    offEventBusHandlers(this.eventBusHandlers);
-    this.eventBusHandlers = null;
+if (this.masterEventBusHandlers) {
+    offEventBusHandlers(this.masterEventBusHandlers);
+    this.masterEventBusHandlers = null;
 }
 
-if (this.globalDataMappings) {
+if (this.masterDataMappings) {
     fx.go(
-        this.globalDataMappings,
+        this.masterDataMappings,
         each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
     );
-    this.globalDataMappings = null;
+    this.masterDataMappings = null;
 }
 
 console.log('[Master] before_unload - Cleanup completed');

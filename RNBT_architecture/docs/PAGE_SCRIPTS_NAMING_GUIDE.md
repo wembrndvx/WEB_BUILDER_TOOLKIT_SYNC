@@ -125,10 +125,12 @@ if (this.pageDataMappings) {
 
 ## 네이밍 규칙
 
-| 스코프 | eventBusHandlers | globalDataMappings | currentParams | refreshIntervals |
-|--------|------------------|--------------------|---------------|------------------|
-| Master | `masterEventBusHandlers` | `masterDataMappings` | `masterParams` | `masterIntervals` |
-| Page   | `pageEventBusHandlers`   | `pageDataMappings`   | `pageParams`   | `pageIntervals`   |
+| 스코프 | eventBusHandlers | globalDataMappings |
+|--------|------------------|--------------------|
+| Master | `masterEventBusHandlers` | `masterDataMappings` |
+| Page   | `pageEventBusHandlers`   | `pageDataMappings`   |
+
+`currentParams`, `refreshIntervals` 등은 Master에서 사용하지 않으므로 이름 충돌이 없다. 분리 불필요.
 
 ### 원칙
 

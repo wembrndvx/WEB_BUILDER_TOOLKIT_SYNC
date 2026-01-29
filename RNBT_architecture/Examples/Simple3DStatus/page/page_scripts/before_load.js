@@ -14,7 +14,7 @@ const { onEventBusHandlers, initThreeRaycasting, fetchData, withSelector } = Wki
 // EVENT BUS HANDLERS (3D 포함)
 // ======================
 
-this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
+this.pageEventBusHandlers = {
     /**
      * 3D 객체 클릭 이벤트 핸들러
      *
@@ -35,9 +35,9 @@ this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
         )
 
     }
-});
+};
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 
 // ======================
 // 3D RAYCASTING SETUP

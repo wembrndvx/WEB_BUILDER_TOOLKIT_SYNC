@@ -15,8 +15,7 @@ const { each } = fx;
 // DATA MAPPINGS
 // ======================
 
-this.globalDataMappings = [
-    ...(this.globalDataMappings || []),
+this.pageDataMappings = [
     {
         topic: 'stats',
         datasetInfo: {
@@ -48,7 +47,7 @@ this.globalDataMappings = [
 // ======================
 
 fx.go(
-    this.globalDataMappings,
+    this.pageDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => {
         const params = this.currentParams?.[topic] || {};
@@ -65,7 +64,7 @@ this.refreshIntervals = {};
 
 this.startAllIntervals = () => {
     fx.go(
-        this.globalDataMappings,
+        this.pageDataMappings,
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
                 this.refreshIntervals[topic] = setInterval(() => {

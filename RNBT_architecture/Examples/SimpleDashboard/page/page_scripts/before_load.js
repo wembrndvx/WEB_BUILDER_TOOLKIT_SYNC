@@ -23,7 +23,7 @@ this.currentParams = {
 // EVENT BUS HANDLERS
 // ======================
 
-this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
+this.pageEventBusHandlers = {
     /**
      * StatsCards 카드 클릭 이벤트
      */
@@ -71,8 +71,8 @@ this.eventBusHandlers = Object.assign(this.eventBusHandlers || {}, {
             this.currentParams.chartData
         );
     }
-});
+};
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.pageEventBusHandlers);
 
 console.log('[Page] before_load - Event handlers registered');

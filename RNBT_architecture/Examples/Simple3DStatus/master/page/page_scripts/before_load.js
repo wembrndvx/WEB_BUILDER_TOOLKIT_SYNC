@@ -14,7 +14,7 @@ const { onEventBusHandlers } = Wkit;
 // EVENT BUS HANDLERS
 // ======================
 
-this.eventBusHandlers = {
+this.masterEventBusHandlers = {
     /**
      * 사용자 메뉴 클릭 이벤트
      */
@@ -34,6 +34,6 @@ this.eventBusHandlers = {
     }
 };
 
-onEventBusHandlers(this.eventBusHandlers);
+onEventBusHandlers(this.masterEventBusHandlers);
 
 console.log('[Master] before_load - Event handlers registered');
