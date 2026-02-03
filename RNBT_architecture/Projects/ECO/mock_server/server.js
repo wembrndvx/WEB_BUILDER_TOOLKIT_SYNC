@@ -652,6 +652,137 @@ app.post('/api/v1/ast/gx', (req, res) => {
 });
 
 // ======================
+// VENDOR & MODEL MOCK DATA
+// ======================
+
+const VENDOR_DATA = [
+    { id: 1, assetVendorKey: 'VENDOR_DELL_001', name: 'Dell', code: 'DELL', country: 'USA', extra: '{"website":"https://www.dell.com"}' },
+    { id: 2, assetVendorKey: 'VENDOR_SCHNEIDER_001', name: 'Schneider Electric', code: 'SCHNEIDER', country: 'France', extra: '{"website":"https://www.se.com"}' },
+    { id: 3, assetVendorKey: 'VENDOR_EATON_001', name: 'Eaton', code: 'EATON', country: 'Ireland', extra: '{"website":"https://www.eaton.com"}' },
+    { id: 4, assetVendorKey: 'VENDOR_EMERSON_001', name: 'Emerson', code: 'EMERSON', country: 'USA', extra: '{"website":"https://www.emerson.com"}' },
+    { id: 5, assetVendorKey: 'VENDOR_DAIKIN_001', name: 'Daikin', code: 'DAIKIN', country: 'Japan', extra: '{"website":"https://www.daikin.com"}' },
+    { id: 6, assetVendorKey: 'VENDOR_LS_001', name: 'LS Electric', code: 'LS', country: 'Korea', extra: '{"website":"https://www.lselectric.co.kr"}' },
+    { id: 7, assetVendorKey: 'VENDOR_HONEYWELL_001', name: 'Honeywell', code: 'HONEYWELL', country: 'USA', extra: '{"website":"https://www.honeywell.com"}' },
+    { id: 8, assetVendorKey: 'VENDOR_SIEMENS_001', name: 'Siemens', code: 'SIEMENS', country: 'Germany', extra: '{"website":"https://www.siemens.com"}' },
+].map(v => ({ ...v, createdAt: '2026-01-15T09:00:00Z', updatedAt: new Date().toISOString() }));
+
+const MODEL_DATA = [
+    { id: 1, assetModelKey: 'MODEL_DELL_R750_001', assetVendorKey: 'VENDOR_DELL_001', vendorName: 'Dell', name: 'PowerEdge R750', code: 'R750', categoryCode: 'SERVER', specJson: '{"cpu":"Intel Xeon","ram":"128GB"}' },
+    { id: 2, assetModelKey: 'MODEL_SCHNEIDER_GALAXY_001', assetVendorKey: 'VENDOR_SCHNEIDER_001', vendorName: 'Schneider Electric', name: 'Galaxy VX 500kVA', code: 'GALAXY_VX_500', categoryCode: 'UPS', specJson: '{"capacity_kva":500,"phase":"3P"}' },
+    { id: 3, assetModelKey: 'MODEL_EATON_93PM_001', assetVendorKey: 'VENDOR_EATON_001', vendorName: 'Eaton', name: '93PM 200kVA', code: '93PM_200', categoryCode: 'UPS', specJson: '{"capacity_kva":200,"phase":"3P"}' },
+    { id: 4, assetModelKey: 'MODEL_SCHNEIDER_PDU_001', assetVendorKey: 'VENDOR_SCHNEIDER_001', vendorName: 'Schneider Electric', name: 'Rack PDU 9000', code: 'RPDU_9000', categoryCode: 'PDU', specJson: '{"rated_a":32,"outlets":24}' },
+    { id: 5, assetModelKey: 'MODEL_EMERSON_LIEBERT_001', assetVendorKey: 'VENDOR_EMERSON_001', vendorName: 'Emerson', name: 'Liebert CRV 35kW', code: 'CRV_35', categoryCode: 'CRAC', specJson: '{"cooling_kw":35,"airflow_cfm":5500}' },
+    { id: 6, assetModelKey: 'MODEL_DAIKIN_SURROUND_001', assetVendorKey: 'VENDOR_DAIKIN_001', vendorName: 'Daikin', name: 'Surround Handler 25kW', code: 'SH_25', categoryCode: 'CRAC', specJson: '{"cooling_kw":25,"refrigerant":"R-410A"}' },
+    { id: 7, assetModelKey: 'MODEL_HONEYWELL_TEMP_001', assetVendorKey: 'VENDOR_HONEYWELL_001', vendorName: 'Honeywell', name: 'C7110A Room Sensor', code: 'C7110A', categoryCode: 'SENSOR', specJson: '{"type":"temp_humidity","range":"-20~60C"}' },
+    { id: 8, assetModelKey: 'MODEL_LS_SWBD_001', assetVendorKey: 'VENDOR_LS_001', vendorName: 'LS Electric', name: 'SUSOL MCC Panel', code: 'SUSOL_MCC', categoryCode: 'SWBD', specJson: '{"rated_v":380,"rated_a":3200}' },
+    { id: 9, assetModelKey: 'MODEL_SIEMENS_ACCURA_001', assetVendorKey: 'VENDOR_SIEMENS_001', vendorName: 'Siemens', name: 'ACCURA 2350', code: 'ACCURA_2350', categoryCode: 'DIST', specJson: '{"type":"power_meter","protocol":"Modbus"}' },
+].map(m => ({ ...m, createdAt: '2026-01-15T09:00:00Z', updatedAt: new Date().toISOString() }));
+
+function filterAndSort(data, filter, sort) {
+    let result = [...data];
+    if (filter) {
+        Object.entries(filter).forEach(([key, value]) => {
+            if (!value) return;
+            if (key === 'q') {
+                const q = value.toLowerCase();
+                result = result.filter(item =>
+                    Object.values(item).some(v => typeof v === 'string' && v.toLowerCase().includes(q))
+                );
+            } else if (typeof value === 'string' && result.length > 0 && key in result[0]) {
+                result = result.filter(item =>
+                    typeof item[key] === 'string' && item[key].toLowerCase().includes(value.toLowerCase())
+                );
+            }
+        });
+    }
+    if (sort && sort.length > 0) {
+        const { field, direction } = sort[0];
+        result.sort((a, b) => {
+            const aVal = a[field] || '';
+            const bVal = b[field] || '';
+            return direction === 'ASC'
+                ? String(aVal).localeCompare(String(bVal))
+                : String(bVal).localeCompare(String(aVal));
+        });
+    }
+    return result;
+}
+
+// ======================
+// API ENDPOINTS - Vendor API v1
+// ======================
+
+/**
+ * POST /api/v1/vdr/la - 벤더 목록 조회 (페이징)
+ */
+app.post('/api/v1/vdr/la', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/vdr/la`);
+    const { page = 0, size = 20, filter = {}, sort = [] } = req.body;
+    const filtered = filterAndSort(VENDOR_DATA, filter, sort);
+    res.json(createPagedResponse(filtered, page, size, '/api/v1/vdr/la'));
+});
+
+/**
+ * POST /api/v1/vdr/l - 벤더 전체 목록 조회
+ */
+app.post('/api/v1/vdr/l', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/vdr/l`);
+    const { filter = {}, sort = [] } = req.body;
+    const filtered = filterAndSort(VENDOR_DATA, filter, sort);
+    res.json(createListResponse(filtered, '/api/v1/vdr/l'));
+});
+
+/**
+ * POST /api/v1/vdr/g - 벤더 단건 조회
+ */
+app.post('/api/v1/vdr/g', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/vdr/g`);
+    const { assetVendorKey } = req.body;
+    const vendor = VENDOR_DATA.find(v => v.assetVendorKey === assetVendorKey);
+    if (!vendor) {
+        return res.status(404).json(createErrorResponse('VENDOR_NOT_FOUND', `Vendor not found: ${assetVendorKey}`, '/api/v1/vdr/g'));
+    }
+    res.json(createSingleResponse(vendor, '/api/v1/vdr/g'));
+});
+
+// ======================
+// API ENDPOINTS - Model API v1
+// ======================
+
+/**
+ * POST /api/v1/mdl/la - 자산 모델 목록 조회 (페이징)
+ */
+app.post('/api/v1/mdl/la', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/mdl/la`);
+    const { page = 0, size = 20, filter = {}, sort = [] } = req.body;
+    const filtered = filterAndSort(MODEL_DATA, filter, sort);
+    res.json(createPagedResponse(filtered, page, size, '/api/v1/mdl/la'));
+});
+
+/**
+ * POST /api/v1/mdl/l - 자산 모델 전체 목록 조회
+ */
+app.post('/api/v1/mdl/l', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/mdl/l`);
+    const { filter = {}, sort = [] } = req.body;
+    const filtered = filterAndSort(MODEL_DATA, filter, sort);
+    res.json(createListResponse(filtered, '/api/v1/mdl/l'));
+});
+
+/**
+ * POST /api/v1/mdl/g - 자산 모델 단건 조회
+ */
+app.post('/api/v1/mdl/g', (req, res) => {
+    console.log(`[${new Date().toISOString()}] POST /api/v1/mdl/g`);
+    const { assetModelKey } = req.body;
+    const model = MODEL_DATA.find(m => m.assetModelKey === assetModelKey);
+    if (!model) {
+        return res.status(404).json(createErrorResponse('MODEL_NOT_FOUND', `Model not found: ${assetModelKey}`, '/api/v1/mdl/g'));
+    }
+    res.json(createSingleResponse(model, '/api/v1/mdl/g'));
+});
+
+// ======================
 // METRIC API v1 DATA
 // ======================
 
@@ -790,5 +921,12 @@ app.listen(PORT, () => {
     console.log(`  POST /api/v1/rel/la     - Relation list (paged)`);
     console.log(`  POST /api/v1/rel/g      - Relation single`);
     console.log(`  POST /api/v1/mh/gl      - Metric latest (per asset)`);
+    console.log(`  POST /api/v1/vdr/la     - Vendor list (paged)`);
+    console.log(`  POST /api/v1/vdr/l      - Vendor list (all)`);
+    console.log(`  POST /api/v1/vdr/g      - Vendor single`);
+    console.log(`  POST /api/v1/mdl/la     - Model list (paged)`);
+    console.log(`  POST /api/v1/mdl/l      - Model list (all)`);
+    console.log(`  POST /api/v1/mdl/g      - Model single`);
+    console.log(`\nMock Data: ${VENDOR_DATA.length} vendors, ${MODEL_DATA.length} models`);
     console.log(`\n`);
 });

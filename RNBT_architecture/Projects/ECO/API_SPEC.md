@@ -30,6 +30,22 @@ ECO 프로젝트는 Asset API v1만 사용합니다. 모든 API는 POST 메서�
 |-----|--------|------|
 | `/api/v1/mh/gl` | POST | 자산별 최신 메트릭 데이터 조회 |
 
+**Vendor API**
+
+| API | 메서드 | 설명 |
+|-----|--------|------|
+| `/api/v1/vdr/la` | POST | 벤더 목록 조회 (페이징) |
+| `/api/v1/vdr/l` | POST | 벤더 전체 목록 조회 |
+| `/api/v1/vdr/g` | POST | 벤더 단건 조회 |
+
+**Model API**
+
+| API | 메서드 | 설명 |
+|-----|--------|------|
+| `/api/v1/mdl/la` | POST | 자산 모델 목록 조회 (페이징) |
+| `/api/v1/mdl/l` | POST | 자산 모델 전체 목록 조회 |
+| `/api/v1/mdl/g` | POST | 자산 모델 단건 조회 |
+
 ---
 
 ## 1. 자산 전체 목록 조회
@@ -488,6 +504,353 @@ Content-Type: application/json
 
 ---
 
+## 9. 벤더 목록 조회 (페이징)
+
+### Request
+
+```
+POST /api/v1/vdr/la
+Content-Type: application/json
+```
+
+```json
+{
+  "page": 0,
+  "size": 20,
+  "sort": [{ "field": "createdAt", "direction": "DESC" }],
+  "filter": {
+    "code": "DELL",
+    "name": "Dell Technologies",
+    "country": "USA",
+    "q": "Dell"
+  }
+}
+```
+
+### Filter Options
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| code | string | 벤더 코드 |
+| name | string | 벤더 이름 |
+| country | string | 국가 |
+| q | string | 통합 검색 (코드, 이름, 국가) |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "assetVendorKey": "VENDOR_DELL_001",
+        "name": "Dell",
+        "code": "DELL",
+        "country": "USA",
+        "extra": "{\"website\":\"https://www.dell.com\"}",
+        "createdAt": "2026-02-03T00:40:37.389Z",
+        "updatedAt": "2026-02-03T00:40:37.389Z"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 0,
+    "totalPages": 0,
+    "first": true,
+    "last": true,
+    "empty": true
+  },
+  "error": null,
+  "timestamp": "2026-02-03T00:40:37.389Z",
+  "path": "/api/v1/vdr/la"
+}
+```
+
+---
+
+## 10. 벤더 전체 목록 조회
+
+### Request
+
+```
+POST /api/v1/vdr/l
+Content-Type: application/json
+```
+
+```json
+{
+  "sort": [{ "field": "createdAt", "direction": "DESC" }],
+  "filter": {
+    "code": "DELL",
+    "name": "Dell Technologies",
+    "country": "USA",
+    "q": "Dell"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "assetVendorKey": "VENDOR_DELL_001",
+      "name": "Dell",
+      "code": "DELL",
+      "country": "USA",
+      "extra": "{\"website\":\"https://www.dell.com\"}",
+      "createdAt": "2026-02-03T00:41:53.980Z",
+      "updatedAt": "2026-02-03T00:41:53.980Z"
+    }
+  ],
+  "error": null,
+  "timestamp": "2026-02-03T00:41:53.980Z",
+  "path": "/api/v1/vdr/l"
+}
+```
+
+---
+
+## 11. 벤더 단건 조회
+
+### Request
+
+```
+POST /api/v1/vdr/g
+Content-Type: application/json
+```
+
+```json
+{
+  "assetVendorKey": "VENDOR-001"
+}
+```
+
+### Request Parameters
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| assetVendorKey | string | O | 벤더 고유 키 |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "assetVendorKey": "VENDOR_DELL_001",
+    "name": "Dell",
+    "code": "DELL",
+    "country": "USA",
+    "extra": "{\"website\":\"https://www.dell.com\"}",
+    "createdAt": "2026-02-03T00:42:11.840Z",
+    "updatedAt": "2026-02-03T00:42:11.840Z"
+  },
+  "error": null,
+  "timestamp": "2026-02-03T00:42:11.840Z",
+  "path": "/api/v1/vdr/g"
+}
+```
+
+### Response Fields
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| assetVendorKey | string | 벤더 고유 키 |
+| name | string | 벤더 이름 |
+| code | string | 벤더 코드 |
+| country | string | 국가 |
+| extra | string | 추가 정보 (JSON 문자열) |
+| createdAt | string | 생성일시 (ISO 8601) |
+| updatedAt | string | 수정일시 (ISO 8601) |
+
+---
+
+## 12. 자산 모델 목록 조회 (페이징)
+
+### Request
+
+```
+POST /api/v1/mdl/la
+Content-Type: application/json
+```
+
+```json
+{
+  "page": 0,
+  "size": 20,
+  "sort": [{ "field": "createdAt", "direction": "DESC" }],
+  "filter": {
+    "assetVendorKey": "VENDOR_DELL_001",
+    "categoryCode": "SERVER",
+    "code": "R750",
+    "name": "PowerEdge",
+    "q": "Dell"
+  }
+}
+```
+
+### Filter Options
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| assetVendorKey | string | 벤더 키 |
+| categoryCode | string | 카테고리 코드 |
+| code | string | 모델 코드 |
+| name | string | 모델 이름 |
+| q | string | 통합 검색 |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "vendorName": "Dell",
+        "assetModelKey": "MODEL_DELL_R750_001",
+        "assetVendorKey": "VENDOR_DELL_001",
+        "name": "PowerEdge R750",
+        "code": "R750",
+        "categoryCode": "SERVER",
+        "specJson": "{\"cpu\":\"Intel Xeon\",\"ram\":\"128GB\"}",
+        "createdAt": "2026-02-03T00:44:04.615Z",
+        "updatedAt": "2026-02-03T00:44:04.615Z"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 0,
+    "totalPages": 0,
+    "first": true,
+    "last": true,
+    "empty": true
+  },
+  "error": null,
+  "timestamp": "2026-02-03T00:44:04.615Z",
+  "path": "/api/v1/mdl/la"
+}
+```
+
+---
+
+## 13. 자산 모델 전체 목록 조회
+
+### Request
+
+```
+POST /api/v1/mdl/l
+Content-Type: application/json
+```
+
+```json
+{
+  "sort": [{ "field": "createdAt", "direction": "DESC" }],
+  "filter": {
+    "assetVendorKey": "VENDOR_DELL_001",
+    "categoryCode": "SERVER",
+    "code": "R750",
+    "name": "PowerEdge",
+    "q": "Dell"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "vendorName": "Dell",
+      "assetModelKey": "MODEL_DELL_R750_001",
+      "assetVendorKey": "VENDOR_DELL_001",
+      "name": "PowerEdge R750",
+      "code": "R750",
+      "categoryCode": "SERVER",
+      "specJson": "{\"cpu\":\"Intel Xeon\",\"ram\":\"128GB\"}",
+      "createdAt": "2026-02-03T00:44:48.520Z",
+      "updatedAt": "2026-02-03T00:44:48.520Z"
+    }
+  ],
+  "error": null,
+  "timestamp": "2026-02-03T00:44:48.520Z",
+  "path": "/api/v1/mdl/l"
+}
+```
+
+---
+
+## 14. 자산 모델 단건 조회
+
+### Request
+
+```
+POST /api/v1/mdl/g
+Content-Type: application/json
+```
+
+```json
+{
+  "assetModelKey": "MODEL-001"
+}
+```
+
+### Request Parameters
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| assetModelKey | string | O | 모델 고유 키 |
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "vendorName": "Dell",
+    "assetModelKey": "MODEL_DELL_R750_001",
+    "assetVendorKey": "VENDOR_DELL_001",
+    "name": "PowerEdge R750",
+    "code": "R750",
+    "categoryCode": "SERVER",
+    "specJson": "{\"cpu\":\"Intel Xeon\",\"ram\":\"128GB\"}",
+    "createdAt": "2026-02-03T00:45:11.108Z",
+    "updatedAt": "2026-02-03T00:45:11.108Z"
+  },
+  "error": null,
+  "timestamp": "2026-02-03T00:45:11.108Z",
+  "path": "/api/v1/mdl/g"
+}
+```
+
+### Response Fields
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| assetModelKey | string | 모델 고유 키 |
+| assetVendorKey | string | 벤더 키 (FK) |
+| vendorName | string | 벤더 이름 (조인) |
+| name | string | 모델 이름 |
+| code | string | 모델 코드 |
+| categoryCode | string | 카테고리 코드 |
+| specJson | string | 스펙 정보 (JSON 문자열) |
+| createdAt | string | 생성일시 (ISO 8601) |
+| updatedAt | string | 수정일시 (ISO 8601) |
+
+---
+
 ## 컴포넌트 - API 매핑
 
 | 컴포넌트 | 사용 데이터셋 | API |
@@ -551,6 +914,12 @@ Available endpoints:
   POST /api/v1/rel/la     - Relation list (paged)
   POST /api/v1/rel/g      - Relation single
   POST /api/v1/mh/gl      - Metric latest (by asset)
+  POST /api/v1/vdr/la     - Vendor list (paged)
+  POST /api/v1/vdr/l      - Vendor list (all)
+  POST /api/v1/vdr/g      - Vendor single
+  POST /api/v1/mdl/la     - Model list (paged)
+  POST /api/v1/mdl/l      - Model list (all)
+  POST /api/v1/mdl/g      - Model single
 ```
 
 ---
@@ -563,3 +932,4 @@ Available endpoints:
 | 2026-01-26 | Asset API v1으로 전면 개편, 레거시 API 제거 |
 | 2026-01-27 | /api/v1/ast/gx (자산 상세 조회 통합 API) 문서 추가 |
 | 2026-01-28 | /api/v1/mh/gl (자산별 최신 메트릭 조회) API 추가 |
+| 2026-02-03 | /api/v1/vdr/* (자산 벤더 관리), /api/v1/mdl/* (자산 모델 관리) API 추가 |
