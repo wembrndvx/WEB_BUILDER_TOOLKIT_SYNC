@@ -32,10 +32,11 @@ function hexToRgba(hex, alpha) {
 // TAB CONFIG (탭별 메트릭 매핑)
 // ======================
 const TAB_CONFIG = {
-  voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',   unit: 'V',  color: '#3b82f6', scale: 1.0 },
-  current:   { metricCode: 'DIST.CURRENT_AVG_A',          label: '평균 전류',   unit: 'A',  color: '#f59e0b', scale: 1.0 },
-  power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',  label: '합계 전력',   unit: 'kW', color: '#8b5cf6', scale: 1.0 },
-  frequency: { metricCode: 'DIST.FREQUENCY_HZ',           label: '주파수',      unit: 'Hz', color: '#22c55e', scale: 1.0 },
+  voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',     unit: 'V',   color: '#3b82f6', scale: 1.0 },
+  current:   { metricCode: 'DIST.CURRENT_AVG_A',          label: '평균 전류',     unit: 'A',   color: '#f59e0b', scale: 1.0 },
+  power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',  label: '합계 전력',     unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
+  frequency: { metricCode: 'DIST.FREQUENCY_HZ',           label: '주파수',        unit: 'Hz',  color: '#22c55e', scale: 1.0 },
+  energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH',  label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
 };
 
 initComponent.call(this);
@@ -58,7 +59,7 @@ function initComponent() {
         assetKey: this._defaultAssetKey,
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000, // 24시간 (ms)
-        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ'],
+        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
         statsKeys: ['avg'],
       },
       render: ['renderTrendChart'],

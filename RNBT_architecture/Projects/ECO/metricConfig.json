@@ -338,6 +338,31 @@
     "interface": "PERF_UPS"
   },
 
+  "UPS.LOAD_PCT": {
+    "label": "부하율",
+    "description": "UPS 부하율",
+    "valueType": "NUMBER",
+    "unit": "%",
+    "scale": 1.0,
+    "interface": "PERF_UPS"
+  },
+  "UPS.BATT_PCT": {
+    "label": "배터리 사용률",
+    "description": "배터리 잔량 퍼센트",
+    "valueType": "NUMBER",
+    "unit": "%",
+    "scale": 1.0,
+    "interface": "PERF_UPS"
+  },
+  "UPS.STATUS_CODE": {
+    "label": "상태 코드",
+    "description": "UPS 운전 상태 코드",
+    "valueType": "NUMBER",
+    "unit": "",
+    "scale": 1.0,
+    "interface": "PERF_UPS"
+  },
+
   "UPS.INPUT_V_AVG": {
     "label": "입력전압(3상 평균)",
     "description": "AVG(UPS.INPUT_V_1, UPS.INPUT_V_2, UPS.INPUT_V_3)",

@@ -33,10 +33,10 @@ function hexToRgba(hex, alpha) {
 // POWER STATUS CONFIG (전력현황 4카드)
 // ======================
 const POWER_STATUS_CONFIG = {
-  batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: null,        scale: 1.0 },
-  batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,        scale: 1.0 },
-  loadRate:     { label: '부하율',         unit: '%', metricCode: null,        scale: 1.0 },
-  batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V', scale: 0.1 },
+  batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
+  batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },  // API 미지원
+  loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
+  batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
 };
 
 // ======================

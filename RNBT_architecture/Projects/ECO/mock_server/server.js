@@ -847,6 +847,9 @@ function generateUPSMetricsData(eventedAt) {
     }
     metrics.push({ metricCode: 'UPS.BATT_V', eventedAt, valueType: 'NUMBER', valueNumber: 4800 + Math.round(Math.random() * 200) });
     metrics.push({ metricCode: 'UPS.BATT_A', eventedAt, valueType: 'NUMBER', valueNumber: 10 + Math.round(Math.random() * 50) });
+    metrics.push({ metricCode: 'UPS.LOAD_PCT', eventedAt, valueType: 'NUMBER', valueNumber: 40 + Math.round(Math.random() * 40) });
+    metrics.push({ metricCode: 'UPS.BATT_PCT', eventedAt, valueType: 'NUMBER', valueNumber: 70 + Math.round(Math.random() * 30) });
+    metrics.push({ metricCode: 'UPS.STATUS_CODE', eventedAt, valueType: 'NUMBER', valueNumber: Math.random() > 0.9 ? 1 : 0 });
     metrics.push({ metricCode: 'UPS.INPUT_BAD_STATE', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
     metrics.push({ metricCode: 'UPS.BATT_CHARGING', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.5 });
     metrics.push({ metricCode: 'UPS.OUTPUT_ON_BATTERY', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.9 });
