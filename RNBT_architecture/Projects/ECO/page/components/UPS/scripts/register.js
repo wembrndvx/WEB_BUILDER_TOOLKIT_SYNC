@@ -274,8 +274,8 @@ function fetchTrendData() {
       assetKey: this._defaultAssetKey,
       interval,
       metricCodes,
-      timeFrom: from.toISOString(),
-      timeTo: now.toISOString(),
+      timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+      timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
       statsKeys,
     }),
     (response) => {

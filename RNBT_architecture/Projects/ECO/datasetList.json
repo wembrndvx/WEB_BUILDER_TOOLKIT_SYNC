@@ -242,22 +242,22 @@
         {
           "param_name": "metricCodes",
           "param_type": "string",
-          "default_value": "[SENSOR.TEMP,SENSOR.HUMIDITY]"
+          "default_value": "SENSOR.TEMP,SENSOR.HUMIDITY"
         },
         {
           "param_name": "timeFrom",
           "param_type": "string",
-          "default_value": "2025-01-01T00:00:00Z"
+          "default_value": "2025-01-01 00:00:00"
         },
         {
           "param_name": "timeTo",
           "param_type": "string",
-          "default_value": "2025-01-01T23:59:59Z"
+          "default_value": "2025-01-01 23:59:59"
         },
         {
           "param_name": "statsKeys",
           "param_type": "string",
-          "default_value": "[avg,min,max]"
+          "default_value": "avg,min,max"
         }
       ],
       "data_type": "1",
@@ -268,7 +268,7 @@
       "description": "Metric API v1 - 메트릭 통계 기간 리스트 조회 (트렌드 차트용)",
       "dataset_id": "mhs-list-001",
       "name": "metricHistoryStats",
-      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mhs/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"interval\\\":\\\"#{interval}\\\",\\\"metricCodes\\\":\\\"#{metricCodes}\\\",\\\"timeFrom\\\":\\\"#{timeFrom}\\\",\\\"timeTo\\\":\\\"#{timeTo}\\\"},\\\"statsKeys\\\":\\\"#{statsKeys}\\\",\\\"sort\\\":[]}\"}"
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mhs/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"interval\\\":\\\"#{interval}\\\",\\\"metricCodes\\\":[\\\"#{metricCodes}\\\"],\\\"timeFrom\\\":\\\"#{timeFrom}\\\",\\\"timeTo\\\":\\\"#{timeTo}\\\"},\\\"statsKeys\\\":[\\\"#{statsKeys}\\\"],\\\"sort\\\":[]}\"}"
     },
     {
       "datasource": "",
