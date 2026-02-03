@@ -1,5 +1,6 @@
 /*
  * TempHumiditySensor - Shadow DOM Popup Styles
+ * 온습도 센서 상세 팝업 (기획서 v.0.8_260128 기준)
  */
 
 .popup-overlay {
@@ -18,7 +19,7 @@
 .popup-content {
     background: #1a1f2e;
     border-radius: 12px;
-    width: 480px;
+    width: 560px;
     max-width: 90vw;
     height: 90vh;
     overflow: hidden;
@@ -28,6 +29,9 @@
     flex-direction: column;
 }
 
+/* ======================
+   Header
+   ====================== */
 .popup-header {
     display: flex;
     justify-content: space-between;
@@ -66,7 +70,6 @@
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-    text-transform: capitalize;
 }
 
 .sensor-status[data-status="normal"] {
@@ -104,27 +107,27 @@
     color: #e0e6ed;
 }
 
+/* ======================
+   Body
+   ====================== */
 .popup-body {
-    padding: 24px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 /* ======================
-   Section Common Styles
+   Section Common
    ====================== */
 .section {
     background: #252b3b;
     border-radius: 8px;
     overflow: hidden;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    flex-shrink: 0;
 }
 
 .section-header {
@@ -133,14 +136,12 @@
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid #2a3142;
-    flex-shrink: 0;
 }
 
 .section-title {
     font-size: 13px;
     font-weight: 500;
     color: #8892a0;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
@@ -150,96 +151,169 @@
 }
 
 /* ======================
-   Metrics Section (실시간 측정값)
+   Section 1: 기본정보 (이미지 + 테이블)
    ====================== */
-.metrics-container {
+.info-section .info-content {
+    padding: 16px;
+}
+
+.info-layout {
+    display: flex;
+    gap: 16px;
+}
+
+.info-image-placeholder {
+    width: 100px;
+    min-height: 100px;
+    background: #1a1f2e;
+    border-radius: 8px;
+    border: 1px solid #2a3142;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.info-image-placeholder svg {
+    opacity: 0.5;
+}
+
+.image-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.info-table {
+    flex: 1;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.info-table th,
+.info-table td {
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(42, 49, 66, 0.5);
+}
+
+.info-table th {
+    color: #8892a0;
+    font-weight: 400;
+    white-space: nowrap;
+    width: 70px;
+}
+
+.info-table td {
+    color: #e0e6ed;
+    font-weight: 500;
+}
+
+.info-table tr:last-child th,
+.info-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ======================
+   Section 2: 실시간 측정값 (2카드)
+   ====================== */
+.status-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1px;
     background: #2a3142;
-    flex: 1;
-    overflow-y: auto;
 }
 
-.metric-card {
+.status-card {
     background: #252b3b;
-    padding: 20px 16px;
-    text-align: center;
+    padding: 16px;
 }
 
-.metric-label {
-    font-size: 11px;
+.status-card-header {
+    margin-bottom: 12px;
+}
+
+.status-card-label {
+    font-size: 12px;
+    font-weight: 500;
     color: #8892a0;
-    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.metric-value {
-    font-size: 32px;
+.status-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.status-current,
+.status-target {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.status-current-label,
+.status-target-label {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.status-current-value {
+    font-size: 28px;
     font-weight: 600;
     color: #e0e6ed;
     line-height: 1;
 }
 
-.metric-unit {
+.status-current-unit {
     font-size: 14px;
     font-weight: 400;
     color: #8892a0;
     margin-left: 2px;
 }
 
-/* Metric 상태별 색상 */
-.metric-card[data-status="normal"] .metric-value { color: #22c55e; }
-.metric-card[data-status="warning"] .metric-value { color: #eab308; }
-.metric-card[data-status="critical"] .metric-value { color: #ef4444; }
-
-/* ======================
-   Properties Section (정적 속성)
-   ====================== */
-.properties-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: #2a3142;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.property-card {
-    background: #252b3b;
-    padding: 12px 16px;
-}
-
-.property-label {
-    font-size: 11px;
-    color: #8892a0;
-    margin-bottom: 4px;
-}
-
-.property-value {
-    font-size: 14px;
+.status-target-value {
+    font-size: 18px;
     font-weight: 500;
-    color: #e0e6ed;
+    color: #8892a0;
+    line-height: 1;
 }
 
-/* Properties 섹션 숨김 (데이터 없을 때) */
-.properties-section.hidden {
-    display: none;
+.status-target-unit {
+    font-size: 12px;
+    font-weight: 400;
+    color: #6b7280;
+    margin-left: 2px;
+}
+
+/* 온도 카드 색상 */
+.status-card[data-metric="temperature"] .status-current-value {
+    color: #3b82f6;
+}
+
+/* 습도 카드 색상 */
+.status-card[data-metric="humidity"] .status-current-value {
+    color: #22c55e;
 }
 
 /* ======================
-   Chart Section (히스토리)
+   Section 3: 트렌드 차트
    ====================== */
-.chart-section .chart-container {
-    width: 100%;
+.chart-section {
     flex: 1;
-    min-height: 180px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Chart 섹션 숨김 (비활성화 시) */
-.chart-section.hidden {
-    display: none;
+.chart-container {
+    flex: 1;
+    min-height: 200px;
+    width: 100%;
 }
 
 /* ======================

@@ -1,14 +1,10 @@
 /**
- * TempHumiditySensor - 3D Component with Popup
+ * TempHumiditySensor (온습도센서) - 3D Popup Component
  *
- * 온습도 센서 컴포넌트
- * - 실시간 온도/습도 표시 (metricLatest API)
- * - 자산 속성 정보 (assetDetailUnified API)
- * - 온습도 히스토리 차트 (추후)
- *
- * 데이터 소스:
- * - assetDetailUnified: 자산 기본 정보 (Header) + 정적 속성 (Properties)
- * - metricLatest: 실시간 측정값 (Metrics)
+ * 온습도센서 컴포넌트 (기획서 v.0.8_260128 기준)
+ * - 기본정보 테이블 (assetDetailUnified + mdl/g + vdr/g 체이닝)
+ * - 실시간 측정값 2카드 (metricLatest, 5초 갱신)
+ * - 온/습도 현황 트렌드 차트 (온도=바, 습도=라인)
  */
 
 const { bind3DEvents, fetchData } = Wkit;
@@ -34,32 +30,24 @@ function hexToRgba(hex, alpha) {
 }
 
 // ======================
-// METRIC CONFIG (metricConfig.json 인라인)
+// STATUS CONFIG (실시간 측정값 카드)
 // ======================
-const METRIC_CONFIG = {
-  'SENSOR.TEMP': {
+const STATUS_CONFIG = {
+  temperature: {
+    metricCode: 'SENSOR.TEMP',
     label: '온도',
-    description: '센서 온도',
-    valueType: 'NUMBER',
     unit: '°C',
+    color: '#3b82f6',
     scale: 1.0,
-    interface: 'PERF_SENSOR',
+    targetValue: null,  // 적정값 API 미확인 → "-" 표시
   },
-  'SENSOR.HUMIDITY': {
+  humidity: {
+    metricCode: 'SENSOR.HUMIDITY',
     label: '습도',
-    description: '상대습도',
-    valueType: 'NUMBER',
-    unit: '%RH',
+    unit: '%',
+    color: '#22c55e',
     scale: 1.0,
-    interface: 'PERF_SENSOR',
-  },
-  'SENSOR.MEASURED_AT': {
-    label: '측정시각',
-    description: '측정시각(필요 시)',
-    valueType: 'STRING/NUMBER',
-    unit: 'timestamp',
-    scale: 1.0,
-    interface: 'PERF_SENSOR.STIME',
+    targetValue: null,
   },
 };
 
@@ -67,15 +55,14 @@ initComponent.call(this);
 
 function initComponent() {
   // ======================
-  // 1. 데이터 정의 (동적 assetKey 지원)
+  // 1. 데이터 정의
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+  this._baseUrl = BASE_URL;
 
-  // 데이터셋 정의: 2개 API 병렬 호출
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderAssetInfo', 'renderProperties'] },
-    { datasetName: 'metricLatest', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderMetrics'] },
-    // { datasetName: 'sensorHistory', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderChart'] },  // 차트 (추후 활성화)
+    { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] },
   ];
 
   // ======================
@@ -89,7 +76,6 @@ function initComponent() {
   // ======================
   // 3. Data Config
   // ======================
-  // 헤더 영역 고정 필드 (assetDetailUnified.asset)
   this.baseInfoConfig = [
     { key: 'name', selector: '.sensor-name' },
     { key: 'locationLabel', selector: '.sensor-zone' },
@@ -97,45 +83,18 @@ function initComponent() {
     { key: 'statusType', selector: '.sensor-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
   ];
 
-  // 컨테이너 selector
-  this.metricsContainerSelector = '.metrics-container';
-  this.propertiesContainerSelector = '.properties-container';
-  this.propertiesSectionSelector = '.properties-section';
-  this.timestampSelector = '.section-timestamp';
-
-  // Metric Config 참조
-  this.metricConfig = METRIC_CONFIG;
-
-  // Section Titles (한글 하드코딩 제거)
-  this.sectionTitles = {
-    '.metrics-section .section-title': '실시간 측정값',
-    '.properties-section .section-title': '속성 정보',
-    '.chart-section .section-title': '히스토리',
-  };
-
-  // chartConfig: 차트 렌더링 설정 (추후 활성화)
-  this.chartConfig = {
-    xKey: 'timestamps',
-    styleMap: {
-      temperature: { label: '온도', unit: '°C', color: '#3b82f6', yAxisIndex: 0 },
-      humidity: { label: '습도', unit: '%', color: '#22c55e', yAxisIndex: 1 },
-    },
-    optionBuilder: getDualAxisChartOption,
-  };
-
   // ======================
   // 4. 렌더링 함수 바인딩
   // ======================
-  this.renderAssetInfo = renderAssetInfo.bind(this);
-  this.renderProperties = renderProperties.bind(this);
-  this.renderMetrics = renderMetrics.bind(this);
-  this.renderChart = renderChart.bind(this, this.chartConfig);
+  this.renderBasicInfo = renderBasicInfo.bind(this);
+  this.renderStatusCards = renderStatusCards.bind(this);
+  this.renderTrendChart = renderTrendChart.bind(this);
   this.renderError = renderError.bind(this);
 
   // ======================
-  // 5. Refresh Config
+  // 5. Refresh Config (5초 갱신)
   // ======================
-  this.refreshInterval = 5000; // 5초
+  this.refreshInterval = 5000;
   this._refreshIntervalId = null;
 
   // ======================
@@ -196,6 +155,8 @@ function initComponent() {
 
 function showDetail() {
   this.showPopup();
+
+  // 1) assetDetailUnified + metricLatest 호출
   fx.go(
     this.datasetInfo,
     fx.each(({ datasetName, params, render }) =>
@@ -206,8 +167,6 @@ function showDetail() {
             this.renderError('데이터를 불러올 수 없습니다.');
             return;
           }
-          // metricLatest는 data가 배열 (빈 배열일 수 있음)
-          // assetDetailUnified는 data가 객체
           const data = response.response.data;
           if (data === null || data === undefined) {
             this.renderError('자산 정보가 존재하지 않습니다.');
@@ -222,8 +181,11 @@ function showDetail() {
     this.renderError('데이터 로드 중 오류가 발생했습니다.');
   });
 
-  // 5초 주기로 메트릭 갱신 시작
-  this.stopRefresh(); // 기존 interval 정리
+  // 2) 트렌드 차트 호출 (mhs/l)
+  fetchTrendData.call(this);
+
+  // 3) 5초 주기로 메트릭 갱신 시작
+  this.stopRefresh();
   this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
   console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
 }
@@ -233,9 +195,6 @@ function hideDetail() {
   this.hidePopup();
 }
 
-/**
- * 메트릭 데이터만 갱신 (5초 주기)
- */
 function refreshMetrics() {
   const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
   fx.go(
@@ -244,16 +203,13 @@ function refreshMetrics() {
       if (!response || !response.response) return;
       const data = response.response.data;
       if (data === null || data === undefined) return;
-      this.renderMetrics(response);
+      this.renderStatusCards(response);
     }
   ).catch((e) => {
     console.warn('[TempHumiditySensor] Metric refresh failed:', e);
   });
 }
 
-/**
- * 메트릭 갱신 중지
- */
 function stopRefresh() {
   if (this._refreshIntervalId) {
     clearInterval(this._refreshIntervalId);
@@ -263,14 +219,41 @@ function stopRefresh() {
 }
 
 // ======================
-// RENDER FUNCTIONS
+// TREND DATA FETCH
 // ======================
 
-/**
- * 자산 기본 정보 렌더링 (Header)
- * 데이터: assetDetailUnified.asset
- */
-function renderAssetInfo({ response }) {
+function fetchTrendData() {
+  const now = new Date();
+  const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const metricCodes = ['SENSOR.TEMP', 'SENSOR.HUMIDITY'];
+  const statsKeys = ['avg'];
+  fx.go(
+    fetchData(this.page, 'metricHistoryStats', {
+      baseUrl: this._baseUrl,
+      assetKey: this._defaultAssetKey,
+      interval: '1h',
+      metricCodes,
+      timeFrom: from.toISOString(),
+      timeTo: now.toISOString(),
+      statsKeys,
+    }),
+    (response) => {
+      if (!response || !response.response) {
+        console.warn('[TempHumiditySensor] Trend data unavailable');
+        return;
+      }
+      this.renderTrendChart(response);
+    }
+  ).catch((e) => {
+    console.warn('[TempHumiditySensor] Trend fetch failed:', e);
+  });
+}
+
+// ======================
+// RENDER: 기본정보 테이블
+// ======================
+
+function renderBasicInfo({ response }) {
   const { data } = response;
   if (!data || !data.asset) {
     renderError.call(this, '자산 데이터가 없습니다.');
@@ -279,6 +262,7 @@ function renderAssetInfo({ response }) {
 
   const asset = data.asset;
 
+  // Header 영역
   fx.go(
     this.baseInfoConfig,
     fx.each(({ key, selector, dataAttr, transform }) => {
@@ -293,83 +277,194 @@ function renderAssetInfo({ response }) {
       }
     })
   );
+
+  // 기본정보 테이블
+  const setCell = (selector, value) => {
+    const el = this.popupQuery(selector);
+    if (el) el.textContent = value ?? '-';
+  };
+
+  setCell('.info-name', asset.name);
+  setCell('.info-type', asset.assetType);
+  setCell('.info-usage', asset.usageLabel || '-');
+  setCell('.info-location', asset.locationLabel);
+  setCell('.info-status', this.statusTypeToLabel(asset.statusType));
+  setCell('.info-install-date', this.formatDate(asset.installDate));
+
+  // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
+  if (asset.assetModelKey) {
+    fx.go(
+      fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+      (modelResp) => {
+        if (!modelResp?.response?.data) return;
+        const model = modelResp.response.data;
+        setCell('.info-model', model.name);
+
+        if (model.assetVendorKey) {
+          fx.go(
+            fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
+            (vendorResp) => {
+              if (!vendorResp?.response?.data) return;
+              setCell('.info-vendor', vendorResp.response.data.name);
+            }
+          ).catch(() => {});
+        }
+      }
+    ).catch(() => {});
+  }
 }
 
-/**
- * 실시간 메트릭 렌더링 (Metrics Section)
- * 데이터: metricLatest + metricConfig
- */
-function renderMetrics({ response }) {
-  const { data } = response; // data는 배열
-  const container = this.popupQuery(this.metricsContainerSelector);
-  const timestampEl = this.popupQuery(this.timestampSelector);
+// ======================
+// RENDER: 실시간 측정값 (2카드)
+// ======================
 
-  if (!container) return;
+function renderStatusCards({ response }) {
+  const { data } = response;
+  const timestampEl = this.popupQuery('.section-timestamp');
 
-  // 메트릭 데이터가 없는 경우
   if (!data || !Array.isArray(data) || data.length === 0) {
-    container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
+    console.warn('[TempHumiditySensor] renderStatusCards: no data');
     return;
   }
 
-  // 타임스탬프 표시 (첫 번째 메트릭의 eventedAt 사용)
+  // 타임스탬프 표시
   if (timestampEl && data[0]?.eventedAt) {
     timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
   }
 
-  // metricConfig 기반으로 렌더링
-  container.innerHTML = data
-    .map((metric) => {
-      const config = this.metricConfig[metric.metricCode];
-      if (!config) return ''; // config 없으면 스킵
+  // 메트릭 코드를 값으로 매핑
+  const metricMap = {};
+  data.forEach((metric) => {
+    const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
+    metricMap[metric.metricCode] = value;
+  });
 
-      const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
-      const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
+  // 각 카드에 값 설정
+  Object.entries(STATUS_CONFIG).forEach(([key, config]) => {
+    const card = this.popupQuery(`.status-card[data-metric="${key}"]`);
+    if (!card) return;
 
-      return `
-        <div class="metric-card">
-          <div class="metric-label">${config.label}</div>
-          <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
-        </div>
-      `;
-    })
-    .join('');
+    const currentValueEl = card.querySelector('.status-current-value');
+    const targetValueEl = card.querySelector('.status-target-value');
+
+    // 현재값
+    const rawValue = metricMap[config.metricCode];
+    if (currentValueEl) {
+      if (rawValue != null) {
+        const displayValue = (rawValue * config.scale).toFixed(1);
+        currentValueEl.textContent = displayValue;
+      } else {
+        currentValueEl.textContent = '-';
+      }
+    }
+
+    // 적정값 (API 미확인 → "-")
+    if (targetValueEl) {
+      targetValueEl.textContent = config.targetValue ?? '-';
+    }
+  });
 }
 
-/**
- * 정적 속성 렌더링 (Properties Section)
- * 데이터: assetDetailUnified.properties
- */
-function renderProperties({ response }) {
+// ======================
+// RENDER: 트렌드 차트 (바+라인 복합)
+// ======================
+
+function renderTrendChart({ response }) {
   const { data } = response;
-  const container = this.popupQuery(this.propertiesContainerSelector);
-
-  if (!container) return;
-
-  // properties가 없거나 빈 배열인 경우 empty-state 표시
-  if (!data?.properties || data.properties.length === 0) {
-    container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    console.warn('[TempHumiditySensor] renderTrendChart: no data');
     return;
   }
 
-  // displayOrder로 정렬
-  const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+  // 데이터를 시간별로 그룹핑
+  const timeMap = {};
+  data.forEach((row) => {
+    const hour = new Date(row.time).getHours() + '시';
+    if (!timeMap[hour]) timeMap[hour] = {};
+    timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+  });
 
-  container.innerHTML = sortedProperties
-    .map(({ label, value, helpText }) => {
-      return `
-        <div class="property-card" title="${helpText || ''}">
-          <div class="property-label">${label}</div>
-          <div class="property-value">${value ?? '-'}</div>
-        </div>
-      `;
-    })
-    .join('');
+  const hours = Object.keys(timeMap);
+  const tempConfig = STATUS_CONFIG.temperature;
+  const humidConfig = STATUS_CONFIG.humidity;
+
+  const tempValues = hours.map((h) => {
+    const raw = timeMap[h][tempConfig.metricCode];
+    return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
+  });
+
+  const humidValues = hours.map((h) => {
+    const raw = timeMap[h][humidConfig.metricCode];
+    return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
+  });
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(26, 31, 46, 0.95)',
+      borderColor: '#2a3142',
+      textStyle: { color: '#e0e6ed', fontSize: 12 },
+    },
+    legend: {
+      data: [tempConfig.label, humidConfig.label],
+      top: 8,
+      textStyle: { color: '#8892a0', fontSize: 11 },
+    },
+    grid: { left: 50, right: 50, top: 40, bottom: 24 },
+    xAxis: {
+      type: 'category',
+      data: hours,
+      axisLine: { lineStyle: { color: '#333' } },
+      axisLabel: { color: '#888', fontSize: 10 },
+    },
+    yAxis: [
+      {
+        type: 'value',
+        name: tempConfig.unit,
+        position: 'left',
+        axisLine: { show: true, lineStyle: { color: tempConfig.color } },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { lineStyle: { color: '#333' } },
+      },
+      {
+        type: 'value',
+        name: humidConfig.unit,
+        position: 'right',
+        axisLine: { show: true, lineStyle: { color: humidConfig.color } },
+        axisLabel: { color: '#888', fontSize: 10 },
+        splitLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: tempConfig.label,
+        type: 'bar',
+        yAxisIndex: 0,
+        data: tempValues,
+        itemStyle: { color: hexToRgba(tempConfig.color, 0.7) },
+        barWidth: '40%',
+      },
+      {
+        name: humidConfig.label,
+        type: 'line',
+        yAxisIndex: 1,
+        data: humidValues,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        lineStyle: { color: humidConfig.color, width: 2 },
+        itemStyle: { color: humidConfig.color },
+      },
+    ],
+  };
+
+  this.updateChart('.chart-container', option);
 }
 
-/**
- * 에러 상태 렌더링
- */
+// ======================
+// RENDER: 에러
+// ======================
+
 function renderError(message) {
   const nameEl = this.popupQuery('.sensor-name');
   const zoneEl = this.popupQuery('.sensor-zone');
@@ -382,30 +477,7 @@ function renderError(message) {
     statusEl.dataset.status = 'critical';
   }
 
-  const metricsContainer = this.popupQuery(this.metricsContainerSelector);
-  if (metricsContainer) {
-    metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
-  }
-
   console.warn('[TempHumiditySensor] renderError:', message);
-}
-
-/**
- * 차트 렌더링 (추후 활성화)
- */
-function renderChart(config, { response }) {
-  const { data } = response;
-  if (!data) {
-    console.warn('[TempHumiditySensor] renderChart: data is null');
-    return;
-  }
-  if (!data[config.xKey]) {
-    console.warn('[TempHumiditySensor] renderChart: chart data is incomplete');
-    return;
-  }
-  const { optionBuilder, ...chartConfig } = config;
-  const option = optionBuilder(chartConfig, data);
-  this.updateChart('.chart-container', option);
 }
 
 // ======================
@@ -414,11 +486,11 @@ function renderChart(config, { response }) {
 
 function statusTypeToLabel(statusType) {
   const labels = {
-    ACTIVE: 'Normal',
-    WARNING: 'Warning',
-    CRITICAL: 'Critical',
-    INACTIVE: 'Inactive',
-    MAINTENANCE: 'Maintenance',
+    ACTIVE: '정상운영',
+    WARNING: '주의',
+    CRITICAL: '위험',
+    INACTIVE: '비활성',
+    MAINTENANCE: '유지보수',
   };
   return labels[statusType] || statusType;
 }
@@ -455,94 +527,10 @@ function formatTimestamp(isoString) {
 }
 
 // ======================
-// CHART OPTION BUILDER
-// ======================
-
-function getDualAxisChartOption(config, data) {
-  const { xKey, styleMap } = config;
-
-  const seriesData = Object.entries(styleMap).map(([key, style]) => ({
-    key,
-    name: style.label,
-    unit: style.unit,
-    color: style.color,
-    yAxisIndex: style.yAxisIndex,
-  }));
-
-  const yAxisUnits = [...new Set(seriesData.map((s) => s.unit))];
-  const yAxes = yAxisUnits.map((unit, idx) => ({
-    type: 'value',
-    name: unit,
-    position: idx === 0 ? 'left' : 'right',
-    axisLine: { show: true, lineStyle: { color: '#333' } },
-    axisLabel: { color: '#888', fontSize: 10 },
-    splitLine: { lineStyle: { color: idx === 0 ? '#333' : 'transparent' } },
-  }));
-
-  return {
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: 'rgba(26, 31, 46, 0.95)',
-      borderColor: '#2a3142',
-      textStyle: { color: '#e0e6ed', fontSize: 12 },
-    },
-    legend: {
-      data: seriesData.map((s) => s.name),
-      top: 8,
-      textStyle: { color: '#8892a0', fontSize: 11 },
-    },
-    grid: {
-      left: 50,
-      right: 50,
-      top: 40,
-      bottom: 24,
-    },
-    xAxis: {
-      type: 'category',
-      data: data[xKey],
-      axisLine: { lineStyle: { color: '#333' } },
-      axisLabel: { color: '#888', fontSize: 10 },
-    },
-    yAxis: yAxes,
-    series: seriesData.map(({ key, name, color, yAxisIndex = 0 }) => ({
-      name,
-      type: 'line',
-      yAxisIndex,
-      data: data[key],
-      smooth: true,
-      symbol: 'none',
-      lineStyle: { color, width: 2 },
-      areaStyle: {
-        color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: hexToRgba(color, 0.2) },
-            { offset: 1, color: hexToRgba(color, 0) },
-          ],
-        },
-      },
-    })),
-  };
-}
-
-// ======================
 // POPUP LIFECYCLE
 // ======================
 
 function onPopupCreated({ chartSelector, events }) {
-  applySectionTitles.call(this);
   chartSelector && this.createChart(chartSelector);
   events && this.bindPopupEvents(events);
-}
-
-function applySectionTitles() {
-  if (!this.sectionTitles) return;
-  Object.entries(this.sectionTitles).forEach(([selector, title]) => {
-    const el = this.popupQuery(selector);
-    if (el) el.textContent = title;
-  });
 }

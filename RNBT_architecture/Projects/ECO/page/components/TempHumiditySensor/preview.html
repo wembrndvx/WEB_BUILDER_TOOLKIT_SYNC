@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TempHumiditySensor - Preview (Metric API 연동)</title>
+    <title>TempHumiditySensor - Preview (기획서 v.0.8)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,12 +54,13 @@
 
     <script>
         // ======================
-        // TEMPLATE DATA (새로운 섹션 구조)
+        // TEMPLATE DATA (기획서 v.0.8 구조)
         // ======================
         const htmlCode = `
             <template id="popup-sensor">
                 <div class="popup-overlay">
                     <div class="popup-content">
+                        <!-- Header -->
                         <div class="popup-header">
                             <div class="header-info">
                                 <h2 class="sensor-name">-</h2>
@@ -75,32 +76,88 @@
                             </div>
                         </div>
 
+                        <!-- Body -->
                         <div class="popup-body">
-                            <!-- Section 1: Realtime Metrics -->
-                            <div class="section metrics-section">
+                            <!-- Section 1: 기본정보 (이미지 + 테이블) -->
+                            <div class="section info-section">
+                                <div class="section-header">
+                                    <span class="section-title">기본정보</span>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-layout">
+                                        <div class="info-image-placeholder">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+                                                <path d="M12 9v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                            <span class="image-label">센서</span>
+                                        </div>
+                                        <table class="info-table">
+                                            <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                            <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                            <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                            <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                            <tr><th>모델</th><td class="info-model">-</td></tr>
+                                            <tr><th>위치</th><td class="info-location">-</td></tr>
+                                            <tr><th>상태</th><td class="info-status">-</td></tr>
+                                            <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Section 2: 실시간 측정값 (2카드) -->
+                            <div class="section status-section">
                                 <div class="section-header">
                                     <span class="section-title">실시간 측정값</span>
                                     <span class="section-timestamp"></span>
                                 </div>
-                                <div class="metrics-container"></div>
-                            </div>
-
-                            <!-- Section 2: Properties -->
-                            <div class="section properties-section">
-                                <div class="section-header">
-                                    <span class="section-title">속성 정보</span>
+                                <div class="status-cards">
+                                    <!-- 온도 카드 -->
+                                    <div class="status-card" data-metric="temperature">
+                                        <div class="status-card-header">
+                                            <span class="status-card-label">온도</span>
+                                        </div>
+                                        <div class="status-card-body">
+                                            <div class="status-current">
+                                                <span class="status-current-label">현재</span>
+                                                <span class="status-current-value">-</span>
+                                                <span class="status-current-unit">°C</span>
+                                            </div>
+                                            <div class="status-target">
+                                                <span class="status-target-label">적정</span>
+                                                <span class="status-target-value">-</span>
+                                                <span class="status-target-unit">°C</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 습도 카드 -->
+                                    <div class="status-card" data-metric="humidity">
+                                        <div class="status-card-header">
+                                            <span class="status-card-label">습도</span>
+                                        </div>
+                                        <div class="status-card-body">
+                                            <div class="status-current">
+                                                <span class="status-current-label">현재</span>
+                                                <span class="status-current-value">-</span>
+                                                <span class="status-current-unit">%</span>
+                                            </div>
+                                            <div class="status-target">
+                                                <span class="status-target-label">적정</span>
+                                                <span class="status-target-value">-</span>
+                                                <span class="status-target-unit">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="properties-container"></div>
                             </div>
 
-                            <!-- Section 3: Chart -->
+                            <!-- Section 3: 온/습도 현황 (트렌드 차트) -->
                             <div class="section chart-section">
                                 <div class="section-header">
-                                    <span class="section-title">히스토리</span>
+                                    <span class="section-title">온/습도 현황</span>
                                 </div>
-                                <div class="chart-container">
-                                    <div class="empty-state">히스토리 데이터가 없습니다</div>
-                                </div>
+                                <div class="chart-container"></div>
                             </div>
                         </div>
                     </div>
@@ -120,7 +177,7 @@
             .popup-content {
                 background: #1a1f2e;
                 border-radius: 12px;
-                width: 480px; max-width: 90vw; height: 90vh;
+                width: 560px; max-width: 90vw; height: 90vh;
                 overflow: hidden;
                 box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
                 border: 1px solid #2a3142;
@@ -137,7 +194,7 @@
             .sensor-zone { font-size: 13px; color: #8892a0; }
 
             .header-actions { display: flex; align-items: center; gap: 12px; }
-            .sensor-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .sensor-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .sensor-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
             .sensor-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
             .sensor-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
@@ -151,34 +208,56 @@
             }
             .close-btn:hover { background: #2a3142; color: #e0e6ed; }
 
-            .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; overflow: hidden; }
+            .popup-body {
+                padding: 20px 24px;
+                display: flex; flex-direction: column; gap: 16px;
+                flex: 1; min-height: 0; overflow-y: auto;
+            }
 
             /* Section Common */
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
             .section-header {
                 display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+                padding: 12px 16px; border-bottom: 1px solid #2a3142;
             }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
             .section-timestamp { font-size: 11px; color: #6b7280; }
 
-            /* Metrics Section */
-            .metrics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .metric-card { background: #252b3b; padding: 20px 16px; text-align: center; }
-            .metric-label { font-size: 11px; color: #8892a0; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-            .metric-value { font-size: 32px; font-weight: 600; color: #e0e6ed; line-height: 1; }
-            .metric-unit { font-size: 14px; font-weight: 400; color: #8892a0; margin-left: 2px; }
+            /* Section 1: 기본정보 */
+            .info-section .info-content { padding: 16px; }
+            .info-layout { display: flex; gap: 16px; }
+            .info-image-placeholder {
+                width: 100px; min-height: 100px;
+                background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 8px; flex-shrink: 0;
+            }
+            .info-image-placeholder svg { opacity: 0.5; }
+            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
+            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
+            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
+            .info-table td { color: #e0e6ed; font-weight: 500; }
+            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
 
-            /* Properties Section */
-            .properties-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .property-card { background: #252b3b; padding: 12px 16px; }
-            .property-label { font-size: 11px; color: #8892a0; margin-bottom: 4px; }
-            .property-value { font-size: 14px; font-weight: 500; color: #e0e6ed; }
-            .properties-section.hidden { display: none; }
+            /* Section 2: 실시간 측정값 */
+            .status-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; }
+            .status-card { background: #252b3b; padding: 16px; }
+            .status-card-header { margin-bottom: 12px; }
+            .status-card-label { font-size: 12px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .status-card-body { display: flex; justify-content: space-between; align-items: flex-end; }
+            .status-current, .status-target { display: flex; flex-direction: column; gap: 4px; }
+            .status-current-label, .status-target-label { font-size: 11px; color: #6b7280; }
+            .status-current-value { font-size: 28px; font-weight: 600; color: #e0e6ed; line-height: 1; }
+            .status-current-unit { font-size: 14px; font-weight: 400; color: #8892a0; margin-left: 2px; }
+            .status-target-value { font-size: 18px; font-weight: 500; color: #8892a0; line-height: 1; }
+            .status-target-unit { font-size: 12px; font-weight: 400; color: #6b7280; margin-left: 2px; }
+            .status-card[data-metric="temperature"] .status-current-value { color: #3b82f6; }
+            .status-card[data-metric="humidity"] .status-current-value { color: #22c55e; }
 
-            /* Chart Section */
-            .chart-section .chart-container { width: 100%; flex: 1; min-height: 180px; }
-            .chart-section.hidden { display: none; }
+            /* Section 3: 트렌드 차트 */
+            .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; }
 
             /* States */
             .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
@@ -186,11 +265,25 @@
         `;
 
         // ======================
-        // METRIC CONFIG
+        // STATUS CONFIG
         // ======================
-        const METRIC_CONFIG = {
-            'SENSOR.TEMP': { label: '온도', unit: '°C', scale: 1.0 },
-            'SENSOR.HUMIDITY': { label: '습도', unit: '%RH', scale: 1.0 }
+        const STATUS_CONFIG = {
+            temperature: {
+                metricCode: 'SENSOR.TEMP',
+                label: '온도',
+                unit: '°C',
+                color: '#3b82f6',
+                scale: 1.0,
+                targetValue: null,
+            },
+            humidity: {
+                metricCode: 'SENSOR.HUMIDITY',
+                label: '습도',
+                unit: '%',
+                color: '#22c55e',
+                scale: 1.0,
+                targetValue: null,
+            },
         };
 
         // ======================
@@ -205,43 +298,47 @@
             }
         };
 
-        const Wkit = {
-            bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
-            fetchData: (page, datasetName, param) => {
-                console.log('[Wkit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
-            }
-        };
-
-        // Mock data
+        const API_BASE = '10.23.128.125:4004';
         let currentStatus = 'normal';
 
-        // assetDetailUnified 응답
+        // Mock assetDetailUnified 응답
         const mockAssetData = {
             normal: {
-                asset: { name: 'Sensor-A01', locationLabel: 'Zone-A (서버실)', statusType: 'ACTIVE' },
-                properties: [
-                    { label: '설치일', value: '2024-01-15', helpText: '센서 설치 날짜', displayOrder: 1 },
-                    { label: '모델', value: 'TH-2000', helpText: '센서 모델명', displayOrder: 2 }
-                ]
+                asset: {
+                    name: 'TH-Sensor-01',
+                    assetType: '온습도센서',
+                    locationLabel: '2층 전기실',
+                    statusType: 'ACTIVE',
+                    usageLabel: '랙 전면 환경 감시',
+                    installDate: '2025-03-23',
+                    assetModelKey: 'model-001'
+                }
             },
             warning: {
-                asset: { name: 'Sensor-B02', locationLabel: 'Zone-B (전산실)', statusType: 'WARNING' },
-                properties: [
-                    { label: '설치일', value: '2023-06-20', helpText: '센서 설치 날짜', displayOrder: 1 },
-                    { label: '모델', value: 'TH-3000', helpText: '센서 모델명', displayOrder: 2 }
-                ]
+                asset: {
+                    name: 'TH-Sensor-02',
+                    assetType: '온습도센서',
+                    locationLabel: '3층 서버실',
+                    statusType: 'WARNING',
+                    usageLabel: '냉각 환경 모니터링',
+                    installDate: '2024-06-15',
+                    assetModelKey: 'model-002'
+                }
             },
             critical: {
-                asset: { name: 'Sensor-C03', locationLabel: 'Zone-C (UPS실)', statusType: 'CRITICAL' },
-                properties: [
-                    { label: '설치일', value: '2022-11-01', helpText: '센서 설치 날짜', displayOrder: 1 },
-                    { label: '모델', value: 'TH-1000', helpText: '센서 모델명', displayOrder: 2 }
-                ]
+                asset: {
+                    name: 'TH-Sensor-03',
+                    assetType: '온습도센서',
+                    locationLabel: '1층 UPS실',
+                    statusType: 'CRITICAL',
+                    usageLabel: '배터리실 환경 감시',
+                    installDate: '2023-11-01',
+                    assetModelKey: 'model-003'
+                }
             }
         };
 
-        // metricLatest 응답 (실시간 측정값)
+        // Mock metricLatest 응답 (실시간 측정값)
         const mockMetricData = {
             normal: [
                 { metricCode: 'SENSOR.TEMP', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 24.5 },
@@ -257,13 +354,71 @@
             ]
         };
 
-        function getMockData(datasetName) {
+        // Mock modelDetail 응답
+        const mockModelData = {
+            'model-001': { name: 'HMP110', assetVendorKey: 'vendor-001' },
+            'model-002': { name: 'TH-3000', assetVendorKey: 'vendor-002' },
+            'model-003': { name: 'SHT40', assetVendorKey: 'vendor-001' }
+        };
+
+        // Mock vendorDetail 응답
+        const mockVendorData = {
+            'vendor-001': { name: 'Vaisala' },
+            'vendor-002': { name: 'Sensirion' }
+        };
+
+        // 트렌드 데이터 생성 (24시간)
+        function generateTrendData() {
+            const now = new Date();
+            const data = [];
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+                // 온도 데이터
+                data.push({
+                    time: time.toISOString(),
+                    metricCode: 'SENSOR.TEMP',
+                    statsBody: { avg: 22 + Math.random() * 6 }
+                });
+                // 습도 데이터
+                data.push({
+                    time: time.toISOString(),
+                    metricCode: 'SENSOR.HUMIDITY',
+                    statsBody: { avg: 40 + Math.random() * 20 }
+                });
+            }
+            return data;
+        }
+
+        function getMockData(datasetName, params) {
             switch (datasetName) {
-                case 'assetDetailUnified': return mockAssetData[currentStatus];
-                case 'metricLatest': return mockMetricData[currentStatus];
-                default: return {};
+                case 'assetDetailUnified':
+                    return mockAssetData[currentStatus];
+                case 'metricLatest':
+                    // 실시간 데이터에 약간의 변동 추가 (5초 갱신용)
+                    const baseData = mockMetricData[currentStatus];
+                    return baseData.map(m => ({
+                        ...m,
+                        eventedAt: new Date().toISOString(),
+                        valueNumber: m.valueNumber + (Math.random() - 0.5) * 2
+                    }));
+                case 'modelDetail':
+                    return mockModelData[params?.assetModelKey] || null;
+                case 'vendorDetail':
+                    return mockVendorData[params?.assetVendorKey] || null;
+                case 'metricHistoryStats':
+                    return generateTrendData();
+                default:
+                    return {};
             }
         }
+
+        const Wkit = {
+            bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
+            fetchData: (page, datasetName, params) => {
+                console.log('[Wkit.fetchData]', datasetName, params);
+                return Promise.resolve({ response: { data: getMockData(datasetName, params) } });
+            }
+        };
 
         // Mock PopupMixin
         const PopupMixin = {
@@ -343,7 +498,7 @@
                         }
                     }
                     if (chart) {
-                        chart.setOption(option);
+                        chart.setOption(option, true);
                         console.log('[EChartsMixin] Chart updated');
                     }
                 };
@@ -358,6 +513,13 @@
             const doc = parser.parseFromString(htmlCode, 'text/html');
             const template = doc.querySelector(`template#${templateId}`);
             return template?.innerHTML || '';
+        }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
         // ======================
@@ -389,13 +551,21 @@
         // ======================
 
         function statusTypeToLabel(statusType) {
-            const labels = { ACTIVE: 'Normal', WARNING: 'Warning', CRITICAL: 'Critical', INACTIVE: 'Inactive', MAINTENANCE: 'Maintenance' };
+            const labels = { ACTIVE: '정상운영', WARNING: '주의', CRITICAL: '위험', INACTIVE: '비활성', MAINTENANCE: '유지보수' };
             return labels[statusType] || statusType;
         }
 
         function statusTypeToDataAttr(statusType) {
             const map = { ACTIVE: 'normal', WARNING: 'warning', CRITICAL: 'critical', INACTIVE: 'inactive', MAINTENANCE: 'maintenance' };
             return map[statusType] || 'normal';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+            } catch { return dateStr; }
         }
 
         function formatTimestamp(isoString) {
@@ -406,18 +576,16 @@
             } catch { return ''; }
         }
 
-        const BASE_URL = '10.23.128.125:4004';
-
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+            this._baseUrl = API_BASE;
 
-            // 데이터셋 정의
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-                { datasetName: 'metricLatest', render: ['renderMetrics'] }
+                { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+                { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards'] }
             ];
 
             this.baseInfoConfig = [
@@ -427,27 +595,17 @@
                 { key: 'statusType', selector: '.sensor-status', dataAttr: 'status', transform: statusTypeToDataAttr }
             ];
 
-            this.metricsContainerSelector = '.metrics-container';
-            this.propertiesContainerSelector = '.properties-container';
-            this.propertiesSectionSelector = '.properties-section';
-            this.timestampSelector = '.section-timestamp';
-            this.metricConfig = METRIC_CONFIG;
+            this.statusTypeToLabel = statusTypeToLabel;
+            this.formatDate = formatDate;
+            this.formatTimestamp = formatTimestamp;
 
-            this.sectionTitles = {
-                '.metrics-section .section-title': '실시간 측정값',
-                '.properties-section .section-title': '속성 정보',
-                '.chart-section .section-title': '히스토리',
-            };
-
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            this.renderAssetInfo = renderAssetInfo.bind(this);
-            this.renderProperties = renderProperties.bind(this);
-            this.renderMetrics = renderMetrics.bind(this);
+            this.renderBasicInfo = renderBasicInfo.bind(this);
+            this.renderStatusCards = renderStatusCards.bind(this);
+            this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
 
             // Refresh Config
-            this.refreshInterval = 5000; // 5초
+            this.refreshInterval = 5000;
             this._refreshIntervalId = null;
 
             this.showDetail = showDetail.bind(this);
@@ -464,12 +622,10 @@
                 events: { click: { '.close-btn': () => this.hideDetail() } }
             };
 
-            const { htmlCode, cssCode } = this.properties.publishCode || {};
             const ctx = this;
             this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
             this.onPopupCreated = function() {
-                applySectionTitles.call(ctx);
                 const { chartSelector, events } = ctx.popupCreatedConfig;
                 if (chartSelector) ctx.createChart(chartSelector);
                 if (events) ctx.bindPopupEvents(events);
@@ -486,7 +642,7 @@
             console.log('[TempHumiditySensor] Registered:', this._defaultAssetKey);
         }
 
-        function renderAssetInfo({ response }) {
+        function renderBasicInfo({ response }) {
             const { data } = response;
             if (!data || !data.asset) {
                 renderError.call(this, '자산 데이터가 없습니다.');
@@ -495,6 +651,7 @@
 
             const asset = data.asset;
 
+            // Header 영역
             fx.go(
                 this.baseInfoConfig,
                 fx.each(({ key, selector, dataAttr, transform }) => {
@@ -509,66 +666,181 @@
                     }
                 })
             );
+
+            // 기본정보 테이블
+            const setCell = (selector, value) => {
+                const el = this.popupQuery(selector);
+                if (el) el.textContent = value ?? '-';
+            };
+
+            setCell('.info-name', asset.name);
+            setCell('.info-type', asset.assetType);
+            setCell('.info-usage', asset.usageLabel || '-');
+            setCell('.info-location', asset.locationLabel);
+            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
+            setCell('.info-install-date', this.formatDate(asset.installDate));
+
+            // 제조사명/모델 체이닝
+            if (asset.assetModelKey) {
+                const ctx = this;
+                fx.go(
+                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
+                    (modelResp) => {
+                        if (!modelResp?.response?.data) return;
+                        const model = modelResp.response.data;
+                        setCell('.info-model', model.name);
+
+                        if (model.assetVendorKey) {
+                            fx.go(
+                                Wkit.fetchData(ctx.page, 'vendorDetail', { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+                                (vendorResp) => {
+                                    if (!vendorResp?.response?.data) return;
+                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                }
+                            ).catch(() => {});
+                        }
+                    }
+                ).catch(() => {});
+            }
         }
 
-        function renderMetrics({ response }) {
+        function renderStatusCards({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.metricsContainerSelector);
-            const timestampEl = this.popupQuery(this.timestampSelector);
-
-            if (!container) return;
+            const timestampEl = this.popupQuery('.section-timestamp');
 
             if (!data || !Array.isArray(data) || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
+                console.warn('[TempHumiditySensor] renderStatusCards: no data');
                 return;
             }
 
+            // 타임스탬프 표시
             if (timestampEl && data[0]?.eventedAt) {
                 timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
             }
 
-            container.innerHTML = data
-                .map((metric) => {
-                    const config = this.metricConfig[metric.metricCode];
-                    if (!config) return '';
+            // 메트릭 코드를 값으로 매핑
+            const metricMap = {};
+            data.forEach((metric) => {
+                const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
+                metricMap[metric.metricCode] = value;
+            });
 
-                    const value = metric.valueType === 'NUMBER' ? metric.valueNumber : metric.valueString;
-                    const displayValue = config.scale ? (value * config.scale).toFixed(1) : value;
+            // 각 카드에 값 설정
+            Object.entries(STATUS_CONFIG).forEach(([key, config]) => {
+                const card = this.popupQuery(`.status-card[data-metric="${key}"]`);
+                if (!card) return;
 
-                    return `
-                        <div class="metric-card">
-                            <div class="metric-label">${config.label}</div>
-                            <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
-                        </div>
-                    `;
-                })
-                .join('');
+                const currentValueEl = card.querySelector('.status-current-value');
+                const targetValueEl = card.querySelector('.status-target-value');
+
+                // 현재값
+                const rawValue = metricMap[config.metricCode];
+                if (currentValueEl) {
+                    if (rawValue != null) {
+                        const displayValue = (rawValue * config.scale).toFixed(1);
+                        currentValueEl.textContent = displayValue;
+                    } else {
+                        currentValueEl.textContent = '-';
+                    }
+                }
+
+                // 적정값 (API 미확인 → "-")
+                if (targetValueEl) {
+                    targetValueEl.textContent = config.targetValue ?? '-';
+                }
+            });
         }
 
-        function renderProperties({ response }) {
+        function renderTrendChart({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.propertiesContainerSelector);
-
-            if (!container) return;
-
-            // properties가 없거나 빈 배열인 경우 empty-state 표시
-            if (!data?.properties || data.properties.length === 0) {
-                container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.warn('[TempHumiditySensor] renderTrendChart: no data');
                 return;
             }
 
-            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+            // 데이터를 시간별로 그룹핑
+            const timeMap = {};
+            data.forEach((row) => {
+                const hour = new Date(row.time).getHours() + '시';
+                if (!timeMap[hour]) timeMap[hour] = {};
+                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            });
 
-            container.innerHTML = sortedProperties
-                .map(({ label, value, helpText }) => {
-                    return `
-                        <div class="property-card" title="${helpText || ''}">
-                            <div class="property-label">${label}</div>
-                            <div class="property-value">${value ?? '-'}</div>
-                        </div>
-                    `;
-                })
-                .join('');
+            const hours = Object.keys(timeMap);
+            const tempConfig = STATUS_CONFIG.temperature;
+            const humidConfig = STATUS_CONFIG.humidity;
+
+            const tempValues = hours.map((h) => {
+                const raw = timeMap[h][tempConfig.metricCode];
+                return raw != null ? +(raw * tempConfig.scale).toFixed(1) : null;
+            });
+
+            const humidValues = hours.map((h) => {
+                const raw = timeMap[h][humidConfig.metricCode];
+                return raw != null ? +(raw * humidConfig.scale).toFixed(1) : null;
+            });
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: [tempConfig.label, humidConfig.label],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 50, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: hours,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: tempConfig.unit,
+                        position: 'left',
+                        axisLine: { show: true, lineStyle: { color: tempConfig.color } },
+                        axisLabel: { color: '#888', fontSize: 10 },
+                        splitLine: { lineStyle: { color: '#333' } },
+                    },
+                    {
+                        type: 'value',
+                        name: humidConfig.unit,
+                        position: 'right',
+                        axisLine: { show: true, lineStyle: { color: humidConfig.color } },
+                        axisLabel: { color: '#888', fontSize: 10 },
+                        splitLine: { show: false },
+                    },
+                ],
+                series: [
+                    {
+                        name: tempConfig.label,
+                        type: 'bar',
+                        yAxisIndex: 0,
+                        data: tempValues,
+                        itemStyle: { color: hexToRgba(tempConfig.color, 0.7) },
+                        barWidth: '40%',
+                    },
+                    {
+                        name: humidConfig.label,
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: humidValues,
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        lineStyle: { color: humidConfig.color, width: 2 },
+                        itemStyle: { color: humidConfig.color },
+                    },
+                ],
+            };
+
+            this.updateChart('.chart-container', option);
         }
 
         function renderError(message) {
@@ -583,21 +855,18 @@
                 statusEl.dataset.status = 'critical';
             }
 
-            const metricsContainer = this.popupQuery(this.metricsContainerSelector);
-            if (metricsContainer) {
-                metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
-            }
-
             console.warn('[TempHumiditySensor] renderError:', message);
         }
 
         function showDetail() {
             this.showPopup();
+
+            // 1) assetDetailUnified + metricLatest 호출
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, render }) =>
+                fx.each(({ datasetName, params, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        Wkit.fetchData(this.page, datasetName, params),
                         (response) => {
                             if (!response || !response.response) {
                                 this.renderError('데이터를 불러올 수 없습니다.');
@@ -617,10 +886,39 @@
                 this.renderError('데이터 로드 중 오류가 발생했습니다.');
             });
 
-            // 5초 주기로 메트릭 갱신 시작
+            // 2) 트렌드 차트 호출
+            fetchTrendData.call(this);
+
+            // 3) 5초 주기로 메트릭 갱신 시작
             this.stopRefresh();
             this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
             console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
+        }
+
+        function fetchTrendData() {
+            const now = new Date();
+            const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            const ctx = this;
+            fx.go(
+                Wkit.fetchData(this.page, 'metricHistoryStats', {
+                    baseUrl: this._baseUrl,
+                    assetKey: this._defaultAssetKey,
+                    interval: '1h',
+                    metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
+                    timeFrom: from.toISOString(),
+                    timeTo: now.toISOString(),
+                    statsKeys: ['avg'],
+                }),
+                (response) => {
+                    if (!response || !response.response) {
+                        console.warn('[TempHumiditySensor] Trend data unavailable');
+                        return;
+                    }
+                    ctx.renderTrendChart(response);
+                }
+            ).catch((e) => {
+                console.warn('[TempHumiditySensor] Trend fetch failed:', e);
+            });
         }
 
         function hideDetail() {
@@ -629,13 +927,14 @@
         }
 
         function refreshMetricsOnly() {
+            const metricInfo = this.datasetInfo.find(d => d.datasetName === 'metricLatest');
             fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
+                Wkit.fetchData(this.page, 'metricLatest', metricInfo.params),
                 (response) => {
                     if (!response || !response.response) return;
                     const data = response.response.data;
                     if (data === null || data === undefined) return;
-                    this.renderMetrics(response);
+                    this.renderStatusCards(response);
                 }
             ).catch(e => {
                 console.warn('[TempHumiditySensor] Metric refresh failed:', e);
@@ -648,14 +947,6 @@
                 this._refreshIntervalId = null;
                 console.log('[TempHumiditySensor] Metric refresh stopped');
             }
-        }
-
-        function applySectionTitles() {
-            if (!this.sectionTitles) return;
-            Object.entries(this.sectionTitles).forEach(([selector, title]) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = title;
-            });
         }
 
         function onInstanceUnLoad() {

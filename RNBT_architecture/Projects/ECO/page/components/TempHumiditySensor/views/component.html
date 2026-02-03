@@ -1,12 +1,12 @@
 <!--
   TempHumiditySensor - Shadow DOM Popup Template
-  온습도 센서 상세 팝업
+  온습도 센서 상세 팝업 (기획서 v.0.8_260128 기준)
 
   섹션 구조:
-  1. Header - 자산 기본 정보 (assetDetailUnified.asset)
-  2. Realtime Metrics - 실시간 측정값 (metricLatest + metricConfig)
-  3. Properties - 정적 속성 (assetDetailUnified.properties)
-  4. Chart - 히스토리 차트 (추후)
+  1. Header - 자산명 + 상태 badge + 닫기
+  2. 기본정보 - 이미지 placeholder + 8필드 테이블
+  3. 실시간 측정값 - 2카드 (현재온도/적정, 현재습도/적정)
+  4. 온/습도 현황 - 트렌드 차트 (바+라인)
 -->
 <template id="popup-sensor">
     <div class="popup-overlay">
@@ -29,35 +29,86 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Section 1: Realtime Metrics (metricLatest API) -->
-                <div class="section metrics-section">
+                <!-- Section 1: 기본정보 (이미지 + 테이블) -->
+                <div class="section info-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">기본정보</span>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-layout">
+                            <div class="info-image-placeholder">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+                                    <path d="M12 9v4m0 4h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                <span class="image-label">센서</span>
+                            </div>
+                            <table class="info-table">
+                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: 실시간 측정값 (2카드) -->
+                <div class="section status-section">
+                    <div class="section-header">
+                        <span class="section-title">실시간 측정값</span>
                         <span class="section-timestamp"></span>
                     </div>
-                    <div class="metrics-container">
-                        <!-- JS에서 metricLatest + metricConfig 기반으로 동적 생성 -->
+                    <div class="status-cards">
+                        <!-- 온도 카드 -->
+                        <div class="status-card" data-metric="temperature">
+                            <div class="status-card-header">
+                                <span class="status-card-label">온도</span>
+                            </div>
+                            <div class="status-card-body">
+                                <div class="status-current">
+                                    <span class="status-current-label">현재</span>
+                                    <span class="status-current-value">-</span>
+                                    <span class="status-current-unit">°C</span>
+                                </div>
+                                <div class="status-target">
+                                    <span class="status-target-label">적정</span>
+                                    <span class="status-target-value">-</span>
+                                    <span class="status-target-unit">°C</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 습도 카드 -->
+                        <div class="status-card" data-metric="humidity">
+                            <div class="status-card-header">
+                                <span class="status-card-label">습도</span>
+                            </div>
+                            <div class="status-card-body">
+                                <div class="status-current">
+                                    <span class="status-current-label">현재</span>
+                                    <span class="status-current-value">-</span>
+                                    <span class="status-current-unit">%</span>
+                                </div>
+                                <div class="status-target">
+                                    <span class="status-target-label">적정</span>
+                                    <span class="status-target-value">-</span>
+                                    <span class="status-target-unit">%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Section 2: Properties (assetDetailUnified.properties) -->
-                <div class="section properties-section">
-                    <div class="section-header">
-                        <span class="section-title"></span>
-                    </div>
-                    <div class="properties-container">
-                        <!-- JS에서 assetDetailUnified.properties 기반으로 동적 생성 -->
-                    </div>
-                </div>
-
-                <!-- Section 3: Chart (추후 활성화) -->
+                <!-- Section 3: 온/습도 현황 (트렌드 차트) -->
                 <div class="section chart-section">
                     <div class="section-header">
-                        <span class="section-title"></span>
+                        <span class="section-title">온/습도 현황</span>
                     </div>
-                    <div class="chart-container">
-                        <div class="empty-state">히스토리 데이터가 없습니다</div>
-                    </div>
+                    <div class="chart-container"></div>
                 </div>
             </div>
         </div>
