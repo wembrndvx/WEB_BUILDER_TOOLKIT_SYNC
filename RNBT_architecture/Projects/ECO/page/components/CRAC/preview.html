@@ -686,9 +686,9 @@
                 Wkit.fetchData(this.page, 'metricHistoryStats', {
                     baseUrl: BASE_URL, assetKey: this._defaultAssetKey,
                     interval: '1h',
-                    metricCodes: '"CRAC.RETURN_TEMP","CRAC.RETURN_HUMIDITY"',
+                    metricCodes: ['CRAC.RETURN_TEMP','CRAC.RETURN_HUMIDITY'],
                     timeFrom: from.toISOString(), timeTo: now.toISOString(),
-                    statsKeys: '"avg"',
+                    statsKeys: ['avg'],
                 }),
                 (response) => {
                     if (!response || !response.response) { console.warn('[CRAC] Trend data unavailable'); return; }

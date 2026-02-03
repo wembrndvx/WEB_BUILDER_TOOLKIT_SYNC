@@ -55,10 +55,11 @@ function initComponent() {
   // 1. 데이터 정의
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+  this._baseUrl = BASE_URL;
 
   this.datasetInfo = [
-    { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: 'metricLatest', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
+    { datasetName: 'assetDetailUnified', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
+    { datasetName: 'metricLatest', params: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
   ];
 
   // ======================
@@ -226,18 +227,17 @@ function stopRefresh() {
 function fetchTrendData() {
   const now = new Date();
   const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const metricCodes = '"CRAC.RETURN_TEMP","CRAC.RETURN_HUMIDITY"';
-  const statsKeys = '"avg"';
-
+  const metricCodes = ['CRAC.RETURN_TEMP','CRAC.RETURN_HUMIDITY'];
+  const statsKeys = ['avg'];
   fx.go(
     fetchData(this.page, 'metricHistoryStats', {
-      baseUrl: BASE_URL,
+      baseUrl: this._baseUrl,
       assetKey: this._defaultAssetKey,
       interval: '1h',
-      metricCodes: metricCodes,
+      metricCodes,
       timeFrom: from.toISOString(),
       timeTo: now.toISOString(),
-      statsKeys: statsKeys,
+      statsKeys,
     }),
     (response) => {
       if (!response || !response.response) {
@@ -296,7 +296,7 @@ function renderBasicInfo({ response }) {
   // 제조사명/모델 체이닝: assetModelKey → mdl/g → vdr/g
   if (asset.assetModelKey) {
     fx.go(
-      fetchData(this.page, 'modelDetail', { baseUrl: BASE_URL, assetModelKey: asset.assetModelKey }),
+      fetchData(this.page, 'modelDetail', { baseUrl: this._baseUrl, assetModelKey: asset.assetModelKey }),
       (modelResp) => {
         if (!modelResp?.response?.data) return;
         const model = modelResp.response.data;
@@ -304,7 +304,7 @@ function renderBasicInfo({ response }) {
 
         if (model.assetVendorKey) {
           fx.go(
-            fetchData(this.page, 'vendorDetail', { baseUrl: BASE_URL, assetVendorKey: model.assetVendorKey }),
+            fetchData(this.page, 'vendorDetail', { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey }),
             (vendorResp) => {
               if (!vendorResp?.response?.data) return;
               setCell('.info-vendor', vendorResp.response.data.name);

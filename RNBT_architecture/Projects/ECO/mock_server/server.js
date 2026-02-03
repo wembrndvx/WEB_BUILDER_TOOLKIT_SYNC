@@ -946,10 +946,23 @@ function generateMhsRow(time, assetKey, metricCode, interval, statsKeys) {
  * POST /api/v1/mhs/l - 메트릭 통계 기간 리스트 조회
  */
 app.post('/api/v1/mhs/l', (req, res) => {
+    // console.log(req, res)
     console.log(`[${new Date().toISOString()}] POST /api/v1/mhs/l`);
 
-    const { sort = [], filter = {}, statsKeys = [] } = req.body;
-    const { assetKey, interval = '1h', metricCodes = [], timeFrom, timeTo } = filter;
+    const { sort = [], filter = {}, statsKeys: rawStatsKeys = [] } = req.body;
+    const { assetKey, interval = '1h', metricCodes: rawMetricCodes = [], timeFrom, timeTo } = filter;
+
+    // 문자열 "[a,b]" 형태를 배열로 변환 (datasetList 템플릿 호환)
+    const parseArrayParam = (v) => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string') {
+            const trimmed = v.replace(/^\[|\]$/g, '').trim();
+            return trimmed ? trimmed.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')) : [];
+        }
+        return [];
+    };
+    const metricCodes = parseArrayParam(rawMetricCodes);
+    const statsKeys = parseArrayParam(rawStatsKeys);
 
     if (!assetKey || !timeFrom || !timeTo || !interval) {
         return res.status(400).json(createErrorResponse(
