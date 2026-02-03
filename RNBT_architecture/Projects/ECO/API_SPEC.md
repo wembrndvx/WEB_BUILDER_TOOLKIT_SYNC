@@ -426,16 +426,67 @@ Content-Type: application/json
 | helpText | string | 도움말 텍스트 |
 | displayOrder | number | 표시 순서 |
 
-### UPS 속성 (PropertyMeta)
+### 공통 기본정보 (전 자산 타입 공통)
 
-| fieldKey | 설명 (ko) | 설명 (en) |
-|----------|-----------|-----------|
-| rated_power_kw | 정격 전력 (kW) | Rated Power |
-| battery_capacity_ah | 배터리 용량 (Ah) | Battery Capacity |
-| efficiency_percent | 효율 (%) | Efficiency |
-| input_voltage_v | 입력 전압 (V) | Input Voltage |
-| output_voltage_v | 출력 전압 (V) | Output Voltage |
-| backup_time_min | 백업 시간 (분) | Backup Time |
+| 필드 | label (ko) | API 소스 | 매핑 |
+|------|-----------|----------|------|
+| 자산명 (ID) | 자산명 | `ast/gx` | `asset.name` |
+| 자산타입 | 자산타입 | `ast/gx` | `asset.assetType` |
+| 용도 | 용도 | `ast/gx` | `asset.usageLabel` (API 요청 완료, 필드명 미정) |
+| 제조사명 | 제조사명 | `vdr/g` | `vendor.name` (asset.assetModelKey → mdl/g → vdr/g) |
+| 모델 | 모델 | `mdl/g` | `model.name` (asset.assetModelKey → mdl/g) |
+| 위치 | 위치 | `ast/gx` | `asset.locationLabel` |
+| 상태 | 상태 | `ast/gx` | `asset.statusType` → UI 라벨 변환 |
+| 설치일 | 설치일 | `ast/gx` | `asset.installDate` → 날짜 포맷 변환 |
+| 담당자 | 담당자 | `ast/gx` | `asset.ownerUserId` → 사용자 이름 조회 (API 확인 필요) |
+| 설명 | 설명 | `ast/gx` | `asset.description` |
+
+### 자산 타입별 properties 항목
+
+#### UPS
+
+| fieldKey | label (ko) | 예시 값 |
+|----------|-----------|---------|
+| rated_capacity | 정격 용량 | 500kVA |
+| output_voltage | 출력 전압 | 380V |
+| output_phase | 출력 상 | 3상 |
+| ups_type | UPS 타입 | 온라인 |
+| battery_type | 배터리 구성 | 리튬이온 |
+
+#### 분전반 (PDU)
+
+| fieldKey | label (ko) | 예시 값 |
+|----------|-----------|---------|
+| rated_voltage | 정격전압 | 380V |
+| rated_current | 정격전류 | 800 A |
+| phase | 상 | 3Ø (3상) |
+| main_breaker_capacity | 주 차단기 용량 | 1000 A |
+| upstream_equipment | 상위전원장비 | UPS-01 |
+
+#### 수배전반 (SWBD)
+
+| fieldKey | label (ko) | 예시 값 |
+|----------|-----------|---------|
+| rated_voltage | 정격전압 | 22.9 kV |
+| rated_current | 정격전류 | 1,250 A |
+| rated_breaking_current | 정격차단전류 | 25 kA |
+| breaker_type | 차단기 타입 | VCB |
+
+#### 항온항습기 (CRAC)
+
+| fieldKey | label (ko) | 예시 값 |
+|----------|-----------|---------|
+| equipment_type | 장비타입 | CRAH |
+| rated_cooling_capacity | 정격냉방용량 | 120 kW |
+| airflow_direction | 급·배기 방향 | 하부 급기 / 상부 배기 |
+
+#### 온습도센서 (TempHumiditySensor)
+
+| fieldKey | label (ko) | 예시 값 |
+|----------|-----------|---------|
+| measurement_range | 측정범위 | -10 ~ 60 ℃ / 0 ~ 95 %RH |
+| accuracy | 정확도 | ±0.3 ℃ / ±2 %RH |
+| install_position_type | 설치 위치 유형 | 랙 전면 흡입부 |
 
 ---
 
