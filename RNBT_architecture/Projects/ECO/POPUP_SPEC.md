@@ -154,7 +154,7 @@ POST /api/v1/mhs/l
 
 | 필드 | 예시 값 | 가능 여부 |
 |------|---------|----------|
-| 담당자 | 홍길동 | **X** |
+| 담당자 | 홍길동 | **O** (※ `ownerUserId`로 사용자 이름 조회 API 확인 필요) |
 | 설명 | 주 전력 공급 장치 | **O** |
 | 정격 용량 | 500kVA | **O** |
 | 출력 전압 | 380V | **O** |
@@ -166,16 +166,15 @@ POST /api/v1/mhs/l
 
 ## 종합: 미제공 데이터 항목
 
-| 항목 | 유형 | 대응 방안 |
-|------|------|----------|
-| 배터리 사용률 (SOC) | 메트릭 | metricConfig에 `UPS.BATT_SOC` 추가 + mock server |
-| 배터리 잔여시간 | 메트릭 | metricConfig에 `UPS.BATT_REMAIN_TIME` 추가 + mock server |
-| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server |
-| 용도 | 속성 | PropertyMeta에 `usage` 필드 추가 또는 assetType 기반 매핑 |
-| 담당자 이름 | 사용자 API | `ownerUserId` → 사용자 조회 API 필요 (현재 미구현) |
-| 출력 상 | 속성 | PropertyMeta에 `phase_count` 추가 또는 specJson 활용 |
-| UPS 타입 | 속성 | PropertyMeta에 `ups_type` 추가 |
-| 배터리 구성 | 속성 | PropertyMeta에 `battery_type` 추가 |
+| 항목 | 유형 | 미제공 사유 | 대응 방안 |
+|------|------|-----------|----------|
+| 배터리 사용률 (SOC, State of Charge: 배터리 잔존 충전량 비율) | 메트릭 | metricConfig에 `UPS.BATT_SOC` 코드 미정의. 장비가 직접 보고하는 SOC 메트릭이 없음 | metricConfig에 `UPS.BATT_SOC` 추가 + mock server |
+| 배터리 잔여시간 | 메트릭 | metricConfig에 `UPS.BATT_REMAIN_TIME` 코드 미정의. 장비가 직접 보고하는 잔여시간 메트릭이 없음 | metricConfig에 `UPS.BATT_REMAIN_TIME` 추가 + mock server |
+| 부하율 | 메트릭 | metricConfig에 `UPS.LOAD_RATE` 코드 미정의. 장비가 직접 보고하는 부하율 메트릭이 없음 (프론트 계산은 이론상 가능: OUTPUT_V × OUTPUT_A / 정격용량) | metricConfig에 `UPS.LOAD_RATE` 추가 + mock server |
+| 용도 | 속성 | `ast/gx` properties에 용도 관련 필드 미존재 | PropertyMeta에 용도 속성 추가 또는 하드코딩 |
+| 출력 상 | 속성 | `ast/gx` properties에 출력 상 관련 필드 미존재. `mdl/g` specJson 미확인 | PropertyMeta에 출력 상 속성 추가 또는 specJson 활용 |
+| UPS 타입 | 속성 | `ast/gx` properties에 UPS 토폴로지 필드 미존재. assetType="UPS"만 존재하며 하위 분류 없음 | PropertyMeta에 UPS 토폴로지 속성 추가 |
+| 배터리 구성 | 속성 | `ast/gx` properties에 배터리 종류 필드 미존재 | PropertyMeta에 배터리 종류 속성 추가 |
 
 ---
 
