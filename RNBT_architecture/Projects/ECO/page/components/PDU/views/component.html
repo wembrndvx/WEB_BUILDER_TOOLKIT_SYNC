@@ -1,12 +1,11 @@
 <!--
   PDU - Shadow DOM Popup Template
-  PDU(분전반) 상세 팝업
+  분전반 상세 팝업
 
-  섹션 구조:
-  1. Header - 자산 기본 정보 (assetDetailUnified.asset)
-  2. Realtime Metrics - 실시간 전력계측 (metricLatest + metricConfig, DIST.*)
-  3. Properties - 정적 속성 (assetDetailUnified.properties)
-  4. Tab [Circuits | Power] - 회로/차트 (추후)
+  섹션 구조 (기획서 v.0.8_260128 기준):
+  1. Header - 자산명 + 상태 badge + 닫기
+  2. 기본정보 - 이미지 placeholder + 8필드 테이블
+  3. 실시간 전력추이현황 - 4탭 트렌드 차트 (전압/전류/전력사용량/입력주파수)
 -->
 <template id="popup-pdu">
     <div class="popup-overlay">
@@ -29,47 +28,50 @@
 
             <!-- Body -->
             <div class="popup-body">
-                <!-- Section 1: Realtime Metrics (metricLatest API) -->
-                <div class="section metrics-section">
-                    <div class="section-header">
-                        <span class="section-title"></span>
-                        <span class="section-timestamp"></span>
-                    </div>
-                    <div class="metrics-container">
-                        <!-- JS에서 metricLatest + metricConfig 기반으로 동적 생성 -->
-                    </div>
-                </div>
-
-                <!-- Section 2: Properties (assetDetailUnified.properties) -->
-                <div class="section properties-section">
-                    <div class="section-header">
-                        <span class="section-title"></span>
-                    </div>
-                    <div class="properties-container">
-                        <!-- JS에서 assetDetailUnified.properties 기반으로 동적 생성 -->
-                    </div>
-                </div>
-
-                <!-- Tab Header -->
-                <div class="tab-header">
-                    <button class="tab-btn active" data-tab="circuits">Circuits</button>
-                    <button class="tab-btn" data-tab="power">Power History</button>
-                </div>
-
-                <!-- Tab Content -->
-                <div class="tab-content">
-                    <div class="tab-panel active" data-panel="circuits">
-                        <div class="panel-header">
-                            <span class="panel-title">Circuit Status</span>
+                <!-- Section 1: 기본정보 (이미지 + 테이블) -->
+                <div class="section info-section">
+                    <div class="info-layout">
+                        <div class="info-image-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                <rect x="6" y="4" width="36" height="40" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                <line x1="6" y1="14" x2="42" y2="14" stroke="#4b5563" stroke-width="2"/>
+                                <line x1="6" y1="24" x2="42" y2="24" stroke="#4b5563" stroke-width="2"/>
+                                <line x1="6" y1="34" x2="42" y2="34" stroke="#4b5563" stroke-width="2"/>
+                                <circle cx="14" cy="9" r="2" fill="#4b5563"/>
+                                <circle cx="14" cy="19" r="2" fill="#4b5563"/>
+                                <circle cx="14" cy="29" r="2" fill="#4b5563"/>
+                                <circle cx="14" cy="39" r="2" fill="#4b5563"/>
+                            </svg>
+                            <span class="image-label">PDU</span>
                         </div>
-                        <div class="table-container"></div>
+                        <table class="info-table">
+                            <tbody>
+                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                            </tbody>
+                        </table>
                     </div>
+                </div>
 
-                    <div class="tab-panel" data-panel="power">
-                        <div class="panel-header">
-                            <span class="panel-title">Power & Current History</span>
-                        </div>
-                        <div class="chart-container"></div>
+                <!-- Section 2: 실시간 전력추이현황 (4탭 트렌드 차트) -->
+                <div class="section chart-section">
+                    <div class="section-header">
+                        <span class="section-title">실시간 전력추이현황</span>
+                    </div>
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="voltage">전압</button>
+                        <button class="tab-btn" data-tab="current">전류</button>
+                        <button class="tab-btn" data-tab="power">전력사용량</button>
+                        <button class="tab-btn" data-tab="frequency">입력주파수</button>
+                    </div>
+                    <div class="chart-container">
+                        <div class="empty-state">차트 데이터를 불러오는 중...</div>
                     </div>
                 </div>
             </div>

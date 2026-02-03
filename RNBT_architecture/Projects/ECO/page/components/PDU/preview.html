@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDU - Preview (Metric API 연동)</title>
+    <title>PDU - Preview (스펙 v.0.8_260128)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -56,7 +54,7 @@
 
     <script>
         // ======================
-        // TEMPLATE DATA
+        // HTML TEMPLATE (component.html 인라인)
         // ======================
         const htmlCode = `
             <template id="popup-pdu">
@@ -77,160 +75,140 @@
                             </div>
                         </div>
                         <div class="popup-body">
-                            <div class="section metrics-section">
+                            <div class="section info-section">
+                                <div class="info-layout">
+                                    <div class="info-image-placeholder">
+                                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                            <rect x="6" y="4" width="36" height="40" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                            <line x1="6" y1="14" x2="42" y2="14" stroke="#4b5563" stroke-width="2"/>
+                                            <line x1="6" y1="24" x2="42" y2="24" stroke="#4b5563" stroke-width="2"/>
+                                            <line x1="6" y1="34" x2="42" y2="34" stroke="#4b5563" stroke-width="2"/>
+                                            <circle cx="14" cy="9" r="2" fill="#4b5563"/>
+                                            <circle cx="14" cy="19" r="2" fill="#4b5563"/>
+                                            <circle cx="14" cy="29" r="2" fill="#4b5563"/>
+                                            <circle cx="14" cy="39" r="2" fill="#4b5563"/>
+                                        </svg>
+                                        <span class="image-label">PDU</span>
+                                    </div>
+                                    <table class="info-table">
+                                        <tbody>
+                                            <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                            <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                            <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                            <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                            <tr><th>모델</th><td class="info-model">-</td></tr>
+                                            <tr><th>위치</th><td class="info-location">-</td></tr>
+                                            <tr><th>상태</th><td class="info-status">-</td></tr>
+                                            <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="section chart-section">
                                 <div class="section-header">
-                                    <span class="section-title"></span>
-                                    <span class="section-timestamp"></span>
+                                    <span class="section-title">실시간 전력추이현황</span>
                                 </div>
-                                <div class="metrics-container"></div>
-                            </div>
-                            <div class="section properties-section">
-                                <div class="section-header">
-                                    <span class="section-title"></span>
+                                <div class="tab-header">
+                                    <button class="tab-btn active" data-tab="voltage">전압</button>
+                                    <button class="tab-btn" data-tab="current">전류</button>
+                                    <button class="tab-btn" data-tab="power">전력사용량</button>
+                                    <button class="tab-btn" data-tab="frequency">입력주파수</button>
                                 </div>
-                                <div class="properties-container"></div>
-                            </div>
-                        <div class="tab-header">
-                            <button class="tab-btn active" data-tab="circuits">Circuits</button>
-                            <button class="tab-btn" data-tab="power">Power History</button>
-                        </div>
-                        <div class="tab-content">
-                            <div class="tab-panel active" data-panel="circuits">
-                                <div class="panel-header">
-                                    <span class="panel-title">Circuit Status</span>
+                                <div class="chart-container">
+                                    <div class="empty-state">차트 데이터를 불러오는 중...</div>
                                 </div>
-                                <div class="table-container"></div>
                             </div>
-                            <div class="tab-panel" data-panel="power">
-                                <div class="panel-header">
-                                    <span class="panel-title">Power & Current History</span>
-                                </div>
-                                <div class="chart-container"></div>
-                            </div>
-                        </div>
                         </div>
                     </div>
                 </div>
             </template>
         `;
 
+        // ======================
+        // CSS (component.css 인라인)
+        // ======================
         const cssCode = `
             .popup-overlay {
-                position: fixed; top: 0; left: 0;
-                width: 100vw; height: 100vh;
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
                 background: rgba(0, 0, 0, 0.6);
-                display: flex; align-items: center; justify-content: center;
-                z-index: 1000;
+                display: flex; align-items: center; justify-content: center; z-index: 1000;
             }
-
             .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px;
-                width: 680px; max-width: 95vw; height: 90vh;
-                overflow: hidden;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142;
-                display: flex; flex-direction: column;
+                background: #1a1f2e; border-radius: 12px;
+                width: 560px; max-width: 90vw; height: 90vh;
+                overflow: hidden; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142; display: flex; flex-direction: column;
             }
-
             .popup-header {
                 display: flex; justify-content: space-between; align-items: center;
                 padding: 20px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
             }
-
             .header-info { display: flex; flex-direction: column; gap: 4px; }
             .pdu-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
             .pdu-zone { font-size: 13px; color: #8892a0; }
-
             .header-actions { display: flex; align-items: center; gap: 12px; }
-            .pdu-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .pdu-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
             .pdu-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
             .pdu-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
             .pdu-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-
             .close-btn {
                 display: flex; align-items: center; justify-content: center;
                 width: 32px; height: 32px; padding: 0;
                 background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; cursor: pointer;
-                transition: background 0.15s, color 0.15s;
+                color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s;
             }
             .close-btn:hover { background: #2a3142; color: #e0e6ed; }
-
-            .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; overflow: hidden; }
-
-            /* Section Common */
-            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-            .section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
-            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
-            .section-timestamp { font-size: 11px; color: #6b7280; }
-
-            /* Properties Section */
-            .properties-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .property-card { background: #252b3b; padding: 12px 16px; }
-            .property-label { font-size: 11px; color: #8892a0; margin-bottom: 4px; }
-            .property-value { font-size: 14px; font-weight: 500; color: #e0e6ed; }
-            .metrics-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #2a3142; flex: 1; overflow-y: auto; }
-            .metric-card { background: #252b3b; padding: 12px 10px; text-align: center; }
-            .metric-label { font-size: 10px; color: #8892a0; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
-            .metric-value { font-size: 20px; font-weight: 600; color: #e0e6ed; line-height: 1; }
-            .metric-unit { font-size: 11px; font-weight: 400; color: #8892a0; margin-left: 2px; }
-            .empty-state { padding: 20px 16px; text-align: center; color: #6b7280; font-size: 13px; }
-            .error-state { padding: 20px 16px; text-align: center; color: #ef4444; font-size: 13px; }
-
-            .tab-header {
-                display: flex; gap: 4px;
-                padding: 12px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+            .popup-body {
+                padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+                flex: 1; min-height: 0; overflow-y: auto;
             }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+            .section-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 12px 16px; border-bottom: 1px solid #2a3142;
+            }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
+
+            /* 기본정보 */
+            .info-section { padding: 16px; }
+            .info-layout { display: flex; gap: 16px; }
+            .info-image-placeholder {
+                width: 100px; min-height: 100px; background: #1a1f2e;
+                border-radius: 8px; border: 1px solid #2a3142;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 8px; flex-shrink: 0;
+            }
+            .info-image-placeholder svg { opacity: 0.5; }
+            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
+            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
+            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
+            .info-table td { color: #e0e6ed; font-weight: 500; }
+            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
+
+            /* 차트 */
+            .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+            .tab-header { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
             .tab-btn {
-                padding: 8px 16px; background: transparent; border: none; border-radius: 6px;
-                color: #8892a0; font-size: 14px; font-weight: 500; cursor: pointer;
+                padding: 6px 12px; background: transparent; border: none; border-radius: 6px;
+                color: #8892a0; font-size: 12px; font-weight: 500; cursor: pointer;
                 transition: background 0.15s, color 0.15s;
             }
             .tab-btn:hover { background: #252b3b; color: #e0e6ed; }
             .tab-btn.active { background: #3b82f6; color: #fff; }
-
-            .tab-content { flex: 1; overflow: hidden; min-height: 0; }
-            .tab-panel { display: none; height: 100%; flex-direction: column; }
-            .tab-panel.active { display: flex; }
-
-            .panel-header {
-                display: flex; justify-content: space-between; align-items: center;
-                padding: 12px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
-            }
-            .panel-title { font-size: 14px; font-weight: 500; color: #e0e6ed; }
-
-            .table-container { flex: 1; min-height: 250px; overflow: auto; padding: 0 16px 16px; }
-            .table-container .tabulator { border-radius: 8px; font-size: 12px; }
-            .table-container .tabulator-header { border-bottom: 2px solid #3b82f6; }
-            .table-container .tabulator .tabulator-table { background: transparent; }
-            .table-container .tabulator-row { background: transparent !important; min-height: 36px; }
-
-            .chart-container { flex: 1; min-height: 280px; padding: 16px; }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; }
+            .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
+            .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
         `;
 
         // ======================
-        // METRIC CONFIG (18 DIST.* metrics)
+        // TAB CONFIG
         // ======================
-        const METRIC_CONFIG = {
-            'DIST.V_LN_AVG': { label: '평균선간전압L-N', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
-            'DIST.V_LL_AVG': { label: '평균상간전압L-L', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
-            'DIST.V_FUND_AVG': { label: '기본파전압평균', valueType: 'NUMBER', unit: 'V', scale: 1.0 },
-            'DIST.FREQUENCY_HZ': { label: '주파수', valueType: 'NUMBER', unit: 'Hz', scale: 1.0 },
-            'DIST.TEMP_C': { label: '온도', valueType: 'NUMBER', unit: '°C', scale: 1.0 },
-            'DIST.CURRENT_AVG_A': { label: '평균전류', valueType: 'NUMBER', unit: 'A', scale: 1.0 },
-            'DIST.CURRENT_FUND_AVG_A': { label: '기본파전류평균', valueType: 'NUMBER', unit: 'A', scale: 1.0 },
-            'DIST.ACTIVE_POWER_TOTAL_KW': { label: '유효전력합', valueType: 'NUMBER', unit: 'kW', scale: 1.0 },
-            'DIST.REACTIVE_POWER_TOTAL_KVAR': { label: '무효전력합', valueType: 'NUMBER', unit: 'kVAR', scale: 1.0 },
-            'DIST.APPARENT_POWER_TOTAL_KVA': { label: '피상전력합', valueType: 'NUMBER', unit: 'kVA', scale: 1.0 },
-            'DIST.ACTIVE_ENERGY_RECEIVED_KWH': { label: '수전유효전력량', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
-            'DIST.ACTIVE_ENERGY_DELIVERED_KWH': { label: '송전유효전력량', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
-            'DIST.ACTIVE_ENERGY_SUM_KWH': { label: '유효전력량합', valueType: 'NUMBER', unit: 'kWh', scale: 1.0 },
-            'DIST.REACTIVE_ENERGY_RECEIVED_KVARH': { label: '수전무효전력량', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
-            'DIST.REACTIVE_ENERGY_DELIVERED_KVARH': { label: '송전무효전력량', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
-            'DIST.REACTIVE_ENERGY_SUM_KVARH': { label: '무효전력량합', valueType: 'NUMBER', unit: 'kVARh', scale: 1.0 },
-            'DIST.APPARENT_ENERGY_KVAH': { label: '피상전력량', valueType: 'NUMBER', unit: 'kVAh', scale: 1.0 },
-            'DIST.POWER_FACTOR_TOTAL': { label: '역률합', valueType: 'NUMBER', unit: '', scale: 1.0 },
+        const TAB_CONFIG = {
+            voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',   unit: 'V',  color: '#3b82f6', scale: 1.0 },
+            current:   { metricCode: 'DIST.CURRENT_AVG_A',          label: '평균 전류',   unit: 'A',  color: '#f59e0b', scale: 1.0 },
+            power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',  label: '합계 전력',   unit: 'kW', color: '#8b5cf6', scale: 1.0 },
+            frequency: { metricCode: 'DIST.FREQUENCY_HZ',           label: '주파수',      unit: 'Hz', color: '#22c55e', scale: 1.0 },
         };
 
         // ======================
@@ -245,176 +223,93 @@
             }
         };
 
+        const BASE_URL = '10.23.128.125:4004';
+        let currentStatus = 'normal';
+
         const Wkit = {
             bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
             fetchData: (page, datasetName, param) => {
                 console.log('[Wkit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
+                return Promise.resolve({ response: { data: getMockData(datasetName, param) } });
             }
         };
 
-        // Mock data - 통합 API 응답 구조 (assetDetailUnified)
-        const mockPDUData = {
+        // ======================
+        // MOCK DATA
+        // ======================
+
+        const mockAssetData = {
             normal: {
                 asset: {
-                    name: 'PDU-A01',
-                    locationLabel: 'Server Room A',
-                    statusType: 'ACTIVE'
+                    name: 'PDB-01', locationLabel: '2층 전기실 / Zone-A',
+                    statusType: 'ACTIVE', assetType: '분전반',
+                    usageLabel: '랙 전원 분배', installDate: '2025-10-23T00:00:00.000Z',
+                    assetModelKey: 'model-pdu-001'
                 },
-                properties: [
-                    { label: 'Power', value: '45.2kW', helpText: 'Total power consumption', displayOrder: 1 },
-                    { label: 'Current', value: '65.5A', helpText: 'Total current draw', displayOrder: 2 },
-                    { label: 'Voltage', value: '220V', helpText: 'Input voltage', displayOrder: 3 },
-                    { label: 'Active', value: '18/24', helpText: 'Active circuits', displayOrder: 4 },
-                    { label: 'PF', value: '0.95', helpText: 'Power factor', displayOrder: 5 }
-                ]
+                properties: []
             },
             warning: {
                 asset: {
-                    name: 'PDU-B02',
-                    locationLabel: 'Server Room B',
-                    statusType: 'WARNING'
+                    name: 'PDB-02', locationLabel: '3층 전기실 / Zone-B',
+                    statusType: 'WARNING', assetType: '분전반',
+                    usageLabel: '냉각장치 전원', installDate: '2024-08-15T00:00:00.000Z',
+                    assetModelKey: 'model-pdu-001'
                 },
-                properties: [
-                    { label: 'Power', value: '72.8kW', helpText: 'Total power consumption', displayOrder: 1 },
-                    { label: 'Current', value: '105.2A', helpText: 'Total current draw', displayOrder: 2 },
-                    { label: 'Voltage', value: '218V', helpText: 'Input voltage', displayOrder: 3 },
-                    { label: 'Active', value: '22/24', helpText: 'Active circuits', displayOrder: 4 },
-                    { label: 'PF', value: '0.92', helpText: 'Power factor', displayOrder: 5 }
-                ]
+                properties: []
             },
             critical: {
                 asset: {
-                    name: 'PDU-C03',
-                    locationLabel: 'Server Room C',
-                    statusType: 'CRITICAL'
+                    name: 'PDB-03', locationLabel: '1층 전기실 / Zone-C',
+                    statusType: 'CRITICAL', assetType: '분전반',
+                    usageLabel: '서버 전원', installDate: '2024-03-10T00:00:00.000Z',
+                    assetModelKey: 'model-pdu-002'
                 },
-                properties: [
-                    { label: 'Power', value: '85.5kW', helpText: 'Total power consumption - OVERLOAD', displayOrder: 1 },
-                    { label: 'Current', value: '125.8A', helpText: 'Total current draw - HIGH', displayOrder: 2 },
-                    { label: 'Voltage', value: '215V', helpText: 'Input voltage - LOW', displayOrder: 3 },
-                    { label: 'Active', value: '24/24', helpText: 'Active circuits - FULL', displayOrder: 4 },
-                    { label: 'PF', value: '0.88', helpText: 'Power factor - LOW', displayOrder: 5 }
-                ]
+                properties: []
             }
         };
 
-        // metricLatest 응답 (실시간 전력계측)
-        const mockMetricData = {
-            normal: [
-                { metricCode: 'DIST.V_LN_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 220.5 },
-                { metricCode: 'DIST.V_LL_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 381.2 },
-                { metricCode: 'DIST.V_FUND_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 219.8 },
-                { metricCode: 'DIST.FREQUENCY_HZ', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 60.0 },
-                { metricCode: 'DIST.TEMP_C', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 32.5 },
-                { metricCode: 'DIST.CURRENT_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 65.5 },
-                { metricCode: 'DIST.CURRENT_FUND_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 64.8 },
-                { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 45.2 },
-                { metricCode: 'DIST.REACTIVE_POWER_TOTAL_KVAR', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 12.3 },
-                { metricCode: 'DIST.APPARENT_POWER_TOTAL_KVA', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 46.8 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_RECEIVED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 125680 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_DELIVERED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 125680 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_RECEIVED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 34520 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_DELIVERED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_SUM_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 34520 },
-                { metricCode: 'DIST.APPARENT_ENERGY_KVAH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 130250 },
-                { metricCode: 'DIST.POWER_FACTOR_TOTAL', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0.95 }
-            ],
-            warning: [
-                { metricCode: 'DIST.V_LN_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 218.2 },
-                { metricCode: 'DIST.V_LL_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 378.5 },
-                { metricCode: 'DIST.V_FUND_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 217.5 },
-                { metricCode: 'DIST.FREQUENCY_HZ', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 59.8 },
-                { metricCode: 'DIST.TEMP_C', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 38.2 },
-                { metricCode: 'DIST.CURRENT_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 105.2 },
-                { metricCode: 'DIST.CURRENT_FUND_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 103.8 },
-                { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 72.8 },
-                { metricCode: 'DIST.REACTIVE_POWER_TOTAL_KVAR', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 22.5 },
-                { metricCode: 'DIST.APPARENT_POWER_TOTAL_KVA', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 76.2 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_RECEIVED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 198450 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_DELIVERED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 198450 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_RECEIVED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 52380 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_DELIVERED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_SUM_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 52380 },
-                { metricCode: 'DIST.APPARENT_ENERGY_KVAH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 205800 },
-                { metricCode: 'DIST.POWER_FACTOR_TOTAL', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0.92 }
-            ],
-            critical: [
-                { metricCode: 'DIST.V_LN_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 215.0 },
-                { metricCode: 'DIST.V_LL_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 372.8 },
-                { metricCode: 'DIST.V_FUND_AVG', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 214.2 },
-                { metricCode: 'DIST.FREQUENCY_HZ', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 59.5 },
-                { metricCode: 'DIST.TEMP_C', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 45.8 },
-                { metricCode: 'DIST.CURRENT_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 125.8 },
-                { metricCode: 'DIST.CURRENT_FUND_AVG_A', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 124.2 },
-                { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85.5 },
-                { metricCode: 'DIST.REACTIVE_POWER_TOTAL_KVAR', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 35.8 },
-                { metricCode: 'DIST.APPARENT_POWER_TOTAL_KVA', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 92.7 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_RECEIVED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 312500 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_DELIVERED_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 312500 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_RECEIVED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85200 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_DELIVERED_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0 },
-                { metricCode: 'DIST.REACTIVE_ENERGY_SUM_KVARH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 85200 },
-                { metricCode: 'DIST.APPARENT_ENERGY_KVAH', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 325800 },
-                { metricCode: 'DIST.POWER_FACTOR_TOTAL', eventedAt: new Date().toISOString(), valueType: 'NUMBER', valueNumber: 0.88 }
-            ]
+        const mockModelData = {
+            'model-pdu-001': { name: 'SUS-PDB-800', assetVendorKey: 'vendor-ls' },
+            'model-pdu-002': { name: 'PDU-4200', assetVendorKey: 'vendor-schneider' },
         };
 
-        const mockCircuitData = [
-            { id: 1, name: 'Rack A-1', current: 12.5, power: 8.6, status: 'active', breaker: 'on' },
-            { id: 2, name: 'Rack A-2', current: 8.2, power: 5.6, status: 'active', breaker: 'on' },
-            { id: 3, name: 'Rack A-3', current: 15.8, power: 10.8, status: 'active', breaker: 'on' },
-            { id: 4, name: 'Rack A-4', current: 0, power: 0, status: 'inactive', breaker: 'off' },
-            { id: 5, name: 'Rack B-1', current: 10.2, power: 7.0, status: 'active', breaker: 'on' },
-            { id: 6, name: 'Rack B-2', current: 18.5, power: 12.7, status: 'active', breaker: 'on' }
-        ];
+        const mockVendorData = {
+            'vendor-ls': { name: 'LS ELECTRIC' },
+            'vendor-schneider': { name: 'Schneider Electric' },
+        };
 
-        let currentStatus = 'normal';
-
-        function generateHistoryData() {
-            const timestamps = [];
-            const power = [];
-            const current = [];
+        function generateTrendData() {
+            const result = [];
             const now = new Date();
-
             for (let i = 23; i >= 0; i--) {
                 const time = new Date(now.getTime() - i * 3600000);
-                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-                const basePower = 45 + Math.sin(i / 4) * 10;
-                power.push(Math.round((basePower + (Math.random() - 0.5) * 8) * 10) / 10);
-                current.push(Math.round((basePower * 1.45 + (Math.random() - 0.5) * 10) * 10) / 10);
+                result.push(
+                    { time: time.toISOString(), metricCode: 'DIST.V_LN_AVG', statsBody: { avg: 220 + (Math.random() - 0.5) * 10 } },
+                    { time: time.toISOString(), metricCode: 'DIST.CURRENT_AVG_A', statsBody: { avg: 150 + Math.sin(i / 4) * 30 + (Math.random() - 0.5) * 20 } },
+                    { time: time.toISOString(), metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', statsBody: { avg: 45 + Math.sin(i / 5) * 10 + (Math.random() - 0.5) * 8 } },
+                    { time: time.toISOString(), metricCode: 'DIST.FREQUENCY_HZ', statsBody: { avg: 60 + (Math.random() - 0.5) * 0.2 } }
+                );
             }
-
-            // API fields 구조에 맞춤
-            return {
-                timestamps,
-                values: { power, current },
-                fields: [
-                    { key: 'power', label: 'Power', unit: 'kW' },
-                    { key: 'current', label: 'Current', unit: 'A' }
-                ]
-            };
+            return result;
         }
 
-        function getMockData(datasetName) {
+        function getMockData(datasetName, param) {
             switch (datasetName) {
-                case 'assetDetailUnified': return mockPDUData[currentStatus];
-                case 'metricLatest': return mockMetricData[currentStatus];
-                case 'pduCircuits': return { circuits: mockCircuitData };
-                case 'pduHistory': return generateHistoryData();
+                case 'assetDetailUnified': return mockAssetData[currentStatus];
+                case 'metricHistoryStats': return generateTrendData();
+                case 'modelDetail': return mockModelData[param?.assetModelKey] || null;
+                case 'vendorDetail': return mockVendorData[param?.assetVendorKey] || null;
                 default: return {};
             }
         }
 
+        // ======================
         // Mock PopupMixin
+        // ======================
         const PopupMixin = {
             applyShadowPopupMixin: (ctx, config) => {
                 let shadowRoot = null;
                 let _chart = null;
-                let _table = null;
 
                 ctx.showPopup = () => {
                     const host = ctx.page.element;
@@ -424,39 +319,24 @@
                         shadowRoot = host.shadowRoot;
                         shadowRoot.innerHTML = '';
                     }
-
-                    const tabulatorLink = document.createElement('link');
-                    tabulatorLink.rel = 'stylesheet';
-                    tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
-                    shadowRoot.appendChild(tabulatorLink);
-
                     const style = document.createElement('style');
                     style.textContent = config.getStyles();
                     shadowRoot.appendChild(style);
-
                     const content = document.createElement('div');
                     content.innerHTML = config.getHTML();
                     shadowRoot.appendChild(content);
-
                     ctx._shadowRoot = shadowRoot;
                     config.onCreated?.();
                     console.log('[PopupMixin] Popup shown');
                 };
 
                 ctx.hidePopup = () => {
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        console.log('[PopupMixin] Popup hidden');
-                    }
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; console.log('[PopupMixin] Popup hidden'); }
                 };
 
                 ctx.destroyPopup = () => {
                     if (_chart) { _chart.dispose(); _chart = null; }
-                    if (_table) { _table.destroy(); _table = null; }
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        ctx._shadowRoot = null;
-                    }
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; ctx._shadowRoot = null; }
                     console.log('[PopupMixin] Popup destroyed');
                 };
 
@@ -472,10 +352,6 @@
 
                 ctx._getChartRef = () => _chart;
                 ctx._setChartRef = (c) => { _chart = c; };
-                ctx._getTableRef = () => _table;
-                ctx._setTableRef = (t) => { _table = t; };
-                ctx.getChart = () => _chart;
-                ctx.getTable = () => _table;
             },
 
             applyEChartsMixin: (ctx) => {
@@ -487,37 +363,13 @@
                         console.log('[EChartsMixin] Chart created');
                     }
                 };
-
                 ctx.updateChart = (selector, option) => {
                     let chart = ctx._getChartRef();
                     if (!chart) {
                         const container = ctx.popupQuery(selector);
-                        if (container) {
-                            chart = echarts.init(container);
-                            ctx._setChartRef(chart);
-                        }
+                        if (container) { chart = echarts.init(container); ctx._setChartRef(chart); }
                     }
-                    if (chart) {
-                        chart.setOption(option);
-                        console.log('[EChartsMixin] Chart updated');
-                    }
-                };
-            },
-
-            applyTabulatorMixin: (ctx) => {
-                ctx.createTable = (selector) => {
-                    console.log('[TabulatorMixin] Table container registered:', selector);
-                };
-
-                ctx.updateTable = (selector, data, options) => {
-                    let table = ctx._getTableRef();
-                    if (table) { table.destroy(); }
-                    const container = ctx.popupQuery(selector);
-                    if (container) {
-                        table = new Tabulator(container, { ...options, data });
-                        ctx._setTableRef(table);
-                        console.log('[TabulatorMixin] Table updated');
-                    }
+                    if (chart) { chart.setOption(option, true); console.log('[EChartsMixin] Chart updated'); }
                 };
             }
         };
@@ -532,6 +384,13 @@
             return template?.innerHTML || '';
         }
 
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         // ======================
         // COMPONENT INSTANCE
         // ======================
@@ -539,14 +398,12 @@
 
         function createInstance() {
             if (instance) { onInstanceUnLoad.call(instance); }
-
             instance = {
                 id: 'preview-pdu',
                 page: { element: document.getElementById('popup-host') },
                 properties: { publishCode: { htmlCode, cssCode } },
                 setter: { assetInfo: { assetKey: 'mock-pdu-001' } }
             };
-
             initComponent.call(instance);
             updateInstanceInfo();
         }
@@ -557,12 +414,11 @@
         }
 
         // ======================
-        // COMPONENT LIFECYCLE
+        // COMPONENT LIFECYCLE (register.js 로직 미러)
         // ======================
 
-        // Status transform functions (Asset API v1)
         function statusTypeToLabel(statusType) {
-            const labels = { ACTIVE: 'Normal', WARNING: 'Warning', CRITICAL: 'Critical', INACTIVE: 'Inactive', MAINTENANCE: 'Maintenance' };
+            const labels = { ACTIVE: '정상운영', WARNING: '주의', CRITICAL: '위험', INACTIVE: '비활성', MAINTENANCE: '유지보수' };
             return labels[statusType] || statusType;
         }
 
@@ -571,106 +427,43 @@
             return map[statusType] || 'normal';
         }
 
-        function formatTimestamp(isoString) {
-            if (!isoString) return '';
-            try {
-                const date = new Date(isoString);
-                return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            } catch { return ''; }
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try { return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }); }
+            catch { return dateStr; }
         }
-
-        const BASE_URL = '10.23.128.125:4004';
 
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
-            const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
+            const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+            this._baseUrl = BASE_URL;
+            this._trendData = null;
+            this._activeTab = 'voltage';
 
-            // 데이터셋 정의 (통합 API + metricLatest)
             this.datasetInfo = [
-                { datasetName: 'assetDetailUnified', render: ['renderAssetInfo', 'renderProperties'] },
-                { datasetName: 'metricLatest', render: ['renderMetrics'] }
+                { datasetName: 'assetDetailUnified', params: { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
             ];
 
-            // 헤더 영역 고정 필드
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+
             this.baseInfoConfig = [
                 { key: 'name', selector: '.pdu-name' },
                 { key: 'locationLabel', selector: '.pdu-zone' },
-                { key: 'statusType', selector: '.pdu-status', transform: statusTypeToLabel },
-                { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: statusTypeToDataAttr }
+                { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
+                { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
             ];
 
-            // 동적 필드 컨테이너 selector (Summary Bar for properties)
-            this.propertiesContainerSelector = '.properties-container';
-
-            // Metrics selectors
-            this.metricsContainerSelector = '.metrics-container';
-            this.timestampSelector = '.section-timestamp';
-            this.metricConfig = METRIC_CONFIG;
-
-            // Section Titles
-            this.sectionTitles = {
-                '.metrics-section .section-title': '실시간 전력계측',
-                '.properties-section .section-title': '속성 정보',
-            };
-
-            this.formatTimestamp = formatTimestamp.bind(this);
-
-            this.tableConfig = {
-                selector: '.table-container',
-                columns: [
-                    { title: 'ID', field: 'id', widthGrow: 0.5, hozAlign: 'right' },
-                    { title: 'Name', field: 'name', widthGrow: 2 },
-                    { title: 'Current', field: 'current', widthGrow: 1, hozAlign: 'right', formatter: (cell) => `${cell.getValue()}A` },
-                    { title: 'Power', field: 'power', widthGrow: 1, hozAlign: 'right', formatter: (cell) => `${cell.getValue()}kW` },
-                    {
-                        title: 'Status', field: 'status', widthGrow: 1,
-                        formatter: (cell) => {
-                            const value = cell.getValue();
-                            const colors = { active: '#22c55e', inactive: '#8892a0' };
-                            return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
-                        }
-                    },
-                    {
-                        title: 'Breaker', field: 'breaker', widthGrow: 0.8,
-                        formatter: (cell) => {
-                            const value = cell.getValue();
-                            const color = value === 'on' ? '#22c55e' : '#ef4444';
-                            return `<span style="color: ${color}">${value.toUpperCase()}</span>`;
-                        }
-                    }
-                ],
-                optionBuilder: getTableOption
-            };
-
-            // chartConfig: 차트 렌더링 설정
-            this.chartConfig = {
-                xKey: 'timestamps',
-                styleMap: {
-                    power: { label: '전력', unit: 'kW', color: '#3b82f6', smooth: true, areaStyle: true, yAxisIndex: 0 },
-                    current: { label: '전류', unit: 'A', color: '#f59e0b', smooth: true, yAxisIndex: 1 }
-                },
-                optionBuilder: getDualAxisChartOption
-            };
-
-            // 렌더링 함수 바인딩
-            this.renderAssetInfo = renderAssetInfo.bind(this);
-            this.renderProperties = renderProperties.bind(this);
-            this.renderMetrics = renderMetrics.bind(this);
-            this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
-            this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
+            this.renderBasicInfo = renderBasicInfo.bind(this);
+            this.renderTrendChart = renderTrendChart.bind(this);
             this.renderError = renderError.bind(this);
-
-            // Refresh Config
-            this.refreshInterval = 5000; // 5초
-            this._refreshIntervalId = null;
 
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
             this._switchTab = switchTab.bind(this);
-            this.refreshMetrics = refreshMetricsOnly.bind(this);
-            this.stopRefresh = stopRefresh.bind(this);
 
             this.customEvents = { click: '@assetClicked' };
             bind3DEvents(this, this.customEvents);
@@ -678,139 +471,102 @@
             this.templateConfig = { popup: 'popup-pdu' };
             this.popupCreatedConfig = {
                 chartSelector: '.chart-container',
-                tableSelector: '.table-container',
                 events: {
                     click: {
                         '.close-btn': () => this.hideDetail(),
-                        '.tab-btn': (e) => this._switchTab(e.target.dataset.tab)
-                    }
-                }
+                        '.tab-btn': (e) => this._switchTab(e.target.dataset.tab),
+                    },
+                },
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
             this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig, this.tableConfig);
+            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
             applyShadowPopupMixin(this, {
                 getHTML: this.getPopupHTML,
                 getStyles: this.getPopupStyles,
-                onCreated: this.onPopupCreated
+                onCreated: this.onPopupCreated,
             });
 
             applyEChartsMixin(this);
-            applyTabulatorMixin(this);
-
             console.log('[PDU] Registered:', this._defaultAssetKey);
         }
 
+        // ======================
+        // PUBLIC METHODS
+        // ======================
+
         function showDetail() {
             this.showPopup();
-            this._switchTab('circuits');
 
             fx.go(
                 this.datasetInfo,
-                fx.each(({ datasetName, render }) =>
+                fx.each(({ datasetName, params, render }) =>
                     fx.go(
-                        Wkit.fetchData(this.page, datasetName, { baseUrl: BASE_URL, assetKey: this._defaultAssetKey, locale: 'ko' }),
+                        Wkit.fetchData(this.page, datasetName, params),
                         (response) => {
-                            if (!response || !response.response) {
-                                this.renderError('데이터를 불러올 수 없습니다.');
-                                return;
-                            }
+                            if (!response || !response.response) { this.renderError('데이터를 불러올 수 없습니다.'); return; }
                             const data = response.response.data;
-                            if (data === null || data === undefined) {
-                                this.renderError('자산 정보가 존재하지 않습니다.');
-                                return;
-                            }
+                            if (data === null || data === undefined) { this.renderError('자산 정보가 존재하지 않습니다.'); return; }
                             fx.each((fn) => this[fn](response), render);
                         }
                     )
                 )
-            ).catch(e => {
-                console.error('[PDU]', e);
-                this.renderError('데이터 로드 중 오류가 발생했습니다.');
-            });
+            ).catch((e) => { console.error('[PDU]', e); this.renderError('데이터 로드 중 오류가 발생했습니다.'); });
 
-            // 5초 주기로 메트릭 갱신 시작
-            this.stopRefresh();
-            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), this.refreshInterval);
-            console.log('[PDU] Metric refresh started (5s interval)');
+            fetchTrendData.call(this);
         }
 
         function hideDetail() {
-            this.stopRefresh();
             this.hidePopup();
         }
 
-        function refreshMetricsOnly() {
-            fx.go(
-                Wkit.fetchData(this.page, 'metricLatest', { baseUrl: BASE_URL, assetKey: this._defaultAssetKey }),
-                (response) => {
-                    if (!response || !response.response) return;
-                    const data = response.response.data;
-                    if (data === null || data === undefined) return;
-                    this.renderMetrics(response);
-                }
-            ).catch(e => {
-                console.warn('[PDU] Metric refresh failed:', e);
-            });
-        }
-
-        function stopRefresh() {
-            if (this._refreshIntervalId) {
-                clearInterval(this._refreshIntervalId);
-                this._refreshIntervalId = null;
-                console.log('[PDU] Metric refresh stopped');
-            }
-        }
-
-        // 에러 상태 렌더링
-        function renderError(message) {
-            const nameEl = this.popupQuery('.pdu-name');
-            const zoneEl = this.popupQuery('.pdu-zone');
-            const statusEl = this.popupQuery('.pdu-status');
-
-            if (nameEl) nameEl.textContent = '데이터 없음';
-            if (zoneEl) zoneEl.textContent = message;
-            if (statusEl) {
-                statusEl.textContent = 'Error';
-                statusEl.dataset.status = 'critical';
-            }
-
-            const metricsContainer = this.popupQuery(this.metricsContainerSelector);
-            if (metricsContainer) {
-                metricsContainer.innerHTML = `<div class="error-state">${message}</div>`;
-            }
-
-            console.warn('[PDU] renderError:', message);
-        }
-
         function switchTab(tabName) {
+            if (!tabName || !TAB_CONFIG[tabName]) return;
+            this._activeTab = tabName;
+
             const buttons = this.popupQueryAll('.tab-btn');
-            const panels = this.popupQueryAll('.tab-panel');
+            if (buttons) {
+                buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
+            }
 
-            fx.go(buttons, fx.each(btn => btn.classList.toggle('active', btn.dataset.tab === tabName)));
-            fx.go(panels, fx.each(panel => panel.classList.toggle('active', panel.dataset.panel === tabName)));
-
-            if (tabName === 'power') {
-                const chart = this.getChart('.chart-container');
-                if (chart) setTimeout(() => chart.resize(), 10);
-            } else if (tabName === 'circuits') {
-                if (this.isTableReady && this.isTableReady('.table-container')) {
-                    const table = this.getTable('.table-container');
-                    setTimeout(() => table.redraw(true), 10);
-                }
+            if (this._trendData) {
+                this.renderTrendChart({ response: { data: this._trendData } });
             }
         }
 
-        // 자산 기본 정보 렌더링 (통합 API - data.asset)
-        function renderAssetInfo({ response }) {
+        // ======================
+        // TREND DATA FETCH
+        // ======================
+
+        function fetchTrendData() {
+            const now = new Date();
+            const from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            fx.go(
+                Wkit.fetchData(this.page, 'metricHistoryStats', {
+                    baseUrl: BASE_URL, assetKey: this._defaultAssetKey,
+                    interval: '1h',
+                    metricCodes: ['DIST.V_LN_AVG','DIST.CURRENT_AVG_A','DIST.ACTIVE_POWER_TOTAL_KW','DIST.FREQUENCY_HZ'],
+                    timeFrom: from.toISOString(), timeTo: now.toISOString(),
+                    statsKeys: ['avg'],
+                }),
+                (response) => {
+                    if (!response || !response.response) { console.warn('[PDU] Trend data unavailable'); return; }
+                    this._trendData = response.response.data;
+                    this.renderTrendChart(response);
+                }
+            ).catch((e) => { console.warn('[PDU] Trend fetch failed:', e); });
+        }
+
+        // ======================
+        // RENDER: 기본정보 테이블
+        // ======================
+
+        function renderBasicInfo({ response }) {
             const { data } = response;
-            if (!data || !data.asset) {
-                renderError.call(this, '자산 데이터가 없습니다.');
-                return;
-            }
+            if (!data || !data.asset) { renderError.call(this, '자산 데이터가 없습니다.'); return; }
 
             const asset = data.asset;
 
@@ -821,189 +577,139 @@
                     if (!el) return;
                     let value = asset[key];
                     if (transform) value = transform(value);
-                    if (dataAttr) {
-                        el.dataset[dataAttr] = value;
-                    } else {
-                        el.textContent = value;
-                    }
+                    if (dataAttr) { el.dataset[dataAttr] = value; } else { el.textContent = value; }
                 })
             );
-        }
 
-        // 동적 프로퍼티 렌더링 (통합 API - data.properties[])
-        function renderProperties({ response }) {
-            const { data } = response;
-            const container = this.popupQuery(this.propertiesContainerSelector);
-            if (!container) return;
+            const setCell = (selector, value) => {
+                const el = this.popupQuery(selector);
+                if (el) el.textContent = value ?? '-';
+            };
 
-            if (!data?.properties || data.properties.length === 0) {
-                container.innerHTML = '<div class="empty-state">속성 정보가 없습니다</div>';
-                return;
+            setCell('.info-name', asset.name);
+            setCell('.info-type', asset.assetType);
+            setCell('.info-usage', asset.usageLabel || '-');
+            setCell('.info-location', asset.locationLabel);
+            setCell('.info-status', this.statusTypeToLabel(asset.statusType));
+            setCell('.info-install-date', this.formatDate(asset.installDate));
+
+            if (asset.assetModelKey) {
+                fx.go(
+                    Wkit.fetchData(this.page, 'modelDetail', { baseUrl: BASE_URL, assetModelKey: asset.assetModelKey }),
+                    (modelResp) => {
+                        if (!modelResp?.response?.data) return;
+                        const model = modelResp.response.data;
+                        setCell('.info-model', model.name);
+                        if (model.assetVendorKey) {
+                            fx.go(
+                                Wkit.fetchData(this.page, 'vendorDetail', { baseUrl: BASE_URL, assetVendorKey: model.assetVendorKey }),
+                                (vendorResp) => {
+                                    if (!vendorResp?.response?.data) return;
+                                    setCell('.info-vendor', vendorResp.response.data.name);
+                                }
+                            ).catch(() => {});
+                        }
+                    }
+                ).catch(() => {});
             }
-
-            const sortedProperties = [...data.properties].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
-
-            container.innerHTML = sortedProperties
-                .map(({ label, value, helpText }) => {
-                    return `<div class="property-card" title="${helpText || ''}">
-                        <div class="property-label">${label}</div>
-                        <div class="property-value">${value ?? '-'}</div>
-                    </div>`;
-                })
-                .join('');
         }
 
-        // 실시간 전력계측 렌더링 (metricLatest API)
-        function renderMetrics({ response }) {
+        // ======================
+        // RENDER: 트렌드 차트 (탭별 단일 라인)
+        // ======================
+
+        function renderTrendChart({ response }) {
             const { data } = response;
-            const container = this.popupQuery(this.metricsContainerSelector);
-            const timestampEl = this.popupQuery(this.timestampSelector);
-
-            if (!container) return;
-
             if (!data || !Array.isArray(data) || data.length === 0) {
-                container.innerHTML = '<div class="empty-state">측정 데이터가 없습니다</div>';
+                console.warn('[PDU] renderTrendChart: no data');
                 return;
             }
 
-            if (timestampEl && data[0]?.eventedAt) {
-                timestampEl.textContent = this.formatTimestamp(data[0].eventedAt);
-            }
+            const tabConfig = TAB_CONFIG[this._activeTab];
+            if (!tabConfig) return;
 
-            container.innerHTML = data.map((metric) => {
-                const config = this.metricConfig[metric.metricCode];
-                if (!config) return '';
+            const timeMap = {};
+            data.forEach((row) => {
+                const hour = new Date(row.time).getHours() + '시';
+                if (!timeMap[hour]) timeMap[hour] = {};
+                timeMap[hour][row.metricCode] = row.statsBody?.avg ?? null;
+            });
 
-                const value = metric.valueNumber;
-                const displayValue = config.scale && config.scale !== 1.0 ? (value * config.scale).toFixed(1) : value;
+            const hours = Object.keys(timeMap);
+            const values = hours.map((h) => {
+                const raw = timeMap[h][tabConfig.metricCode];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            });
 
-                return `<div class="metric-card">
-                    <div class="metric-label">${config.label}</div>
-                    <div class="metric-value">${displayValue}<span class="metric-unit">${config.unit}</span></div>
-                </div>`;
-            }).join('');
-        }
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: [tabConfig.label],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 20, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category', data: hours,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: {
+                    type: 'value', name: tabConfig.unit,
+                    axisLine: { show: true, lineStyle: { color: tabConfig.color } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } },
+                },
+                series: [
+                    {
+                        name: tabConfig.label, type: 'line', data: values,
+                        smooth: true, symbol: 'none',
+                        lineStyle: { color: tabConfig.color, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(tabConfig.color, 0.3) },
+                                    { offset: 1, color: hexToRgba(tabConfig.color, 0) },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            };
 
-        function renderCircuitTable(config, { response }) {
-            const { data } = response;
-            if (!data) return;
-            const circuits = data.circuits || data;
-            const tableOptions = config.optionBuilder(config.columns);
-            this.updateTable(config.selector, circuits, tableOptions);
-        }
-
-        function renderPowerChart(config, { response }) {
-            const { data } = response;
-            if (!data) return;
-            const option = config.optionBuilder(config, data);
             this.updateChart('.chart-container', option);
         }
 
-        function getTableOption(columns) {
-            return {
-                layout: 'fitColumns',
-                responsiveLayout: 'collapse',
-                placeholder: 'No circuits found',
-                initialSort: [{ column: 'power', dir: 'desc' }],
-                columns
-            };
+        // ======================
+        // RENDER: 에러
+        // ======================
+
+        function renderError(message) {
+            const nameEl = this.popupQuery('.pdu-name');
+            const zoneEl = this.popupQuery('.pdu-zone');
+            const statusEl = this.popupQuery('.pdu-status');
+            if (nameEl) nameEl.textContent = '데이터 없음';
+            if (zoneEl) zoneEl.textContent = message;
+            if (statusEl) { statusEl.textContent = 'Error'; statusEl.dataset.status = 'critical'; }
+            console.warn('[PDU] renderError:', message);
         }
 
-        function getDualAxisChartOption(config, data) {
-            const { xKey, styleMap } = config;
+        // ======================
+        // POPUP LIFECYCLE
+        // ======================
 
-            // styleMap 기반으로 series 생성
-            const seriesData = Object.entries(styleMap).map(([key, style]) => ({
-                key,
-                name: style.label,
-                unit: style.unit,
-                color: style.color,
-                smooth: style.smooth,
-                areaStyle: style.areaStyle,
-                yAxisIndex: style.yAxisIndex
-            }));
-
-            // yAxis 설정: styleMap의 unit 정보 활용
-            const yAxisUnits = [...new Set(seriesData.map(s => s.unit))];
-            const yAxes = yAxisUnits.map((unit, idx) => ({
-                type: 'value',
-                name: unit,
-                position: idx === 0 ? 'left' : 'right',
-                axisLine: { show: true, lineStyle: { color: seriesData.find(s => s.unit === unit)?.color || '#888' } },
-                axisLabel: { color: '#888', fontSize: 10 },
-                splitLine: idx === 0 ? { lineStyle: { color: '#333' } } : { show: false }
-            }));
-
-            return {
-                grid: { left: 50, right: 50, top: 35, bottom: 24 },
-                legend: {
-                    data: seriesData.map(s => s.name),
-                    top: 0,
-                    textStyle: { color: '#8892a0', fontSize: 11 }
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    backgroundColor: '#1a1f2e',
-                    borderColor: '#2a3142',
-                    textStyle: { color: '#e0e6ed', fontSize: 12 }
-                },
-                xAxis: {
-                    type: 'category',
-                    data: data[xKey],
-                    axisLine: { lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10 }
-                },
-                yAxis: yAxes,
-                series: seriesData.map(({ key, name, color, smooth, areaStyle, yAxisIndex = 0 }) => ({
-                    name,
-                    type: 'line',
-                    yAxisIndex,
-                    data: data[key],
-                    smooth,
-                    symbol: 'none',
-                    lineStyle: { color, width: 2 },
-                    areaStyle: areaStyle ? {
-                        color: {
-                            type: 'linear',
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: hexToRgba(color, 0.3) },
-                                { offset: 1, color: hexToRgba(color, 0) }
-                            ]
-                        }
-                    } : null
-                }))
-            };
-        }
-
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1, 3), 16);
-            const g = parseInt(hex.slice(3, 5), 16);
-            const b = parseInt(hex.slice(5, 7), 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-
-        function onPopupCreated(popupConfig, tableConfig) {
-            applySectionTitles.call(this);
-            const { chartSelector, tableSelector, events } = popupConfig;
-            if (chartSelector) this.createChart(chartSelector);
-            if (tableSelector) {
-                const tableOptions = tableConfig.optionBuilder(tableConfig.columns);
-                this.createTable(tableSelector, tableOptions);
-            }
-            if (events) this.bindPopupEvents(events);
-        }
-
-        function applySectionTitles() {
-            if (!this.sectionTitles) return;
-            Object.entries(this.sectionTitles).forEach(([selector, title]) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = title;
-            });
+        function onPopupCreated({ chartSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            events && this.bindPopupEvents(events);
         }
 
         function onInstanceUnLoad() {
-            this.stopRefresh();
             this.destroyPopup();
             console.log('[PDU] Destroyed:', this.id);
         }

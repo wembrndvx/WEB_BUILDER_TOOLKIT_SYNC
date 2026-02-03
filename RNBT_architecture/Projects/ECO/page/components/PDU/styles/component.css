@@ -1,5 +1,6 @@
 /*
- * PDU - Shadow DOM Popup Styles (Tabbed Layout)
+ * PDU - Shadow DOM Popup Styles
+ * 분전반 상세 팝업 (기획서 v.0.8_260128 기준)
  */
 
 .popup-overlay {
@@ -18,8 +19,8 @@
 .popup-content {
     background: #1a1f2e;
     border-radius: 12px;
-    width: 680px;
-    max-width: 95vw;
+    width: 560px;
+    max-width: 90vw;
     height: 90vh;
     overflow: hidden;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
@@ -28,7 +29,9 @@
     flex-direction: column;
 }
 
-/* Header */
+/* ======================
+   Header
+   ====================== */
 .popup-header {
     display: flex;
     justify-content: space-between;
@@ -67,7 +70,6 @@
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-    text-transform: capitalize;
 }
 
 .pdu-status[data-status="normal"] {
@@ -105,28 +107,27 @@
     color: #e0e6ed;
 }
 
-/* Body */
+/* ======================
+   Body
+   ====================== */
 .popup-body {
-    padding: 24px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 /* ======================
-   Section Common Styles
+   Section Common
    ====================== */
 .section {
     background: #252b3b;
     border-radius: 8px;
     overflow: hidden;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    flex-shrink: 0;
 }
 
 .section-header {
@@ -135,118 +136,106 @@
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid #2a3142;
-    flex-shrink: 0;
 }
 
 .section-title {
     font-size: 13px;
     font-weight: 500;
     color: #8892a0;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.section-timestamp {
+/* ======================
+   Section 1: 기본정보 (이미지 + 테이블)
+   ====================== */
+.info-section {
+    padding: 16px;
+}
+
+.info-layout {
+    display: flex;
+    gap: 16px;
+}
+
+.info-image-placeholder {
+    width: 100px;
+    min-height: 100px;
+    background: #1a1f2e;
+    border-radius: 8px;
+    border: 1px solid #2a3142;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.info-image-placeholder svg {
+    opacity: 0.5;
+}
+
+.image-label {
     font-size: 11px;
     color: #6b7280;
+    font-weight: 500;
+}
+
+.info-table {
+    flex: 1;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.info-table th,
+.info-table td {
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(42, 49, 66, 0.5);
+}
+
+.info-table th {
+    color: #8892a0;
+    font-weight: 400;
+    white-space: nowrap;
+    width: 70px;
+}
+
+.info-table td {
+    color: #e0e6ed;
+    font-weight: 500;
+}
+
+.info-table tr:last-child th,
+.info-table tr:last-child td {
+    border-bottom: none;
 }
 
 /* ======================
-   Properties Section (정적 속성)
+   Section 2: 트렌드 차트 (4탭)
    ====================== */
-.properties-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px;
-    background: #2a3142;
+.chart-section {
     flex: 1;
-    overflow-y: auto;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
 }
 
-.property-card {
-    background: #252b3b;
-    padding: 12px 16px;
-}
-
-.property-label {
-    font-size: 11px;
-    color: #8892a0;
-    margin-bottom: 4px;
-}
-
-.property-value {
-    font-size: 14px;
-    font-weight: 500;
-    color: #e0e6ed;
-}
-
-.metrics-container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: #2a3142;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.metric-card {
-    background: #252b3b;
-    padding: 12px 10px;
-    text-align: center;
-}
-
-.metric-label {
-    font-size: 10px;
-    color: #8892a0;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.metric-value {
-    font-size: 20px;
-    font-weight: 600;
-    color: #e0e6ed;
-    line-height: 1;
-}
-
-.metric-unit {
-    font-size: 11px;
-    font-weight: 400;
-    color: #8892a0;
-    margin-left: 2px;
-}
-
-.empty-state {
-    padding: 20px 16px;
-    text-align: center;
-    color: #6b7280;
-    font-size: 13px;
-}
-
-.error-state {
-    padding: 20px 16px;
-    text-align: center;
-    color: #ef4444;
-    font-size: 13px;
-}
-
-/* Tab Header */
 .tab-header {
     display: flex;
     gap: 4px;
-    padding: 12px 24px;
+    padding: 8px 16px;
     border-bottom: 1px solid #2a3142;
     flex-shrink: 0;
 }
 
 .tab-btn {
-    padding: 8px 16px;
+    padding: 6px 12px;
     background: transparent;
     border: none;
     border-radius: 6px;
     color: #8892a0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
@@ -262,66 +251,25 @@
     color: #fff;
 }
 
-/* Tab Content */
-.tab-content {
-    flex: 1;
-    overflow: hidden;
-    min-height: 0;
-}
-
-.tab-panel {
-    display: none;
-    height: 100%;
-    flex-direction: column;
-}
-
-.tab-panel.active {
-    display: flex;
-}
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
-    border-bottom: 1px solid #2a3142;
-    flex-shrink: 0;
-}
-
-.panel-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: #e0e6ed;
-}
-
-/* Table Container */
-.table-container {
-    height: 280px;
-    overflow: hidden;
-    padding: 0 16px 16px;
-}
-
-.table-container .tabulator {
-    border-radius: 8px;
-    font-size: 12px;
-}
-
-.table-container .tabulator-header {
-    border-bottom: 2px solid #3b82f6;
-}
-
-.table-container .tabulator .tabulator-table {
-    background: transparent;
-}
-
-.table-container .tabulator-row {
-    background: transparent !important;
-    min-height: 36px;
-}
-
-/* Chart Container */
 .chart-container {
     flex: 1;
-    min-height: 280px;
-    padding: 16px;
+    min-height: 200px;
+    width: 100%;
+}
+
+/* ======================
+   Empty/Error States
+   ====================== */
+.empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.error-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #ef4444;
+    font-size: 13px;
 }
