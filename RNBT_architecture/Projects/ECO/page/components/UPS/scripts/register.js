@@ -10,7 +10,7 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-const BASE_URL = '10.23.128.125:4004';
+const BASE_URL = '10.23.128.140:8811';
 
 // ======================
 // TEMPLATE HELPER
@@ -49,6 +49,18 @@ function initComponent() {
   this._trendData = null;
   this._activeTab = 'voltage';
   this._refreshIntervalId = null;
+
+  // 트렌드 차트 API 파라미터
+  this._trendInterval = '1h';
+  this._trendMetricCodes = [
+    'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+    'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+    'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+  ];
+  this._trendStatsKeys = ['avg'];
+  this._trendTimeRangeMs = 24 * 60 * 60 * 1000;
+  this._trendTimeFrom = null; // 호출 시 동적 계산
+  this._trendTimeTo = null;   // 호출 시 동적 계산
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -156,14 +168,11 @@ function initComponent() {
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
-        interval: '1h',
-        timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: [
-          'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
-          'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
-          'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
-        ],
-        statsKeys: ['avg'],
+        interval: this._trendInterval,
+        metricCodes: this._trendMetricCodes,
+        statsKeys: this._trendStatsKeys,
+        timeFrom: this._trendTimeFrom,
+        timeTo: this._trendTimeTo,
       },
       render: ['renderTrendChart'],
     },
@@ -305,9 +314,13 @@ async function fetchTrendData() {
   const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
-  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys } = trendInfo.param;
+  // timeFrom, timeTo 동적 계산 후 this 속성에 저장
   const now = new Date();
-  const from = new Date(now.getTime() - timeRange);
+  const from = new Date(now.getTime() - this._trendTimeRangeMs);
+  this._trendTimeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+  this._trendTimeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+
+  const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
 
   try {
     const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
@@ -318,8 +331,8 @@ async function fetchTrendData() {
           assetKey,
           interval,
           metricCodes,
-          timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-          timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+          timeFrom: this._trendTimeFrom,
+          timeTo: this._trendTimeTo,
         },
         statsKeys,
         sort: [],
