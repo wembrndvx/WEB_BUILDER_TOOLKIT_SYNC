@@ -16,6 +16,55 @@ description: 표준 RNBT 컴포넌트를 생성합니다. 페이지가 GlobalDat
 
 1. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
 2. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+3. **기존 컴포넌트 패턴 확인** - `/RNBT_architecture/Components/LogViewer/` 등 기존 컴포넌트의 구조와 패턴을 먼저 확인
+
+---
+
+## 🚨 실수 방지 체크리스트
+
+### 1. 기존 컴포넌트 패턴을 먼저 확인
+
+```
+❌ 임의로 새 구조를 만들지 않는다
+✅ LogViewer, AssetTree 등 기존 컴포넌트의 패턴을 먼저 확인한다
+```
+
+### 2. 정적 CSS는 그대로 복사 (body/reset/import 제외)
+
+```
+❌ 검증된 CSS를 "비슷하게" 새로 작성
+✅ Figma_Conversion의 검증된 CSS를 복사하되, body/*/import만 제외
+```
+
+**정적 CSS에서 제외할 부분:**
+```css
+/* 제외 */
+@import url('...');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { ... }
+
+/* 복사 */
+.component-name { ... }  /* 컴포넌트 스타일만 */
+```
+
+### 3. preview.html은 inline 방식으로 구현
+
+```
+❌ 외부 파일 로드 방식 (경로 문제 발생)
+   <script src="../../Utils/fx.js"></script>
+
+✅ inline 방식 (LogViewer 패턴)
+   - register.js 내용을 복사해서 붙여넣기
+   - fx는 최소 기능만 inline 구현
+   - mockThis 컨텍스트에서 IIFE로 실행
+```
+
+### 4. 스크린샷으로 반드시 확인
+
+```
+❌ 코드 작성 후 바로 "완료"
+✅ Playwright 스크린샷 캡처 → 정적 HTML과 비교 → 동일해야 완료
+```
 
 ---
 
