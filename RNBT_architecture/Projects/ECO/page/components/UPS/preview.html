@@ -510,18 +510,6 @@
             this._activeTab = 'voltage';
             this._refreshIntervalId = null;
 
-            // 트렌드 차트 API 파라미터
-            this._trendInterval = '1h';
-            this._trendMetricCodes = [
-                'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
-                'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
-                'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
-            ];
-            this._trendStatsKeys = ['avg'];
-            this._trendTimeRangeMs = 24 * 60 * 60 * 1000;
-            this._trendTimeFrom = null; // 호출 시 동적 계산
-            this._trendTimeTo = null;   // 호출 시 동적 계산
-
             // ======================
             // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
             // ======================
@@ -531,14 +519,7 @@
             this.formatTimestamp = formatTimestamp.bind(this);           // ISO → 'HH:mm:ss'
 
             // ======================
-            // 3. 이벤트 (DEFAULT_JS_NAMING.md: this.customEvents)
-            // ======================
-            this.customEvents = {
-                click: '@assetClicked',
-            };
-
-            // ======================
-            // 4. Config 통합 (this.config로 모든 설정 접근)
+            // 3. Config 통합 (this.config로 모든 설정 접근)
             // ======================
             this.config = {
                 // 데이터셋 이름
@@ -560,9 +541,38 @@
                     interval: 5000,
                 },
 
-                // API 엔드포인트
+                // API 엔드포인트 및 파라미터
                 api: {
                     trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h',
+                        metricCodes: [
+                            'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+                            'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+                            'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+                        ],
+                        statsKeys: ['avg'],
+                        timeRangeMs: 24 * 60 * 60 * 1000,
+                    },
+                },
+
+                // 상태 매핑
+                statusMap: {
+                    labels: {
+                        ACTIVE: '정상운영',
+                        WARNING: '주의',
+                        CRITICAL: '위험',
+                        INACTIVE: '비활성',
+                        MAINTENANCE: '유지보수',
+                    },
+                    dataAttrs: {
+                        ACTIVE: 'normal',
+                        WARNING: 'warning',
+                        CRITICAL: 'critical',
+                        INACTIVE: 'inactive',
+                        MAINTENANCE: 'maintenance',
+                    },
+                    defaultDataAttr: 'normal',
                 },
 
                 // ========================
@@ -633,9 +643,9 @@
             };
 
             // ======================
-            // 5. 데이터셋 정의
+            // 4. 데이터셋 정의
             // ======================
-            const { datasetNames } = this.config;
+            const { datasetNames, api } = this.config;
             this.datasetInfo = [
                 { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
                 { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
@@ -644,25 +654,25 @@
                     param: {
                         baseUrl: this._baseUrl,
                         assetKey: this._defaultAssetKey,
-                        interval: this._trendInterval,
-                        metricCodes: this._trendMetricCodes,
-                        statsKeys: this._trendStatsKeys,
-                        timeFrom: this._trendTimeFrom,
-                        timeTo: this._trendTimeTo,
+                        interval: api.trendParams.interval,
+                        metricCodes: api.trendParams.metricCodes,
+                        statsKeys: api.trendParams.statsKeys,
+                        timeFrom: null,
+                        timeTo: null,
                     },
                     render: ['renderTrendChart'],
                 },
             ];
 
             // ======================
-            // 6. 렌더링 함수 바인딩
+            // 5. 렌더링 함수 바인딩
             // ======================
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderPowerStatus = renderPowerStatus.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
 
             // ======================
-            // 7. Public Methods
+            // 6. Public Methods
             // ======================
             this.showDetail = showDetail.bind(this);
             this.hideDetail = hideDetail.bind(this);
@@ -671,12 +681,16 @@
             this._switchTab = switchTab.bind(this);
 
             // ======================
-            // 8. 이벤트 발행
+            // 7. 3D 이벤트 바인딩 (라이브러리 강제 네이밍)
             // ======================
+            this.customEvents = {
+                click: '@assetClicked',
+            };
+
             bind3DEvents(this, this.customEvents);
 
             // ======================
-            // 9. Popup (template 기반)
+            // 8. Popup (template 기반)
             // ======================
             const popupCreatedConfig = {
                 chartSelector: this.config.chart.selectors.container,
@@ -801,7 +815,7 @@
 
             const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
             const now = new Date();
-            const from = new Date(now.getTime() - this._trendTimeRangeMs);
+            const from = new Date(now.getTime() - this.config.api.trendParams.timeRangeMs);
 
             try {
                 const response = await fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {
@@ -1093,25 +1107,13 @@
         }
 
         function statusTypeToLabel(statusType) {
-            const labels = {
-                ACTIVE: '정상운영',
-                WARNING: '주의',
-                CRITICAL: '위험',
-                INACTIVE: '비활성',
-                MAINTENANCE: '유지보수',
-            };
+            const { labels } = this.config.statusMap;
             return labels[statusType] || statusType;
         }
 
         function statusTypeToDataAttr(statusType) {
-            const map = {
-                ACTIVE: 'normal',
-                WARNING: 'warning',
-                CRITICAL: 'critical',
-                INACTIVE: 'inactive',
-                MAINTENANCE: 'maintenance',
-            };
-            return map[statusType] || 'normal';
+            const { dataAttrs, defaultDataAttr } = this.config.statusMap;
+            return dataAttrs[statusType] || defaultDataAttr;
         }
 
         function formatDate(dateStr) {

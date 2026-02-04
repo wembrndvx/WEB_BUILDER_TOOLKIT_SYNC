@@ -50,18 +50,6 @@ function initComponent() {
   this._activeTab = 'voltage';
   this._refreshIntervalId = null;
 
-  // 트렌드 차트 API 파라미터
-  this._trendInterval = '1h';
-  this._trendMetricCodes = [
-    'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
-    'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
-    'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
-  ];
-  this._trendStatsKeys = ['avg'];
-  this._trendTimeRangeMs = 24 * 60 * 60 * 1000;
-  this._trendTimeFrom = null; // 호출 시 동적 계산
-  this._trendTimeTo = null;   // 호출 시 동적 계산
-
   // ======================
   // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
   // ======================
@@ -93,9 +81,38 @@ function initComponent() {
       interval: 5000,
     },
 
-    // API 엔드포인트
+    // API 엔드포인트 및 파라미터
     api: {
       trendHistory: '/api/v1/mhs/l',
+      trendParams: {
+        interval: '1h',
+        metricCodes: [
+          'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+          'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
+          'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
+        ],
+        statsKeys: ['avg'],
+        timeRangeMs: 24 * 60 * 60 * 1000,
+      },
+    },
+
+    // 상태 매핑
+    statusMap: {
+      labels: {
+        ACTIVE: '정상운영',
+        WARNING: '주의',
+        CRITICAL: '위험',
+        INACTIVE: '비활성',
+        MAINTENANCE: '유지보수',
+      },
+      dataAttrs: {
+        ACTIVE: 'normal',
+        WARNING: 'warning',
+        CRITICAL: 'critical',
+        INACTIVE: 'inactive',
+        MAINTENANCE: 'maintenance',
+      },
+      defaultDataAttr: 'normal',
     },
 
     // ========================
@@ -168,7 +185,7 @@ function initComponent() {
   // ======================
   // 4. 데이터셋 정의
   // ======================
-  const { datasetNames } = this.config;
+  const { datasetNames, api } = this.config;
   this.datasetInfo = [
     { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
     { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
@@ -177,11 +194,11 @@ function initComponent() {
       param: {
         baseUrl: this._baseUrl,
         assetKey: this._defaultAssetKey,
-        interval: this._trendInterval,
-        metricCodes: this._trendMetricCodes,
-        statsKeys: this._trendStatsKeys,
-        timeFrom: this._trendTimeFrom,
-        timeTo: this._trendTimeTo,
+        interval: api.trendParams.interval,
+        metricCodes: api.trendParams.metricCodes,
+        statsKeys: api.trendParams.statsKeys,
+        timeFrom: null,
+        timeTo: null,
       },
       render: ['renderTrendChart'],
     },
@@ -332,7 +349,7 @@ function fetchTrendData() {
 
   // timeFrom, timeTo 동적 계산
   const now = new Date();
-  const from = new Date(now.getTime() - this._trendTimeRangeMs);
+  const from = new Date(now.getTime() - this.config.api.trendParams.timeRangeMs);
   const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
   const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
@@ -590,25 +607,13 @@ function renderTrendChart({ response }) {
 // ======================
 
 function statusTypeToLabel(statusType) {
-  const labels = {
-    ACTIVE: '정상운영',
-    WARNING: '주의',
-    CRITICAL: '위험',
-    INACTIVE: '비활성',
-    MAINTENANCE: '유지보수',
-  };
+  const { labels } = this.config.statusMap;
   return labels[statusType] || statusType;
 }
 
 function statusTypeToDataAttr(statusType) {
-  const map = {
-    ACTIVE: 'normal',
-    WARNING: 'warning',
-    CRITICAL: 'critical',
-    INACTIVE: 'inactive',
-    MAINTENANCE: 'maintenance',
-  };
-  return map[statusType] || 'normal';
+  const { dataAttrs, defaultDataAttr } = this.config.statusMap;
+  return dataAttrs[statusType] || defaultDataAttr;
 }
 
 function formatDate(dateStr) {
