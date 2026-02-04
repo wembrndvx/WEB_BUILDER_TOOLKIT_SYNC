@@ -276,13 +276,17 @@ function hideDetail() {
 function refreshMetrics() {
   const { datasetNames } = this.config;
   const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
+  if (!metricInfo) return;
 
-  fetchData(this.page, datasetNames.metricLatest, metricInfo.param)
+  const { datasetName, param, render } = metricInfo;
+
+  fetchData(this.page, datasetName, param)
     .then(response => {
       const data = extractData(response);
-      if (data) this.renderPowerStatus(response);
+      if (!data) return;
+      fx.each(fn => this[fn](response), render);
     })
-    .catch(e => console.warn('[UPS] Metric refresh failed:', e));
+    .catch(e => console.warn(`[UPS] ${datasetName} fetch failed:`, e));
 }
 
 function stopRefresh() {
@@ -313,47 +317,40 @@ function switchTab(tabName) {
 // TREND DATA FETCH
 // ======================
 
-async function fetchTrendData() {
+function fetchTrendData() {
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
-  // timeFrom, timeTo 동적 계산 후 this 속성에 저장
+  const { datasetName, param, render } = trendInfo;
+  const { baseUrl, assetKey, interval, metricCodes, statsKeys } = param;
+
+  // timeFrom, timeTo 동적 계산
   const now = new Date();
   const from = new Date(now.getTime() - this._trendTimeRangeMs);
-  this._trendTimeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
-  this._trendTimeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+  const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+  const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
-  const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
-
-  try {
-    const response = await fetch(`http://${baseUrl}/api/v1/mhs/l`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        filter: {
-          assetKey,
-          interval,
-          metricCodes,
-          timeFrom: this._trendTimeFrom,
-          timeTo: this._trendTimeTo,
-        },
-        statsKeys,
-        sort: [],
-      }),
-    });
-
-    const result = await response.json();
-    if (!result || !result.success) {
-      console.warn('[UPS] Trend data unavailable');
-      return;
-    }
-    // 데이터를 저장해두고 현재 활성 탭으로 렌더링
-    this._trendData = result.data;
-    this.renderTrendChart({ response: { data: result.data } });
-  } catch (e) {
-    console.warn('[UPS] Trend fetch failed:', e);
-  }
+  fetch(`http://${baseUrl}/api/v1/mhs/l`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
+      statsKeys,
+      sort: [],
+    }),
+  })
+    .then(response => response.json())
+    .then(result => {
+      if (!result?.success || !result.data) {
+        console.warn(`[UPS] ${datasetName}: no data`);
+        return;
+      }
+      // 캐싱 후 렌더링
+      this._trendData = result.data;
+      fx.each(fn => this[fn]({ response: { data: result.data } }), render);
+    })
+    .catch(e => console.warn(`[UPS] ${datasetName} fetch failed:`, e));
 }
 
 // ======================
