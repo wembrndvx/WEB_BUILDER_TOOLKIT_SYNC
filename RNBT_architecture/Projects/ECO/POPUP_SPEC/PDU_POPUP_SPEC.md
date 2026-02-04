@@ -78,18 +78,18 @@ UPS 팝업과 동일한 8개 필드. 공통 기본정보 참조.
 
 ---
 
-## ② 실시간 전력추이현황 (트렌드 차트)
+## ② 분전반 운전 상태 추이 (트렌드 차트)
 
-24시간 (전일 동시간 ~ 현재시간) 데이터를 A상·B상·C상 3상 라인으로 표시합니다.
+24시간 (전일 동시간 ~ 현재시간) 데이터를 표시합니다.
 
 ### 탭 구성
 
-| 탭 | 기획서 Y축 단위 | 현재 metricConfig 매핑 | 비고 |
-|----|---------------|----------------------|------|
-| 전압 | V | `DIST.V_LN_AVG` (평균만) | **X** 3상 개별 메트릭 미정의 |
-| 전류 | A | `DIST.CURRENT_AVG_A` (평균만) | **X** 3상 개별 메트릭 미정의 |
-| 전력사용량 | kW | `DIST.ACTIVE_POWER_TOTAL_KW` (합계만) | **X** 3상 개별 메트릭 미정의 |
-| 입력주파수 | Hz | `DIST.FREQUENCY_HZ` (단일값) | **△** 주파수는 3상 동일하므로 단일값으로 표시 가능 |
+| 탭 | 기획서 범례 | Y축 단위 | 현재 metricConfig | 비고 |
+|----|------------|---------|-------------------|------|
+| 전압 | A상, B상, C상 | V | `DIST.V_LN_AVG` (평균만) | **X** 3상 개별 메트릭 미정의 |
+| 전류 | A상, B상, C상 | A | `DIST.CURRENT_AVG_A` (평균만) | **X** 3상 개별 메트릭 미정의 |
+| 전력사용량 | 금일, 전일 | kW | `DIST.ACTIVE_POWER_TOTAL_KW` | **O** 시간대 조정으로 비교 가능 |
+| 입력주파수 | (없음) | Hz | `DIST.FREQUENCY_HZ` | **O** 단일값 |
 
 > **문제점**: 기획서 차트는 A상·B상·C상 3개 라인을 개별 표시하지만, 현재 metricConfig의 DIST 메트릭은 평균/합계값만 정의되어 있어 3상 개별 표시 불가.
 
@@ -99,8 +99,6 @@ UPS 팝업과 동일한 8개 필드. 공통 기본정보 참조.
 |----|----------------|------|
 | 전압 | `DIST.V_LN_1`, `DIST.V_LN_2`, `DIST.V_LN_3` | 선간전압 A/B/C상 |
 | 전류 | `DIST.CURRENT_1_A`, `DIST.CURRENT_2_A`, `DIST.CURRENT_3_A` | 전류 A/B/C상 |
-| 전력사용량 | `DIST.ACTIVE_POWER_1_KW`, `DIST.ACTIVE_POWER_2_KW`, `DIST.ACTIVE_POWER_3_KW` | 유효전력 A/B/C상 |
-| 입력주파수 | `DIST.FREQUENCY_HZ` (기존) | 단일값으로 충분 |
 
 ### 대체 방안: 평균/합계값으로 단일 라인 표시
 
@@ -110,11 +108,12 @@ UPS 팝업과 동일한 8개 필드. 공통 기본정보 참조.
 |----|-----------|----------|
 | 전압 | `DIST.V_LN_AVG` | 평균 전압 1개 라인 |
 | 전류 | `DIST.CURRENT_AVG_A` | 평균 전류 1개 라인 |
-| 전력사용량 | `DIST.ACTIVE_POWER_TOTAL_KW` | 합계 전력 1개 라인 |
+| 전력사용량 | `DIST.ACTIVE_POWER_TOTAL_KW` | 금일/전일 2개 라인 비교 |
 | 입력주파수 | `DIST.FREQUENCY_HZ` | 주파수 1개 라인 |
 
 ### API 호출
 
+**전압/전류/주파수 (금일 24시간)**:
 ```
 POST /api/v1/mhs/l
 {
@@ -122,9 +121,37 @@ POST /api/v1/mhs/l
   "filter": {
     "assetKey": "pdu-001",
     "interval": "1h",
-    "metricCodes": ["DIST.V_LN_AVG", "DIST.CURRENT_AVG_A",
-                    "DIST.ACTIVE_POWER_TOTAL_KW", "DIST.FREQUENCY_HZ"],
-    "timeFrom": "2026-02-02T09:00:00.000",
+    "metricCodes": ["DIST.V_LN_AVG", "DIST.CURRENT_AVG_A", "DIST.FREQUENCY_HZ"],
+    "timeFrom": "2026-02-03T07:00:00.000",
+    "timeTo": "2026-02-04T09:00:00.000"
+  },
+  "statsKeys": ["avg"]
+}
+```
+
+**전력사용량 (금일 + 전일 비교)**:
+```
+// 금일 데이터
+POST /api/v1/mhs/l
+{
+  "filter": {
+    "assetKey": "pdu-001",
+    "interval": "1h",
+    "metricCodes": ["DIST.ACTIVE_POWER_TOTAL_KW"],
+    "timeFrom": "2026-02-03T07:00:00.000",
+    "timeTo": "2026-02-04T09:00:00.000"
+  },
+  "statsKeys": ["avg"]
+}
+
+// 전일 데이터
+POST /api/v1/mhs/l
+{
+  "filter": {
+    "assetKey": "pdu-001",
+    "interval": "1h",
+    "metricCodes": ["DIST.ACTIVE_POWER_TOTAL_KW"],
+    "timeFrom": "2026-02-02T07:00:00.000",
     "timeTo": "2026-02-03T09:00:00.000"
   },
   "statsKeys": ["avg"]
@@ -139,8 +166,8 @@ POST /api/v1/mhs/l
 | 전압 (평균) | **O** - `DIST.V_LN_AVG` |
 | 전류 (3상 개별) | **X** - 3상 개별 메트릭 미정의 |
 | 전류 (평균) | **O** - `DIST.CURRENT_AVG_A` |
-| 전력사용량 (3상 개별) | **X** - 3상 개별 메트릭 미정의 |
-| 전력사용량 (합계) | **O** - `DIST.ACTIVE_POWER_TOTAL_KW` |
+| 전력사용량 (금일) | **O** - `DIST.ACTIVE_POWER_TOTAL_KW` |
+| 전력사용량 (전일) | **O** - timeFrom/timeTo 조정으로 조회 |
 | 입력주파수 | **O** - `DIST.FREQUENCY_HZ` |
 | 시계열 통계 API | **O** |
 
@@ -166,11 +193,10 @@ POST /api/v1/mhs/l
 
 | 항목 | 유형 | 미제공 사유 | 대응 방안 |
 |------|------|-----------|----------|
-| 전압 3상 개별 (A/B/C) | 메트릭 | metricConfig에 `DIST.V_LN_1~3` 미정의. PT2300 인터페이스에서 3상 개별값 수신 가능 여부 확인 필요 | 3상 메트릭 추가 또는 **대체**: `DIST.V_LN_AVG` 단일 라인으로 표시 |
-| 전류 3상 개별 (A/B/C) | 메트릭 | metricConfig에 `DIST.CURRENT_1~3_A` 미정의. SU2350 인터페이스에서 3상 개별값 수신 가능 여부 확인 필요 | 3상 메트릭 추가 또는 **대체**: `DIST.CURRENT_AVG_A` 단일 라인으로 표시 |
-| 전력사용량 3상 개별 (A/B/C) | 메트릭 | metricConfig에 `DIST.ACTIVE_POWER_1~3_KW` 미정의 | 3상 메트릭 추가 또는 **대체**: `DIST.ACTIVE_POWER_TOTAL_KW` 단일 라인으로 표시 |
+| 전압 3상 개별 (A/B/C) | 메트릭 | metricConfig에 `DIST.V_LN_1~3` 미정의. 인터페이스에서 3상 개별값 수신 가능 여부 확인 필요 | 3상 메트릭 추가 또는 **대체**: `DIST.V_LN_AVG` 단일 라인으로 표시 |
+| 전류 3상 개별 (A/B/C) | 메트릭 | metricConfig에 `DIST.CURRENT_1~3_A` 미정의. 인터페이스에서 3상 개별값 수신 가능 여부 확인 필요 | 3상 메트릭 추가 또는 **대체**: `DIST.CURRENT_AVG_A` 단일 라인으로 표시 |
 | 용도 | 속성 | `ast/gx` 기본정보에 용도 전용 필드 미존재 (API 요청 완료) | `asset.usageLabel`로 제공 예정 (필드명 미정) |
 
 ---
 
-*최종 업데이트: 2026-02-03*
+*최종 업데이트: 2026-02-04*
