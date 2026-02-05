@@ -495,7 +495,6 @@
         // ======================
         // COMPONENT LIFECYCLE (register.js와 동일)
         // ======================
-        const BASE_URL = '10.23.128.125:4004';
 
         function initComponent() {
             const { bind3DEvents, fetchData } = Wkit;
@@ -505,10 +504,12 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = BASE_URL;
+            this._baseUrl = '10.23.128.125:4004';
+            this._locale = 'ko';
+            this._popupTemplateId = 'popup-ups';
             this._trendData = null;
             this._activeTab = 'voltage';
-            this._refreshIntervalId = null;
+            this._metricRefreshIntervalId = null;
 
             // ======================
             // 2. 변환 함수 바인딩 (config.fields.transform에서 사용)
@@ -531,11 +532,6 @@
                     vendorDetail: 'vendorDetail',
                 },
 
-                // 템플릿
-                template: {
-                    popup: 'popup-ups',
-                },
-
                 // 갱신 주기
                 refresh: {
                     interval: 5000,
@@ -546,13 +542,13 @@
                     trendHistory: '/api/v1/mhs/l',
                     trendParams: {
                         interval: '1h',
+                        timeRange: 24 * 60 * 60 * 1000,
                         metricCodes: [
                             'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
                             'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
                             'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
                         ],
                         statsKeys: ['avg'],
-                        timeRangeMs: 24 * 60 * 60 * 1000,
                     },
                 },
 
@@ -646,22 +642,11 @@
             // 4. 데이터셋 정의
             // ======================
             const { datasetNames, api } = this.config;
+            const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
             this.datasetInfo = [
-                { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-                { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderPowerStatus'] },
-                {
-                    datasetName: datasetNames.metricHistory,
-                    param: {
-                        baseUrl: this._baseUrl,
-                        assetKey: this._defaultAssetKey,
-                        interval: api.trendParams.interval,
-                        metricCodes: api.trendParams.metricCodes,
-                        statsKeys: api.trendParams.statsKeys,
-                        timeFrom: null,
-                        timeTo: null,
-                    },
-                    render: ['renderTrendChart'],
-                },
+                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
+                { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'] },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
             ];
 
             // ======================
@@ -703,14 +688,13 @@
             };
 
             const { htmlCode, cssCode } = this.properties.publishCode || {};
-            const ctx = this;
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.config.template.popup);
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
             this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = function() {
-                renderInitialLabels.call(ctx);
+            this.onPopupCreated = () => {
+                renderInitialLabels.call(this);
                 const { chartSelector, events } = popupCreatedConfig;
-                if (chartSelector) ctx.createChart(chartSelector);
-                if (events) ctx.bindPopupEvents(events);
+                if (chartSelector) this.createChart(chartSelector);
+                if (events) this.bindPopupEvents(events);
             };
 
             applyShadowPopupMixin(this, {
@@ -759,7 +743,7 @@
 
             // 3) 5초 주기로 메트릭 갱신 시작
             this.stopRefresh();
-            this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
+            this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
             console.log('[UPS] Metric refresh started (5s interval)');
         }
 
@@ -785,9 +769,9 @@
         }
 
         function stopRefresh() {
-            if (this._refreshIntervalId) {
-                clearInterval(this._refreshIntervalId);
-                this._refreshIntervalId = null;
+            if (this._metricRefreshIntervalId) {
+                clearInterval(this._metricRefreshIntervalId);
+                this._metricRefreshIntervalId = null;
                 console.log('[UPS] Metric refresh stopped');
             }
         }
@@ -815,7 +799,7 @@
 
             const { baseUrl, assetKey, interval, metricCodes, statsKeys } = trendInfo.param;
             const now = new Date();
-            const from = new Date(now.getTime() - this.config.api.trendParams.timeRangeMs);
+            const from = new Date(now.getTime() - this.config.api.trendParams.timeRange);
 
             try {
                 const response = await fetch(`http://${baseUrl}${this.config.api.trendHistory}`, {

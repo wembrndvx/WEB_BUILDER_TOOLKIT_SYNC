@@ -12,33 +12,29 @@
 ## datasetInfo 구조
 
 ```javascript
-// UPS register.js 예시
+// UPS register.js 예시 (리팩토링 후)
+const { datasetNames, api } = this.config;
+const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+
 this.datasetInfo = [
-  {
-    datasetName: 'assetDetailUnified',
-    param: { baseUrl, assetKey, locale: 'ko' },
-    render: ['renderBasicInfo']
-  },
-  {
-    datasetName: 'metricLatest',
-    param: { baseUrl, assetKey },
-    render: ['renderPowerStatus']
-  },
-  {
-    datasetName: 'metricHistoryStats',
-    param: {
-      baseUrl,
-      assetKey,
-      interval: '1h',
-      metricCodes: ['UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG', ...],
-      statsKeys: ['avg'],
-      timeFrom: null,
-      timeTo: null,
-    },
-    render: ['renderTrendChart'],
-  },
+  { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
+  { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'] },
+  { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
 ];
+
+// api.trendParams 구조
+api: {
+  trendHistory: '/api/v1/mhs/l',
+  trendParams: {
+    interval: '1h',
+    timeRange: 24 * 60 * 60 * 1000,  // 24시간 (ms)
+    metricCodes: ['UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG', ...],
+    statsKeys: ['avg'],
+  },
+}
 ```
+
+> **참고**: `timeFrom`, `timeTo`는 param에 포함되지 않고 `fetchTrendData`에서 `timeRange` 기반으로 동적 계산된다.
 
 | 필드 | 설명 |
 |------|------|
@@ -50,36 +46,59 @@ this.datasetInfo = [
 
 ## 런타임에서 파라미터 변경하기
 
-### 1. 특정 datasetInfo 찾기
+### 중요: 트렌드 파라미터 vs 기본 파라미터
+
+리팩토링된 구조에서 파라미터는 두 곳에서 관리됩니다:
+
+| 파라미터 종류 | 저장 위치 | 수정 방법 |
+|--------------|----------|----------|
+| 트렌드 관련 (timeRange, interval, metricCodes, statsKeys) | `this.config.api.trendParams` | `api.trendParams` 직접 수정 |
+| 기본 정보 (assetKey, baseUrl, locale) | `this.datasetInfo[].param` | `datasetInfo[].param` 또는 내부 상태 변수 수정 |
+
+> **주의**: `datasetInfo`의 `param`은 초기화 시 spread 연산자로 **복사**된 값입니다.
+> `api.trendParams`를 수정해도 이미 복사된 `param`에는 반영되지 않고,
+> 반대로 `param`을 수정해도 `api.trendParams`에는 영향이 없습니다.
+
+### 1. 트렌드 파라미터 변경 (권장)
+
+`fetchTrendData`는 `this.config.api.trendParams`를 직접 사용하므로, 트렌드 관련 파라미터는 여기서 수정해야 합니다.
+
+```javascript
+const { api } = this.config;
+
+// 단일 값 변경
+api.trendParams.interval = '5m';
+
+// 배열 값 변경
+api.trendParams.metricCodes = ['UPS.BATT_PCT', 'UPS.LOAD_PCT'];
+
+// 여러 값 한번에 변경
+Object.assign(api.trendParams, {
+  interval: '15m',
+  timeRange: 1 * 60 * 60 * 1000,  // 1시간
+  metricCodes: ['UPS.INPUT_V_AVG'],
+  statsKeys: ['avg', 'max', 'min'],
+});
+```
+
+### 2. 기본 파라미터 변경 (datasetInfo.param)
+
+assetKey, baseUrl, locale 등 기본 파라미터는 `datasetInfo[].param`에서 직접 수정합니다.
 
 ```javascript
 const { datasetNames } = this.config;
 
-// 방법 1: datasetName으로 찾기
+// 특정 datasetInfo 찾기
 const trendInfo = this.datasetInfo.find(
   d => d.datasetName === datasetNames.metricHistory
 );
 
-// 방법 2: 인덱스로 접근 (구조가 고정된 경우)
+// 또는 인덱스로 접근 (구조가 고정된 경우)
 const trendInfo = this.datasetInfo[2];
-```
 
-### 2. param 수정하기
-
-```javascript
 if (trendInfo) {
-  // 단일 값 변경
-  trendInfo.param.interval = '5m';
-
-  // 배열 값 변경
-  trendInfo.param.metricCodes = ['UPS.BATT_PCT', 'UPS.LOAD_PCT'];
-
-  // 여러 값 한번에 변경
-  Object.assign(trendInfo.param, {
-    interval: '15m',
-    metricCodes: ['UPS.INPUT_V_AVG'],
-    statsKeys: ['avg', 'max', 'min'],
-  });
+  // 기본 파라미터 수정
+  trendInfo.param.assetKey = 'NEW_ASSET_KEY';
 }
 ```
 
@@ -91,19 +110,11 @@ if (trendInfo) {
 
 ```javascript
 // 외부에서 호출하는 public method
-function setTrendTimeRange(timeRangeMs) {
-  const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+function setTrendTimeRange(timeRange) {
+  const { api } = this.config;
 
-  if (!trendInfo) {
-    console.warn('[UPS] metricHistory datasetInfo not found');
-    return;
-  }
-
-  // param 수정
-  trendInfo.param.timeRange = timeRangeMs;
+  // api.trendParams 수정 (fetchTrendData가 이 값을 사용)
+  api.trendParams.timeRange = timeRange;
 
   // 변경된 파라미터로 데이터 재요청
   fetchTrendData.call(this);
@@ -117,14 +128,12 @@ this.setTrendTimeRange(1 * 60 * 60 * 1000);  // 1시간
 
 ```javascript
 function setTrendMetrics(metricCodes) {
-  const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const { api } = this.config;
 
-  if (!trendInfo) return;
+  // api.trendParams 수정
+  api.trendParams.metricCodes = metricCodes;
 
-  trendInfo.param.metricCodes = metricCodes;
+  // 변경된 파라미터로 데이터 재요청
   fetchTrendData.call(this);
 }
 
@@ -134,17 +143,19 @@ this.setTrendMetrics(['UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG']);
 
 ### 시나리오: assetKey 변경 (다른 장비 조회)
 
+assetKey는 기본 파라미터이므로 `datasetInfo[].param`에서 수정합니다.
+
 ```javascript
 function switchAsset(newAssetKey) {
+  // 내부 상태 업데이트
+  this._defaultAssetKey = newAssetKey;
+
   // 모든 datasetInfo의 assetKey 업데이트
   this.datasetInfo.forEach(info => {
     if (info.param.assetKey !== undefined) {
       info.param.assetKey = newAssetKey;
     }
   });
-
-  // 내부 상태도 업데이트
-  this._defaultAssetKey = newAssetKey;
 
   // 팝업이 열려있으면 새 데이터로 갱신
   if (this._popupVisible) {
@@ -160,12 +171,18 @@ function switchAsset(newAssetKey) {
 자주 사용한다면 헬퍼 함수로 추출:
 
 ```javascript
+// 트렌드 파라미터 업데이트 헬퍼
+function updateTrendParams(updates) {
+  const { api } = this.config;
+  Object.assign(api.trendParams, updates);
+}
+
 // datasetInfo 조회 헬퍼
 function getDatasetInfo(datasetName) {
   return this.datasetInfo.find(d => d.datasetName === datasetName);
 }
 
-// param 업데이트 헬퍼
+// 기본 param 업데이트 헬퍼 (assetKey, baseUrl, locale 등)
 function updateDatasetParam(datasetName, updates) {
   const info = this.datasetInfo.find(d => d.datasetName === datasetName);
   if (info) {
@@ -174,10 +191,17 @@ function updateDatasetParam(datasetName, updates) {
   return info;
 }
 
-// 사용
-this.updateDatasetParam(datasetNames.metricHistory, {
+// 사용 예시
+// 트렌드 파라미터 변경
+this.updateTrendParams({
   interval: '5m',
   metricCodes: ['UPS.BATT_PCT'],
+});
+fetchTrendData.call(this);
+
+// 기본 파라미터 변경 (전체 datasetInfo)
+this.datasetInfo.forEach(info => {
+  info.param.assetKey = 'NEW_ASSET_KEY';
 });
 ```
 
@@ -185,29 +209,42 @@ this.updateDatasetParam(datasetNames.metricHistory, {
 
 ## 주의사항
 
-1. **datasetInfo를 찾지 못할 경우 대비**
+1. **트렌드 파라미터는 api.trendParams에서 수정**
    ```javascript
-   const info = this.datasetInfo.find(...);
-   if (!info) {
-     console.warn('datasetInfo not found');
-     return;
-   }
+   // ❌ 잘못된 패턴: datasetInfo.param 수정 (fetchTrendData가 사용하지 않음)
+   trendInfo.param.timeRange = 3600000;
+
+   // ✅ 올바른 패턴: api.trendParams 수정
+   this.config.api.trendParams.timeRange = 3600000;
    ```
 
-2. **param 객체 자체를 교체하지 않기**
+2. **객체 자체를 교체하지 않기**
    ```javascript
-   // ❌ 피해야 할 패턴: render 배열 등 다른 속성 유실
-   trendInfo.param = { metricCodes: [...] };
+   // ❌ 피해야 할 패턴: 다른 속성 유실
+   trendInfo.param = { assetKey: 'NEW_KEY' };
+   api.trendParams = { timeRange: 3600000 };
 
-   // ✅ 권장: 기존 param 유지하며 필요한 값만 수정
-   trendInfo.param.metricCodes = [...];
+   // ✅ 권장: 기존 객체 유지하며 필요한 값만 수정
+   trendInfo.param.assetKey = 'NEW_KEY';
+   api.trendParams.timeRange = 3600000;
    // 또는
-   Object.assign(trendInfo.param, { metricCodes: [...] });
+   Object.assign(api.trendParams, { timeRange: 3600000 });
    ```
 
 3. **수정 후 데이터 재요청 필요**
-   - param만 바꾸면 화면에 반영되지 않음
+   - 파라미터만 바꾸면 화면에 반영되지 않음
    - `fetchData()` 또는 `fetchTrendData()` 재호출 필요
+
+4. **spread 복사로 인한 독립성 이해**
+   ```javascript
+   // 초기화 시 spread로 복사됨
+   this.datasetInfo = [
+     { param: { ...baseParam, ...api.trendParams }, ... }
+   ];
+
+   // 이후 api.trendParams를 수정해도 이미 복사된 param에는 영향 없음
+   // 반대로 param을 수정해도 api.trendParams에는 영향 없음
+   ```
 
 ---
 
@@ -215,7 +252,15 @@ this.updateDatasetParam(datasetNames.metricHistory, {
 
 | 작업 | 방법 |
 |------|------|
+| 트렌드 파라미터 수정 | `this.config.api.trendParams.key = value` |
+| 기본 파라미터 수정 | `datasetInfo[].param.key = value` |
+| 여러 값 수정 | `Object.assign(targetObject, { ... })` |
+| 데이터 갱신 | 수정 후 `fetchData()` 또는 `fetchTrendData()` 재호출 |
 | datasetInfo 찾기 | `this.datasetInfo.find(d => d.datasetName === name)` |
-| 단일 값 수정 | `info.param.key = value` |
-| 여러 값 수정 | `Object.assign(info.param, { ... })` |
-| 데이터 갱신 | 수정 후 fetch 함수 재호출 |
+
+### 파라미터 분류
+
+| 파라미터 | 수정 위치 | 사용처 |
+|---------|----------|--------|
+| `timeRange`, `interval`, `metricCodes`, `statsKeys` | `api.trendParams` | `fetchTrendData` |
+| `assetKey`, `baseUrl`, `locale` | `datasetInfo[].param` | 모든 fetch 함수 |
