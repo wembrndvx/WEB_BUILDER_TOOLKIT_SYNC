@@ -11,8 +11,6 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-const BASE_URL = '10.23.128.125:4004';
-
 // ======================
 // TEMPLATE HELPER
 // ======================
@@ -46,8 +44,10 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = BASE_URL;
-  this._refreshIntervalId = null;
+  this._baseUrl = '10.23.128.125:4004';
+  this._locale = 'ko';
+  this._popupTemplateId = 'popup-crac';
+  this._metricRefreshIntervalId = null;
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -70,19 +70,14 @@ function initComponent() {
       vendorDetail: 'vendorDetail',
     },
 
-    // 템플릿
-    template: {
-      popup: 'popup-crac',
-    },
-
     // API 엔드포인트 및 파라미터
     api: {
       trendHistory: '/api/v1/mhs/l',
       trendParams: {
         interval: '1h',
+        timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
         statsKeys: ['avg'],
-        timeRangeMs: 24 * 60 * 60 * 1000,
       },
     },
 
@@ -185,21 +180,12 @@ function initComponent() {
   // 4. 데이터셋 정의
   // ======================
   const { datasetNames, api } = this.config;
+  const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    { datasetName: datasetNames.metricLatest, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey }, render: ['renderStatusCards', 'renderIndicators'] },
-    {
-      datasetName: datasetNames.metricHistory,
-      param: {
-        baseUrl: this._baseUrl,
-        assetKey: this._defaultAssetKey,
-        interval: api.trendParams.interval,
-        timeRange: api.trendParams.timeRangeMs,
-        metricCodes: api.trendParams.metricCodes,
-        statsKeys: api.trendParams.statsKeys,
-      },
-      render: ['renderTrendChart'],
-    },
+    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
+    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards', 'renderIndicators'] },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
   ];
 
   // ======================
@@ -239,7 +225,7 @@ function initComponent() {
   };
 
   const { htmlCode, cssCode } = this.properties.publishCode || {};
-  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.config.template.popup);
+  this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
   this.getPopupStyles = () => cssCode || '';
   this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
@@ -283,7 +269,7 @@ function showDetail() {
 
   // 3) 5초 주기로 메트릭 갱신 시작
   this.stopRefresh();
-  this._refreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
+  this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
 }
 
 function hideDetail() {
@@ -308,9 +294,9 @@ function refreshMetrics() {
 }
 
 function stopRefresh() {
-  if (this._refreshIntervalId) {
-    clearInterval(this._refreshIntervalId);
-    this._refreshIntervalId = null;
+  if (this._metricRefreshIntervalId) {
+    clearInterval(this._metricRefreshIntervalId);
+    this._metricRefreshIntervalId = null;
     console.log('[CRAC] Metric refresh stopped');
   }
 }
@@ -329,7 +315,7 @@ function fetchTrendData() {
 
   // timeFrom, timeTo 동적 계산
   const now = new Date();
-  const from = new Date(now.getTime() - api.trendParams.timeRangeMs);
+  const from = new Date(now.getTime() - api.trendParams.timeRange);
   const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
   const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
 
