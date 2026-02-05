@@ -9,8 +9,6 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
-const BASE_URL = '10.23.128.125:4004';
-
 // ======================
 // TEMPLATE HELPER
 // ======================
@@ -44,7 +42,9 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = BASE_URL;
+  this._baseUrl = '10.23.128.125:4004';
+  this._locale = 'ko';
+  this._popupTemplateId = 'popup-pdu';
   this._trendData = null;
   this._activeTab = 'voltage';
 
@@ -77,19 +77,14 @@ function initComponent() {
       vendorDetail: 'vendorDetail',
     },
 
-    // 템플릿
-    template: {
-      popup: 'popup-pdu',
-    },
-
     // API 엔드포인트 및 파라미터
     api: {
       trendHistory: '/api/v1/mhs/l',
       trendParams: {
         interval: '1h',
+        timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ', 'DIST.ACTIVE_ENERGY_SUM_KWH'],
         statsKeys: ['avg'],
-        timeRangeMs: 24 * 60 * 60 * 1000,
       },
     },
 
@@ -143,20 +138,11 @@ function initComponent() {
   // 4. 데이터셋 정의
   // ======================
   const { datasetNames, api } = this.config;
+  const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: 'ko' }, render: ['renderBasicInfo'] },
-    {
-      datasetName: datasetNames.metricHistory,
-      param: {
-        baseUrl: this._baseUrl,
-        assetKey: this._defaultAssetKey,
-        interval: api.trendParams.interval,
-        timeRange: api.trendParams.timeRangeMs,
-        metricCodes: api.trendParams.metricCodes,
-        statsKeys: api.trendParams.statsKeys,
-      },
-      render: ['renderTrendChart'],
-    },
+    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams }, render: ['renderTrendChart'] },
   ];
 
   // ======================
@@ -195,7 +181,7 @@ function initComponent() {
   };
 
   const { htmlCode, cssCode } = this.properties.publishCode || {};
-  this.getPopupHTML = () => extractTemplate(htmlCode || '', this.config.template.popup);
+  this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
   this.getPopupStyles = () => cssCode || '';
   this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
 
