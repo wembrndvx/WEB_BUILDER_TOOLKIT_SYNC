@@ -14,54 +14,35 @@
 | 트렌드 탭 수 | 4탭 | 5탭 | ⚠️ |
 | 전압 탭 | 평균 전압 (단일) | `DIST.V_LN_AVG` (단일) | ✅ |
 | 전류 탭 | 평균 전류 (단일) | `DIST.CURRENT_AVG_A` (단일) | ✅ |
-| **전력사용량 탭** | **금일/전일 비교 (2라인)** | 단일 라인 | ❌ |
+| **전력사용량 탭** | **금일/전일 비교 (2라인)** | `comparison: true` + 2시리즈 | ✅ |
 | 주파수 탭 | 입력주파수 (단일) | `DIST.FREQUENCY_HZ` (단일) | ✅ |
 | energy 탭 | (SPEC에 없음) | `DIST.ACTIVE_ENERGY_SUM_KWH` | ⚠️ 추가됨 |
 
-### ❌ 미구현: 전력사용량 금일/전일 비교
+### ✅ 구현 완료: 전력사용량 금일/전일 비교
 
-**SPEC 요구사항** (PDU_POPUP_SPEC.md 라인 91, 111):
-```
-| 전력사용량 | 금일, 전일 | kW | DIST.ACTIVE_POWER_TOTAL_KW |
-```
-
-**현재 구현** (register.js 라인 131):
+**구현된 코드** (register.js):
 ```javascript
-power: { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '합계 전력', ... }
-// → 단일 라인만 표시, 금일/전일 비교 없음
-```
-
-### 수정 필요 사항
-
-#### 1. config 수정
-```javascript
-// 현재
-power: { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '합계 전력', ... }
-
-// 수정 후
 power: {
   metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',
   label: '전력사용량',
   unit: 'kW',
+  scale: 1.0,
   comparison: true,  // 금일/전일 비교 플래그
   series: {
-    today: { label: '금일', color: '#3b82f6' },
+    today:     { label: '금일', color: '#3b82f6' },
     yesterday: { label: '전일', color: '#94a3b8' },
-  }
+  },
 }
 ```
 
-#### 2. fetchTrendData 수정
-- [ ] `comparison: true`인 탭은 **2회 fetch** (금일 + 전일)
-- [ ] 시간 계산: 금일 00:00~현재, 전일 00:00~23:59
+**구현 내용:**
+- [x] `fetchComparisonTrendData`: 금일/전일 병렬 fetch
+- [x] `renderComparisonChart`: 2시리즈 차트 렌더링
+- [x] X축: 0시~23시 고정
+- [x] 전일은 dashed 라인 스타일
 
-#### 3. renderTrendChart 수정
-- [ ] `comparison: true`인 탭: 시리즈 2개 (금일, 전일)
-- [ ] X축: 시간만 (0시~23시), 날짜 제외
-
-#### 4. 기타
+#### 남은 결정사항
 - [ ] energy 탭 유지 여부 결정 (SPEC에 없음)
-- [ ] 탭 라벨 정리: "합계 전력" → "전력사용량"
 
 ---
 
@@ -101,11 +82,11 @@ SWBD 컴포넌트 폴더 없음.
 
 ## 구현 우선순위
 
-### Phase 1: PDU 전력사용량 금일/전일 비교
-- [ ] config에 `comparison` 플래그 추가
-- [ ] fetchTrendData에 2회 fetch 로직
-- [ ] renderTrendChart에 2시리즈 처리
-- [ ] preview.html 테스트
+### Phase 1: PDU 전력사용량 금일/전일 비교 ✅ 완료
+- [x] config에 `comparison` 플래그 추가
+- [x] fetchTrendData에 2회 fetch 로직 (fetchComparisonTrendData)
+- [x] renderTrendChart에 2시리즈 처리 (renderComparisonChart)
+- [x] preview.html 동일 패턴 적용
 
 ### Phase 2: SWBD 신규 구현
 - [ ] PDU 기반 SWBD 컴포넌트 생성
@@ -139,3 +120,4 @@ const yesterdayTo = yesterdayEnd.toISOString();
 ---
 
 *작성일: 2026-02-04*
+*Phase 1 완료: 2026-02-05*

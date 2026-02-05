@@ -461,6 +461,7 @@
             this._locale = 'ko';
             this._popupTemplateId = 'popup-pdu';
             this._trendData = null;
+            this._trendDataComparison = null;  // { today: [], yesterday: [] }
             this._activeTab = 'voltage';
 
             // ======================
@@ -538,7 +539,17 @@
                     tabs: {
                         voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',       unit: 'V',   color: '#3b82f6', scale: 1.0 },
                         current:   { metricCode: 'DIST.CURRENT_AVG_A',         label: '평균 전류',       unit: 'A',   color: '#f59e0b', scale: 1.0 },
-                        power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '합계 전력',       unit: 'kW',  color: '#8b5cf6', scale: 1.0 },
+                        power: {
+                            metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',
+                            label: '전력사용량',
+                            unit: 'kW',
+                            scale: 1.0,
+                            comparison: true,
+                            series: {
+                                today:     { label: '금일', color: '#3b82f6' },
+                                yesterday: { label: '전일', color: '#94a3b8' },
+                            },
+                        },
                         frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',          unit: 'Hz',  color: '#22c55e', scale: 1.0 },
                         energy:    { metricCode: 'DIST.ACTIVE_ENERGY_SUM_KWH', label: '누적 전력사용량', unit: 'kWh', color: '#ef4444', scale: 1.0 },
                     },
@@ -675,18 +686,31 @@
         // ======================
 
         function fetchTrendData() {
-            const { datasetNames } = this.config;
+            const { datasetNames, chart } = this.config;
             const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
             if (!trendInfo) return;
 
             const { param } = trendInfo;
-            const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = param;
+            const { baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint } = param;
 
-            const now = new Date();
-            const from = new Date(now.getTime() - timeRange);
-            const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
-            const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+            // comparison 탭이 있는지 확인
+            const hasComparison = Object.values(chart.tabs).some((tab) => tab.comparison);
 
+            if (hasComparison) {
+                fetchComparisonTrendData.call(this, { baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint });
+            } else {
+                const { timeRange } = param;
+                const now = new Date();
+                const from = new Date(now.getTime() - timeRange);
+                fetchSingleTrendData.call(this, {
+                    baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint,
+                    timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
+                    timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
+                });
+            }
+        }
+
+        function fetchSingleTrendData({ baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint, timeFrom, timeTo }) {
             fetch(`http://${baseUrl}${apiEndpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -703,10 +727,56 @@
                         return;
                     }
                     this._trendData = result.data;
+                    this._trendDataComparison = null;
                     this.renderTrendChart({ response: { data: result.data } });
                 })
                 .catch((e) => {
                     console.warn('[PDU] Trend fetch failed:', e);
+                });
+        }
+
+        function fetchComparisonTrendData({ baseUrl, assetKey, interval, metricCodes, statsKeys, apiEndpoint }) {
+            // 금일: 오늘 00:00 ~ 현재
+            const now = new Date();
+            const todayStart = new Date(now);
+            todayStart.setHours(0, 0, 0, 0);
+
+            const todayFrom = todayStart.toISOString().replace('T', ' ').slice(0, 19);
+            const todayTo = now.toISOString().replace('T', ' ').slice(0, 19);
+
+            // 전일: 어제 00:00 ~ 어제 23:59:59
+            const yesterdayStart = new Date(todayStart);
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+            const yesterdayEnd = new Date(todayStart);
+            yesterdayEnd.setTime(yesterdayEnd.getTime() - 1000);
+
+            const yesterdayFrom = yesterdayStart.toISOString().replace('T', ' ').slice(0, 19);
+            const yesterdayTo = yesterdayEnd.toISOString().replace('T', ' ').slice(0, 19);
+
+            const fetchPayload = (from, to) => ({
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filter: { assetKey, interval, metricCodes, timeFrom: from, timeTo: to },
+                    statsKeys,
+                    sort: [],
+                }),
+            });
+
+            Promise.all([
+                fetch(`http://${baseUrl}${apiEndpoint}`, fetchPayload(todayFrom, todayTo)).then((r) => r.json()),
+                fetch(`http://${baseUrl}${apiEndpoint}`, fetchPayload(yesterdayFrom, yesterdayTo)).then((r) => r.json()),
+            ])
+                .then(([todayResult, yesterdayResult]) => {
+                    this._trendData = todayResult?.success ? todayResult.data : [];
+                    this._trendDataComparison = {
+                        today: todayResult?.success ? todayResult.data : [],
+                        yesterday: yesterdayResult?.success ? yesterdayResult.data : [],
+                    };
+                    this.renderTrendChart({ response: { data: this._trendData } });
+                })
+                .catch((e) => {
+                    console.warn('[PDU] Comparison trend fetch failed:', e);
                 });
         }
 
@@ -786,20 +856,27 @@
         }
 
         // ======================
-        // RENDER: 트렌드 차트 (탭별 단일 라인)
+        // RENDER: 트렌드 차트 (탭별 단일 라인 / 금일-전일 비교)
         // ======================
 
         function renderTrendChart({ response }) {
             const { data } = response;
-            if (!data || !Array.isArray(data) || data.length === 0) {
-                console.warn('[PDU] renderTrendChart: no data');
-                return;
-            }
-
             const { chart } = this.config;
             const { tabs, selectors } = chart;
             const tabConfig = tabs[this._activeTab];
             if (!tabConfig) return;
+
+            // comparison 탭이고 비교 데이터가 있는 경우
+            if (tabConfig.comparison && this._trendDataComparison) {
+                renderComparisonChart.call(this, tabConfig, selectors);
+                return;
+            }
+
+            // 단일 시리즈 렌더링
+            if (!data || !Array.isArray(data) || data.length === 0) {
+                console.warn('[PDU] renderTrendChart: no data');
+                return;
+            }
 
             // data를 시간별로 그룹핑
             const timeMap = fx.reduce(
@@ -844,7 +921,7 @@
                 yAxis: {
                     type: 'value',
                     name: tabConfig.unit,
-                    axisLine: { show: true, lineStyle: { color: tabConfig.color } },
+                    axisLine: { show: true, lineStyle: { color: tabConfig.color || '#3b82f6' } },
                     axisLabel: { color: '#888', fontSize: 10 },
                     splitLine: { lineStyle: { color: '#333' } },
                 },
@@ -866,6 +943,103 @@
                                 ],
                             },
                         },
+                    },
+                ],
+            };
+
+            this.updateChart(selectors.container, option);
+        }
+
+        // ======================
+        // RENDER: 금일/전일 비교 차트
+        // ======================
+
+        function renderComparisonChart(tabConfig, selectors) {
+            const { today, yesterday } = this._trendDataComparison;
+            const { series } = tabConfig;
+
+            // 0시~23시 고정 X축
+            const hours = Array.from({ length: 24 }, (_, i) => i + '시');
+
+            // 데이터를 시간(hour)별로 그룹핑하는 헬퍼
+            const groupByHour = (data) =>
+                fx.reduce(
+                    (acc, row) => {
+                        const hour = new Date(row.time).getHours() + '시';
+                        if (row.metricCode === tabConfig.metricCode) {
+                            acc[hour] = row.statsBody?.avg ?? null;
+                        }
+                        return acc;
+                    },
+                    {},
+                    data || []
+                );
+
+            const todayMap = groupByHour(today);
+            const yesterdayMap = groupByHour(yesterday);
+
+            const todayValues = hours.map((h) => {
+                const raw = todayMap[h];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            });
+
+            const yesterdayValues = hours.map((h) => {
+                const raw = yesterdayMap[h];
+                return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+            });
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: [series.today.label, series.yesterday.label],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 20, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: hours,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: {
+                    type: 'value',
+                    name: tabConfig.unit,
+                    axisLine: { show: true, lineStyle: { color: series.today.color } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } },
+                },
+                series: [
+                    {
+                        name: series.today.label,
+                        type: 'line',
+                        data: todayValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: series.today.color, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(series.today.color, 0.3) },
+                                    { offset: 1, color: hexToRgba(series.today.color, 0) },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        name: series.yesterday.label,
+                        type: 'line',
+                        data: yesterdayValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: series.yesterday.color, width: 2, type: 'dashed' },
                     },
                 ],
             };
