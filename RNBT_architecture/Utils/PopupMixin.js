@@ -50,6 +50,9 @@
 
 const PopupMixin = {};
 
+// 팝업 z-index 카운터 (나중에 연 팝업이 항상 최상단)
+let _popupZCounter = 1000;
+
 /**
  * ─────────────────────────────────────────────────────────────
  * applyShadowPopupMixin - 기본 Shadow DOM 팝업
@@ -109,6 +112,7 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
         if (!instance._popup.host) {
             instance.createPopup();
         }
+        instance._popup.host.style.zIndex = ++_popupZCounter;
         instance._popup.host.style.display = 'block';
     };
 
@@ -117,7 +121,7 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      */
     instance.hidePopup = function() {
         if (instance._popup.host) {
-            instance._popup.host.style.display = 'none';
+            instance.destroyPopup();
         }
     };
 
