@@ -504,7 +504,11 @@ function renderTrendChart({ response }) {
   const statsKey = statsKeys?.[0] || 'avg';
   const timeKey = timeField || 'time';
 
-  // 데이터를 시간별로 그룹핑 (원본 시간 사용)
+  // 차트에 표시할 metricCode로 필터링
+  const chartMetricCodes = [tempConfig.metricCode, humidConfig.metricCode];
+  const chartData = safeData.filter(row => chartMetricCodes.includes(row.metricCode));
+
+  // 필터링된 데이터를 시간별로 그룹핑
   const timeMap = fx.reduce(
     (acc, row) => {
       const time = row[timeKey];
@@ -513,7 +517,7 @@ function renderTrendChart({ response }) {
       return acc;
     },
     {},
-    safeData
+    chartData
   );
 
   const times = Object.keys(timeMap);

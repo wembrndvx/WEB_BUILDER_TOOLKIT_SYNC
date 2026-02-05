@@ -958,9 +958,13 @@
             const statsKey = statsKeys?.[0] || 'avg';
             const timeKey = timeField || 'time';
 
-            // 데이터를 시간별로 그룹핑
+            // 현재 탭의 metricCode로 필터링
+            const tabMetricCodes = [tabConfig.inputCode, tabConfig.outputCode];
+            const tabData = safeData.filter(row => tabMetricCodes.includes(row.metricCode));
+
+            // 필터링된 데이터를 시간별로 그룹핑
             const timeMap = {};
-            safeData.forEach((row) => {
+            tabData.forEach((row) => {
                 const time = row[timeKey];
                 if (!timeMap[time]) timeMap[time] = {};
                 timeMap[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;

@@ -996,9 +996,13 @@
             const statsKey = statsKeys?.[0] || 'avg';
             const timeKey = timeField || 'time';
 
-            // data를 시간별로 그룹핑
+            // 차트에 표시할 metricCode로 필터링
+            const chartMetricCodes = [tempConfig.metricCode, humidConfig.metricCode];
+            const chartData = safeData.filter(row => chartMetricCodes.includes(row.metricCode));
+
+            // 필터링된 데이터를 시간별로 그룹핑
             const timeMap = {};
-            safeData.forEach((row) => {
+            chartData.forEach((row) => {
                 const time = row[timeKey];
                 if (!timeMap[time]) timeMap[time] = {};
                 timeMap[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;

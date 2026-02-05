@@ -475,7 +475,10 @@ function renderTrendChart({ response }) {
   const statsKey = statsKeys?.[0] || 'avg';
   const timeKey = timeField || 'time';
 
-  // data를 시간별로 그룹핑 (원본 시간 사용)
+  // 현재 탭의 metricCode로 필터링
+  const tabData = safeData.filter(row => row.metricCode === tabConfig.metricCode);
+
+  // 필터링된 데이터를 시간별로 그룹핑
   const timeMap = fx.reduce(
     (acc, row) => {
       const time = row[timeKey];
@@ -484,7 +487,7 @@ function renderTrendChart({ response }) {
       return acc;
     },
     {},
-    safeData
+    tabData
   );
 
   const times = Object.keys(timeMap);
