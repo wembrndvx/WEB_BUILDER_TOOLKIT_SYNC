@@ -221,6 +221,13 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
+  // 탭 상태 초기화 (이전 세션의 탭 상태가 잔존하지 않도록)
+  this._activeTab = 'voltage';
+  const tabBtns = this.popupQueryAll(this.config.chart.selectors.tabBtn);
+  if (tabBtns) {
+    tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
+  }
+
   // 전체 데이터셋 fetch
   fx.go(
     this.datasetInfo,
