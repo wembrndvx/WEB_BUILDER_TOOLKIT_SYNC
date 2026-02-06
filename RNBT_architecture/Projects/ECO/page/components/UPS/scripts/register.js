@@ -77,11 +77,11 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
-          'UPS.INPUT_A_AVG', 'UPS.OUTPUT_A_AVG',
+          'UPS.INPUT_A_SUM', 'UPS.OUTPUT_A_SUM',
           'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG',
           'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG',
         ],
-        statsKeys: ['avg'],
+        statsKeys: [],
         timeField: 'time',
       },
     },
@@ -155,7 +155,7 @@ function initComponent() {
     // 트렌드 차트 영역 (3탭)
     chart: {
       tabs: {
-        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_AVG',  outputCode: 'UPS.OUTPUT_A_AVG' },
+        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_SUM',  outputCode: 'UPS.OUTPUT_A_SUM' },
         voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
         frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
       },
@@ -455,8 +455,7 @@ function renderTrendChart({ response }) {
   const safeData = Array.isArray(data) ? data : [];
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-  const { statsKeys, timeField } = trendInfo?.param || {};
-  const statsKey = statsKeys?.[0] || 'avg';
+  const { timeField } = trendInfo?.param || {};
   const timeKey = timeField || 'time';
 
   // 현재 탭의 metricCode로 필터링
@@ -468,6 +467,7 @@ function renderTrendChart({ response }) {
     (acc, row) => {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
+      const statsKey = row.metricCode.split('_').pop().toLowerCase();
       acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
       return acc;
     },
