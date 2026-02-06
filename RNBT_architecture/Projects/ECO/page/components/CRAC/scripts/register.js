@@ -47,7 +47,6 @@ function initComponent() {
   this._baseUrl = '10.23.128.140:8811';
   this._locale = 'ko';
   this._popupTemplateId = 'popup-crac';
-  this._metricRefreshIntervalId = null;
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -77,14 +76,13 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
-        statsKeys: ['avg'],
+        statsKeys: [],
         timeField: 'time',
       },
-    },
-
-    // 갱신 주기
-    refresh: {
-      interval: 5000,
+      statsKeyMap: {
+        'CRAC.RETURN_TEMP': 'avg',
+        'CRAC.RETURN_HUMIDITY': 'avg',
+      },
     },
 
     // 상태 매핑
@@ -184,9 +182,9 @@ function initComponent() {
   const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards', 'renderIndicators'] },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
+    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards', 'renderIndicators'], refreshInterval: 5000 },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
   ];
 
   // ======================
@@ -202,7 +200,6 @@ function initComponent() {
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
-  this.refreshMetrics = refreshMetrics.bind(this);
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
@@ -248,29 +245,21 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
-  const { datasetNames, refresh } = this.config;
-
-  // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
+  // 모든 datasetInfo를 fetchData로 호출
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d.datasetName !== datasetNames.metricHistory),
-    fx.each(({ datasetName, param, render }) =>
-      fetchData(this.page, datasetName, param)
-        .then(response => {
-          const data = extractData(response);
-          if (!data) return;
-          fx.each(fn => this[fn](response), render);
-        })
-        .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e))
-    )
+    fx.each(d => fetchDatasetAndRender.call(this, d))
   );
 
-  // 2) 트렌드 차트 호출 (mhs/l)
-  fetchTrendData.call(this);
-
-  // 3) 5초 주기로 메트릭 갱신 시작
+  // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
   this.stopRefresh();
-  this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d.refreshInterval > 0),
+    fx.each(d => {
+      d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+    })
+  );
 }
 
 function hideDetail() {
@@ -278,12 +267,32 @@ function hideDetail() {
   this.hidePopup();
 }
 
-function refreshMetrics() {
-  const { datasetNames } = this.config;
-  const metricInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricLatest);
-  if (!metricInfo) return;
+function stopRefresh() {
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d._intervalId),
+    fx.each(d => {
+      clearInterval(d._intervalId);
+      d._intervalId = null;
+    })
+  );
+}
 
-  const { datasetName, param, render } = metricInfo;
+// ======================
+// DATASET FETCH HELPER
+// ======================
+
+function fetchDatasetAndRender(d) {
+  const { datasetNames } = this.config;
+  const { datasetName, param, render } = d;
+
+  // metricHistory는 매번 timeFrom/timeTo 갱신
+  if (datasetName === datasetNames.metricHistory) {
+    const now = new Date();
+    const from = new Date(now.getTime() - param.timeRange);
+    param.timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+    param.timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+  }
 
   fetchData(this.page, datasetName, param)
     .then(response => {
@@ -292,55 +301,6 @@ function refreshMetrics() {
       fx.each(fn => this[fn](response), render);
     })
     .catch(e => console.warn(`[CRAC] ${datasetName} fetch failed:`, e));
-}
-
-function stopRefresh() {
-  if (this._metricRefreshIntervalId) {
-    clearInterval(this._metricRefreshIntervalId);
-    this._metricRefreshIntervalId = null;
-    console.log('[CRAC] Metric refresh stopped');
-  }
-}
-
-// ======================
-// TREND DATA FETCH
-// ======================
-
-function fetchTrendData() {
-  const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
-  if (!trendInfo) return;
-
-  const { datasetName, param, render } = trendInfo;
-  const { baseUrl, assetKey, interval, metricCodes, statsKeys, timeRange, apiEndpoint } = param;
-
-  // timeFrom, timeTo 동적 계산
-  const now = new Date();
-  const from = new Date(now.getTime() - timeRange);
-  const timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
-  const timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
-
-  fetch(`http://${baseUrl}${apiEndpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filter: { assetKey, interval, metricCodes, timeFrom, timeTo },
-      statsKeys,
-      sort: [],
-    }),
-  })
-    .then(response => response.json())
-    .then(result => {
-      if (!result?.success || !result.data) {
-        console.warn(`[CRAC] ${datasetName}: no data`);
-        return;
-      }
-      fx.each(fn => this[fn]({ response: { data: result.data } }), render);
-    })
-    .catch(e => {
-      console.warn(`[CRAC] ${datasetName} fetch failed:`, e);
-      fx.each(fn => this[fn]({ response: { data: [] } }), render);
-    });
 }
 
 // ======================
@@ -523,8 +483,7 @@ function renderTrendChart({ response }) {
   const safeData = Array.isArray(data) ? data : [];
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-  const { statsKeys, timeField } = trendInfo?.param || {};
-  const statsKey = statsKeys?.[0] || 'avg';
+  const { timeField } = trendInfo?.param || {};
   const timeKey = timeField || 'time';
 
   // 차트에 표시할 metricCode로 필터링
@@ -536,7 +495,8 @@ function renderTrendChart({ response }) {
     (acc, row) => {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
-      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
+      const statsKey = this.config.api.statsKeyMap[row.metricCode];
+      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
       return acc;
     },
     {},

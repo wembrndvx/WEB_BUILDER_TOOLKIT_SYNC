@@ -46,7 +46,6 @@ function initComponent() {
   this._baseUrl = '10.23.128.140:8811';
   this._locale = 'ko';
   this._popupTemplateId = 'popup-sensor';
-  this._metricRefreshIntervalId = null;
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -86,14 +85,13 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
-        statsKeys: ['avg'],
+        statsKeys: [],
         timeField: 'time',
       },
-    },
-
-    // 갱신 주기
-    refresh: {
-      interval: 5000,
+      statsKeyMap: {
+        'SENSOR.TEMP': 'avg',
+        'SENSOR.HUMIDITY': 'avg',
+      },
     },
 
     // ========================
@@ -173,9 +171,9 @@ function initComponent() {
   const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'] },
-    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards'] },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'] },
+    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards'], refreshInterval: 5000 },
+    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
   ];
 
   // ======================
@@ -191,7 +189,6 @@ function initComponent() {
   // ======================
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
-  this.refreshMetrics = refreshMetrics.bind(this);
   this.stopRefresh = stopRefresh.bind(this);
 
   // ======================
@@ -237,37 +234,21 @@ function initComponent() {
 function showDetail() {
   this.showPopup();
 
-  const { datasetNames, refresh } = this.config;
-
-  // 1) assetDetailUnified + metricLatest 호출 (섹션별 독립 처리)
-  // metricHistoryStats는 fetchTrendData에서 fetch API로 직접 호출하므로 제외
+  // 모든 datasetInfo를 fetchData로 호출
   fx.go(
     this.datasetInfo,
-    fx.filter((d) => d.datasetName !== datasetNames.metricHistory),
-    fx.each(({ datasetName, param, render }) =>
-      fx.go(
-        fetchData(this.page, datasetName, param),
-        (response) => {
-          const data = extractData(response, 'data');
-          if (data === null) {
-            console.warn(`[TempHumiditySensor] ${datasetName} - no data`);
-            return;
-          }
-          fx.each((fn) => this[fn](response), render);
-        }
-      )
-    )
-  ).catch((e) => {
-    console.error('[TempHumiditySensor] Data load error:', e);
-  });
+    fx.each(d => fetchDatasetAndRender.call(this, d))
+  );
 
-  // 2) 트렌드 차트 호출 (mhs/l)
-  fetchTrendData.call(this);
-
-  // 3) 5초 주기로 메트릭 갱신 시작
+  // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
   this.stopRefresh();
-  this._metricRefreshIntervalId = setInterval(() => this.refreshMetrics(), refresh.interval);
-  console.log('[TempHumiditySensor] Metric refresh started (5s interval)');
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d.refreshInterval > 0),
+    fx.each(d => {
+      d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+    })
+  );
 }
 
 function hideDetail() {
@@ -275,79 +256,40 @@ function hideDetail() {
   this.hidePopup();
 }
 
-function refreshMetrics() {
-  const { datasetNames } = this.config;
-  const metricInfo = fx.go(
-    this.datasetInfo,
-    fx.filter((d) => d.datasetName === datasetNames.metricLatest),
-    (arr) => arr[0]
-  );
-  if (!metricInfo) return;
-
-  fx.go(
-    fetchData(this.page, datasetNames.metricLatest, metricInfo.param),
-    (response) => {
-      const data = extractData(response, 'data');
-      if (data === null) return;
-      this.renderStatusCards(response);
-    }
-  ).catch((e) => {
-    console.warn('[TempHumiditySensor] Metric refresh failed:', e);
-  });
-}
-
 function stopRefresh() {
-  if (this._metricRefreshIntervalId) {
-    clearInterval(this._metricRefreshIntervalId);
-    this._metricRefreshIntervalId = null;
-    console.log('[TempHumiditySensor] Metric refresh stopped');
-  }
+  fx.go(
+    this.datasetInfo,
+    fx.filter(d => d._intervalId),
+    fx.each(d => {
+      clearInterval(d._intervalId);
+      d._intervalId = null;
+    })
+  );
 }
 
 // ======================
-// TREND DATA FETCH
+// DATASET FETCH HELPER
 // ======================
 
-function fetchTrendData() {
+function fetchDatasetAndRender(d) {
   const { datasetNames } = this.config;
-  const trendInfo = fx.go(
-    this.datasetInfo,
-    fx.filter((d) => d.datasetName === datasetNames.metricHistory),
-    (arr) => arr[0]
-  );
-  if (!trendInfo) return;
+  const { datasetName, param, render } = d;
 
-  const { baseUrl, assetKey, interval, timeRange, metricCodes, statsKeys, apiEndpoint } = trendInfo.param;
-  const now = new Date();
-  const from = new Date(now.getTime() - timeRange);
+  // metricHistory는 매번 timeFrom/timeTo 갱신
+  if (datasetName === datasetNames.metricHistory) {
+    const now = new Date();
+    const from = new Date(now.getTime() - param.timeRange);
+    param.timeFrom = from.toISOString().replace('T', ' ').slice(0, 19);
+    param.timeTo = now.toISOString().replace('T', ' ').slice(0, 19);
+  }
 
-  fetch(`http://${baseUrl}${apiEndpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      filter: {
-        assetKey,
-        interval,
-        metricCodes,
-        timeFrom: from.toISOString().replace('T', ' ').slice(0, 19),
-        timeTo: now.toISOString().replace('T', ' ').slice(0, 19),
-      },
-      statsKeys,
-      sort: [],
-    }),
-  })
-    .then((resp) => resp.json())
-    .then((result) => {
-      if (!result || !result.success) {
-        console.warn('[TempHumiditySensor] Trend data unavailable');
-        return;
-      }
-      this.renderTrendChart({ response: { data: result.data } });
+  fetchData(this.page, datasetName, param)
+    .then(response => {
+      const data = extractData(response);
+      if (!data) return;
+      fx.each(fn => this[fn](response), render);
     })
-    .catch((e) => {
-      console.warn('[TempHumiditySensor] Trend fetch failed:', e);
-      this.renderTrendChart({ response: { data: [] } });
-    });
+    .catch(e => console.warn(`[TempHumiditySensor] ${datasetName} fetch failed:`, e));
 }
 
 // ======================
@@ -500,8 +442,7 @@ function renderTrendChart({ response }) {
   const safeData = Array.isArray(data) ? data : [];
   const { datasetNames } = this.config;
   const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
-  const { statsKeys, timeField } = trendInfo?.param || {};
-  const statsKey = statsKeys?.[0] || 'avg';
+  const { timeField } = trendInfo?.param || {};
   const timeKey = timeField || 'time';
 
   // 차트에 표시할 metricCode로 필터링
@@ -513,7 +454,8 @@ function renderTrendChart({ response }) {
     (acc, row) => {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
-      acc[time][row.metricCode] = row.statsBody?.[statsKey] ?? null;
+      const statsKey = this.config.api.statsKeyMap[row.metricCode];
+      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
       return acc;
     },
     {},
