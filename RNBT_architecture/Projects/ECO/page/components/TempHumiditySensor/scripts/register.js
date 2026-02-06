@@ -194,7 +194,7 @@ function initComponent() {
   // Runtime Parameter Update API
   this.updateTrendParams = updateTrendParams.bind(this);
   this.updateSensorSeriesMetric = updateSensorSeriesMetric.bind(this);
-  this.switchAsset = switchAsset.bind(this);
+  this.updateGlobalParams = updateGlobalParams.bind(this);
   this.updateRefreshInterval = updateRefreshInterval.bind(this);
 
   // ======================
@@ -672,11 +672,17 @@ function rebuildMetricCodes(trendInfo) {
   });
 }
 
-function switchAsset(assetKey) {
-  if (!assetKey) return;
-  this._defaultAssetKey = assetKey;
+function updateGlobalParams(options) {
+  const { assetKey, baseUrl, locale } = options;
+
+  if (assetKey !== undefined) {
+    this._defaultAssetKey = assetKey;
+  }
+
   this.datasetInfo.forEach(d => {
-    d.param.assetKey = assetKey;
+    if (assetKey !== undefined) d.param.assetKey = assetKey;
+    if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+    if (locale !== undefined)   d.param.locale = locale;
   });
 }
 

@@ -428,35 +428,48 @@ this.updateSensorSeriesMetric('humidity', { scale: 0.01 });
 
 ---
 
-### 5. `switchAsset(assetKey)` — Category C
+### 5. `updateGlobalParams(options)` — Category C
 
-모든 컴포넌트 공통. 대상 장비를 전환한다.
+모든 컴포넌트 공통. 글로벌 파라미터(assetKey, baseUrl, locale)를 변경한다.
 
 ```javascript
 /**
- * 다른 장비로 전환한다.
- * 모든 데이터셋의 param.assetKey를 변경한다.
- * showDetail() 호출 시 변경된 assetKey로 전체 fetch된다.
+ * 글로벌 파라미터를 변경한다.
+ * 모든 데이터셋의 param에 적용된다.
+ * showDetail() 호출 시 변경된 값으로 전체 fetch된다.
  *
- * @param {string} assetKey - 새 장비 식별자
+ * @param {Object} options
+ * @param {string} [options.assetKey] - 대상 장비 식별자
+ * @param {string} [options.baseUrl]  - API 서버 주소
+ * @param {string} [options.locale]   - 언어 ('ko', 'en', ...)
  */
-function switchAsset(assetKey) {
-  if (!assetKey) return;
+function updateGlobalParams(options) {
+  const { assetKey, baseUrl, locale } = options;
 
   // 내부 상태 업데이트
-  this._defaultAssetKey = assetKey;
+  if (assetKey !== undefined) {
+    this._defaultAssetKey = assetKey;
+  }
 
-  // 모든 데이터셋의 param.assetKey 변경
+  // 모든 데이터셋의 param 변경
   this.datasetInfo.forEach(d => {
-    d.param.assetKey = assetKey;
+    if (assetKey !== undefined) d.param.assetKey = assetKey;
+    if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+    if (locale !== undefined)   d.param.locale = locale;
   });
 }
 ```
 
 **사용 예시**:
 ```javascript
-// 다른 UPS 장비로 전환
-this.switchAsset('UPS_RACK_B_002');
+// 장비만 변경 (기존 switchAsset과 동일)
+this.updateGlobalParams({ assetKey: 'UPS_RACK_B_002' });
+
+// 서버 + 장비 변경
+this.updateGlobalParams({ baseUrl: '10.23.128.150:8811', assetKey: 'UPS_NEW' });
+
+// 언어만 변경
+this.updateGlobalParams({ locale: 'en' });
 ```
 
 ---
@@ -499,7 +512,7 @@ this.updateRefreshInterval('metricLatest', 0);
 | 메서드 | Category | 설명 |
 |--------|----------|------|
 | `updateTrendParams(options)` | A | fetch 파라미터 변경 (timeRange, interval 등) |
-| `switchAsset(assetKey)` | C | 대상 장비 전환 |
+| `updateGlobalParams(options)` | C | 글로벌 파라미터 변경 (assetKey, baseUrl, locale) |
 | `updateRefreshInterval(name, ms)` | D | 자동 갱신 주기 변경 |
 
 ### 컴포넌트별 메서드
@@ -541,16 +554,21 @@ updateUpsTabMetric('voltage', { inputCode, outputCode, statsKey, label, unit })
         └─ tabs 전체 순회 → codes.push(...)
 ```
 
-### Category C: `switchAsset`
+### Category C: `updateGlobalParams`
 
 ```
-switchAsset('ASSET_002')
+updateGlobalParams({ assetKey: 'ASSET_002', baseUrl: '10.23.128.150:8811' })
   │
   ├─ this._defaultAssetKey = 'ASSET_002'
   │
   ├─ datasetInfo[0].param.assetKey = 'ASSET_002'  (assetDetail)
+  ├─ datasetInfo[0].param.baseUrl = '10.23.128.150:8811'
+  │
   ├─ datasetInfo[1].param.assetKey = 'ASSET_002'  (metricLatest)
-  └─ datasetInfo[2].param.assetKey = 'ASSET_002'  (metricHistory)
+  ├─ datasetInfo[1].param.baseUrl = '10.23.128.150:8811'
+  │
+  ├─ datasetInfo[2].param.assetKey = 'ASSET_002'  (metricHistory)
+  └─ datasetInfo[2].param.baseUrl = '10.23.128.150:8811'
 ```
 
 ### Category D: `updateRefreshInterval`
@@ -696,7 +714,7 @@ this.updateUpsTabMetric = updateUpsTabMetric.bind(this);           // UPS
 // this.updatePduTabMetric = updatePduTabMetric.bind(this);       // PDU
 // this.updateCracSeriesMetric = updateCracSeriesMetric.bind(this);     // CRAC
 // this.updateSensorSeriesMetric = updateSensorSeriesMetric.bind(this); // Sensor
-this.switchAsset = switchAsset.bind(this);
+this.updateGlobalParams = updateGlobalParams.bind(this);
 this.updateRefreshInterval = updateRefreshInterval.bind(this);
 ```
 
@@ -753,4 +771,4 @@ chart: {
 
 ---
 
-*최종 업데이트: 2026-02-06 — 현황카드 API 검토 항목 추가*
+*최종 업데이트: 2026-02-07 — switchAsset → updateGlobalParams로 변경 (Category C 정의와 일치)*
