@@ -57,27 +57,73 @@ copied ────────────────┘
 
 ---
 
-## 실제 사례: datasetInfo 패턴
+## 실제 사례: datasetInfo의 스프레드 초기화 패턴
 
-### 문제 상황
+### 현재 코드 구조
+
+ECO 컴포넌트(UPS, CRAC, TempHumiditySensor, PDU)는 스프레드 연산자로 datasetInfo를 초기화한다:
 
 ```javascript
-// 초기화 시점
-this.datasetInfo = [
-  {
-    datasetName: 'metricHistory',
-    param: {
-      metricCodes: api.trendParams.metricCodes,  // 주소 복사
-    },
-    render: ['renderTrendChart'],
-  },
-];
+const { datasetNames, api } = this.config;
+const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
 
-// 런타임에서 변경 시도
-this.config.api.trendParams.metricCodes = ['NEW_CODE'];  // ❌ 효과 없음
+this.datasetInfo = [
+  { datasetName: datasetNames.assetDetail,  param: { ...baseParam }, render: ['renderBasicInfo'],   refreshInterval: 0 },
+  { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderPowerStatus'], refreshInterval: 5000 },
+  { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+];
 ```
 
-`datasetInfo`는 생성 시점의 주소를 유지하므로, 새 배열을 할당해도 반영되지 않는다.
+### 스프레드의 얕은 복사 특성
+
+`{ ...api.trendParams }`는 **얕은 복사(shallow copy)**다. 1단계 프로퍼티만 복사되며, 값의 타입에 따라 동작이 다르다:
+
+```javascript
+// api.trendParams 원본
+api.trendParams = {
+  metricCodes: ['UPS.INPUT_V_AVG', 'UPS.INPUT_A_SUM'],  // 배열 (참조 타입)
+  statsKeys: [],                                          // 배열 (참조 타입)
+  timeRange: 3600000,                                     // 숫자 (원시 타입)
+  timeField: 'metricDt',                                  // 문자열 (원시 타입)
+};
+```
+
+스프레드 후 `param` 객체의 상태:
+
+```
+param.timeRange ──────▶ 3600000              (독립 복사본, 원본과 무관)
+param.timeField ──────▶ 'metricDt'           (독립 복사본, 원본과 무관)
+param.metricCodes ──┬──▶ ['UPS.INPUT_V_AVG', 'UPS.INPUT_A_SUM']  (공유)
+api.trendParams.metricCodes ──┘
+param.statsKeys ────┬──▶ []                                       (공유)
+api.trendParams.statsKeys ────┘
+```
+
+**원시 타입** (숫자, 문자열, boolean): 값이 복사되므로 원본과 독립적
+**참조 타입** (배열, 객체): 주소가 복사되므로 원본과 **같은 인스턴스를 공유**
+
+### 이것이 중요한 이유
+
+런타임에서 `api.trendParams.metricCodes`를 `=`로 새 배열에 할당하면:
+
+```javascript
+// ❌ 효과 없음 — param.metricCodes는 여전히 원래 배열을 가리킴
+this.config.api.trendParams.metricCodes = ['NEW_CODE'];
+```
+
+```
+param.metricCodes ──────────────▶ ['UPS.INPUT_V_AVG', ...]  (원래 배열)
+api.trendParams.metricCodes ──▶ ['NEW_CODE']                (새 배열, 참조 끊김)
+```
+
+반면 **내용을 직접 수정**하면 param에도 반영된다:
+
+```javascript
+// ✅ param.metricCodes에도 반영됨 — 같은 배열 인스턴스를 수정
+const codes = this.config.api.trendParams.metricCodes;
+codes.length = 0;
+codes.push('NEW_CODE');
+```
 
 ### 해결 방법
 
@@ -88,18 +134,18 @@ codes.length = 0;
 codes.push(...newCodes);
 ```
 
-**방법 2: datasetInfo를 직접 수정**
+**방법 2: datasetInfo.param을 직접 수정**
 ```javascript
-const historyDataset = this.datasetInfo.find(
-  d => d.datasetName === 'metricHistory'
+const trendInfo = this.datasetInfo.find(
+  d => d.datasetName === datasetNames.metricHistory
 );
-historyDataset.param.metricCodes = newCodes;
+trendInfo.param.metricCodes = newCodes;
 ```
 
-**방법 3: datasetInfo 재생성**
-```javascript
-this.datasetInfo = this._createDatasetInfo();
-```
+> **참고**: 방법 2를 사용하면 `api.trendParams.metricCodes`와의 공유가 끊어진다.
+> 이후 `api.trendParams`를 참조하는 다른 로직이 있다면 양쪽 모두 업데이트해야 한다.
+> `config.api.statsKeyMap`도 별도 설정이므로 metricCode를 변경할 경우 동기화 필요.
+> 상세한 수정 가이드는 [RUNTIME_DATASETINFO_MODIFICATION.md](./RUNTIME_DATASETINFO_MODIFICATION.md) 참조.
 
 ---
 
@@ -111,5 +157,6 @@ this.datasetInfo = this._createDatasetInfo();
 | 배열 비우기 | `arr.length = 0` | ✅ 유지 |
 | 요소 추가/제거 | `arr.push()`, `arr.splice()` | ✅ 유지 |
 | 요소 수정 | `arr[0] = 'x'` | ✅ 유지 |
+| 스프레드 복사 | `{ ...obj }` | 1단계만 복사 (얕은 복사) |
 
-**핵심**: `=`로 새 값을 할당하면 참조가 끊어진다. 참조를 유지하려면 기존 객체/배열의 **내용**을 수정해야 한다.
+**핵심**: `=`로 새 값을 할당하면 참조가 끊어진다. 참조를 유지하려면 기존 객체/배열의 **내용**을 수정해야 한다. 스프레드 연산자(`...`)는 얕은 복사이므로, 중첩된 배열/객체는 여전히 원본과 참조를 공유한다.
