@@ -7,7 +7,8 @@ description: RNBT 아키텍처 패턴에 맞는 완전한 대시보드 페이지
 
 Master/Page 레이어, 컴포넌트, Mock 서버, datasetList.json을 포함한 완전한 프로젝트를 생성합니다.
 
-> 기본 원칙은 [RNBT_architecture/README.md](/RNBT_architecture/README.md) 참조
+> 공통 규칙: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) 참조
+> 기본 원칙: [RNBT_architecture/README.md](/RNBT_architecture/README.md) 참조
 
 ---
 
@@ -18,6 +19,7 @@ Master/Page 레이어, 컴포넌트, Mock 서버, datasetList.json을 포함한 
 
 1. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
 2. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+3. **기존 프로젝트 패턴 확인** - SimpleDashboard 또는 TaskMonitor의 page_scripts 구조를 먼저 읽을 것
 
 ---
 

@@ -9,6 +9,8 @@ Figma 디자인을 **인라인 SVG가 포함된 정적 HTML/CSS**로 변환하�
 런타임에서 색상 제어가 필요한 심볼, 아이콘, 상태 표시 컴포넌트용입니다.
 스크립트 작업은 하지 않습니다 (순수 퍼블리싱).
 
+> 공통 규칙: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) 참조
+
 ---
 
 ## ⚠️ 작업 전 필수 확인

@@ -141,14 +141,16 @@ create-component-with-popup ─→ create-project
 
 | 문서 | 위치 | 내용 |
 |------|------|------|
-| CODING_STYLE.md | [/.claude/guides/](/.claude/guides/) | 함수형 코딩 지침, CSS 원칙 |
+| **SHARED_INSTRUCTIONS.md** | [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) | **모든 스킬 공통 규칙** (JS/CSS 패턴, beforeDestroy 순서, 이벤트 이중 구조) |
+| CODING_STYLE.md | [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) | 함수형 코딩 지침, CSS 원칙 |
 | RNBT README | [/RNBT_architecture/README.md](/RNBT_architecture/README.md) | 아키텍처 설계 문서 |
 
 ---
 
 ## 주의사항
 
-1. **정적/동적 분리**: Figma 단계에서는 스크립트 없이 순수 퍼블리싱만
-2. **Figma MCP 필요**: figma-to-* Skills는 Figma Desktop + MCP 서버 필요
-3. **CODING_STYLE 참조**: 모든 코드 작성 시 [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) 참조
+1. **공통 규칙 확인**: 모든 스킬은 [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md)의 공통 규칙을 따름
+2. **정적/동적 분리**: Figma 단계에서는 스크립트 없이 순수 퍼블리싱만
+3. **Figma MCP 필요**: figma-to-* Skills는 Figma Desktop + MCP 서버 필요
+4. **CODING_STYLE 참조**: 모든 코드 작성 시 [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) 참조
 

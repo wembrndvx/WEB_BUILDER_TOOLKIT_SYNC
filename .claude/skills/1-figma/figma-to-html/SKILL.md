@@ -8,6 +8,8 @@ description: Figma 디자인을 정적 HTML/CSS로 변환합니다. Figma 링크
 Figma 디자인을 **정적 HTML/CSS**로 변환하는 Skill입니다.
 스크립트 작업은 하지 않습니다 (순수 퍼블리싱).
 
+> 공통 규칙: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) 참조
+
 ---
 
 ## ⚠️ 작업 전 필수 확인
