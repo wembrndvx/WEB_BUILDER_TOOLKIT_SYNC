@@ -271,7 +271,28 @@ function hideDetail() {
 
 **주의:** `fetchAllDatasets`라는 별도 함수는 존재하지 않습니다. fetch + interval 로직은 `showDetail` 안에 인라인으로 작성합니다.
 
-### 6. fetch + render 패턴
+### 6. 헬퍼 함수 (모든 팝업 컴포넌트 공통)
+
+```javascript
+// HTML 템플릿에서 특정 template 추출
+function extractTemplate(htmlCode, templateId) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlCode, 'text/html');
+    const template = doc.querySelector(`template#${templateId}`);
+    return template?.innerHTML || '';
+}
+
+// 응답에서 데이터 안전 추출
+function extractData(response, path = 'data') {
+    if (!response?.response) return null;
+    const data = response.response[path];
+    return data !== null && data !== undefined ? data : null;
+}
+```
+
+이 두 함수는 **모든 팝업 컴포넌트의 register.js 상단에 정의**합니다.
+
+### 7. fetch + render 패턴
 
 ```javascript
 function fetchDatasetAndRender(d) {
@@ -305,7 +326,7 @@ function stopRefresh() {
 - render 배열 순회에 `fx.each` 사용 (Array.forEach 아님)
 - `stopRefresh`는 `fx.go` 파이프라인 사용
 
-### 7. Transform 함수 패턴
+### 8. Transform 함수 패턴
 
 config의 `transform`에 사용되는 변환 함수입니다.
 
@@ -333,7 +354,7 @@ function renderField(el, value, field) {
 }
 ```
 
-### 8. Runtime Parameter Update API
+### 9. Runtime Parameter Update API
 
 페이지가 런타임에 컴포넌트 설정을 변경할 수 있는 메서드입니다.
 
@@ -356,18 +377,16 @@ function updateRefreshInterval(datasetName, interval) {
     target.refreshInterval = interval;
 }
 
-// 차트 탭/시리즈 메트릭 변경 (컴포넌트별 이름!)
-// 실제 함수명은 컴포넌트에 따라 달라짐:
-//   UPS → updateUpsTabMetric
-//   PDU → updatePduTabMetric
-//   CRAC → updateCracSeriesMetric
-//   TempHumiditySensor → updateSensorSeriesMetric
-function update[Component]TabMetric(tabName, options) {
+// 차트 탭/시리즈 메트릭 변경
+// 네이밍 규칙: update + 컴포넌트명 + TabMetric (또는 SeriesMetric)
+//   예: updateUpsTabMetric, updatePduTabMetric,
+//       updateCracSeriesMetric, updateSensorSeriesMetric
+function updateUpsTabMetric(tabName, options) {
     const { inputCode, outputCode, statsKey, label, unit } = options;
 
     // metricCode 변경 시 statsKey가 없으면 거부
     if ((inputCode !== undefined || outputCode !== undefined) && statsKey === undefined) {
-        console.warn(`[update...TabMetric] metricCode 변경 시 statsKey 필수`);
+        console.warn(`[updateUpsTabMetric] metricCode 변경 시 statsKey 필수`);
         return;
     }
     // ... 탭 업데이트 + statsKeyMap 업데이트 + metricCodes 재구축
@@ -385,18 +404,15 @@ this.stopRefresh();
 // 2. 팝업 파괴 (Shadow DOM + 차트 + 이벤트 리스너)
 this.destroyPopup();
 
-// 3. 캐시 데이터 정리
+// 3. 캐시 데이터 정리 (컴포넌트별로 다름)
 this._trendData = null;
-
-// 4. 바인딩 메서드 null 처리
-this.showDetail = null;
-this.hideDetail = null;
-this.renderBasicInfo = null;
-this.renderPowerStatus = null;
-this.renderTrendChart = null;
+// PDU의 경우: this._trendDataComparison = null;
 ```
 
-**핵심:** `destroyPopup()`이 팝업 내부의 차트/테이블/이벤트를 모두 정리합니다.
+**주의:**
+- `destroyPopup()`이 팝업 내부의 차트/테이블/이벤트를 **모두** 정리합니다
+- 일반 컴포넌트와 달리 **메서드 null 할당은 하지 않습니다** (실제 UPS/PDU/CRAC 모두 미사용)
+- `stopRefresh()` → `destroyPopup()` → 캐시 null 순서만 지키면 됩니다
 
 ---
 

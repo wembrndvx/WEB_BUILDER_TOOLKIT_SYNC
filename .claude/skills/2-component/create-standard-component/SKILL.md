@@ -31,42 +31,12 @@ description: 표준 RNBT 컴포넌트를 생성합니다. 페이지가 GlobalDat
 ✅ LogViewer, AssetTree 등 기존 컴포넌트의 패턴을 먼저 확인한다
 ```
 
-### 2. 정적 CSS는 그대로 복사 (body/reset/import 제외)
+### 2. 정적 CSS / preview.html / 스크린샷 검증
 
-```
-❌ 검증된 CSS를 "비슷하게" 새로 작성
-✅ Figma_Conversion의 검증된 CSS를 복사하되, body/*/import만 제외
-```
-
-**정적 CSS에서 제외할 부분:**
-```css
-/* 제외 */
-@import url('...');
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { ... }
-
-/* 복사 */
-.component-name { ... }  /* 컴포넌트 스타일만 */
-```
-
-### 3. preview.html은 inline 방식으로 구현
-
-```
-❌ 외부 파일 로드 방식 (경로 문제 발생)
-   <script src="../../Utils/fx.js"></script>
-
-✅ inline 방식 (LogViewer 패턴)
-   - register.js 내용을 복사해서 붙여넣기
-   - fx는 최소 기능만 inline 구현
-   - mockThis 컨텍스트에서 IIFE로 실행
-```
-
-### 4. 스크린샷으로 반드시 확인
-
-```
-❌ 코드 작성 후 바로 "완료"
-✅ Playwright 스크린샷 캡처 → 정적 HTML과 비교 → 동일해야 완료
-```
+> **상세 규칙은 [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) 참조**
+> - CSS: body/\*/import 제외, 나머지 그대로 복사
+> - preview.html: inline 방식 (외부 파일 로드 금지)
+> - 스크린샷: Playwright 캡처 → 원본 비교 → 동일해야 완료
 
 ---
 
@@ -195,6 +165,8 @@ function setupInternalHandlers() { ... }
 
 ### 이벤트 처리 이중 구조
 
+> **공통 패턴 상세: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#이벤트-처리-이중-구조) 참조**
+
 **판단 기준: "이 동작의 결과를 페이지가 알아야 하는가?"**
 
 | 페이지가 알아야 하는가? | 처리 | 예시 |
@@ -203,57 +175,25 @@ function setupInternalHandlers() { ... }
 | 예 | `customEvents` + `bindEvents` | 행 선택, 필터 변경 |
 | 둘 다 | 둘 다 | 노드 클릭 → 선택 표시 + 상세 요청 |
 
-```javascript
-// 페이지에 전달 → customEvents
-this.customEvents = {
-    click: { '.row': '@rowClicked' }
-};
-bindEvents(this, this.customEvents);
-
-// 컴포넌트 내부 동작 → _internalHandlers
-function setupInternalHandlers() {
-    const root = this.appendElement;
-
-    // 핸들러 참조 저장 (beforeDestroy에서 제거용)
-    this._internalHandlers.clearClick = () => this.clearLogs();
-    this._internalHandlers.scrollClick = () => this.toggleAutoScroll();
-
-    root.querySelector('.btn-clear')?.addEventListener('click', this._internalHandlers.clearClick);
-    root.querySelector('.btn-scroll')?.addEventListener('click', this._internalHandlers.scrollClick);
-}
-```
-
 **핵심:** `_internalHandlers`에 함수 참조를 저장해야 `removeEventListener`가 가능합니다.
 
 ### fx.go 파이프라인 활용
 
-데이터 변환과 DOM 렌더링에 `fx.go` 파이프라인을 사용합니다.
+> **기본 패턴: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#fxgo-파이프라인-패턴) 참조**
+
+DOM 렌더링에 `fx.go` 파이프라인을 사용합니다. DOM 생성은 순수 함수로 분리합니다.
 
 ```javascript
-// 리스트 렌더링
-function renderData(config, { response }) {
-    const { data } = response;
-    if (!data) return;
+fx.go(
+    items,
+    fx.map(item => createItemElement(config, item)),
+    fx.each(el => container.appendChild(el))
+);
 
-    const items = data[config.itemsKey];
-    if (!items || !Array.isArray(items)) return;
-
-    const container = this.appendElement.querySelector('.list');
-    container.innerHTML = '';
-
-    fx.go(
-        items,
-        fx.map(item => createItemElement(config, item)),
-        fx.each(el => container.appendChild(el))
-    );
-}
-
-// DOM 생성은 순수 함수로 분리
 function createItemElement(config, item) {
-    const { fields } = config;
     const el = document.createElement('div');
     el.className = 'list-item';
-    el.textContent = item[fields.name];
+    el.textContent = item[config.fields.name];
     return el;
 }
 ```
@@ -303,37 +243,13 @@ function createNodeElement(config, item, searchTerm) {
 
 ## beforeDestroy 패턴
 
-**반드시 생성의 역순으로 정리합니다.**
+> **5단계 정리 순서: [SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md#beforeDestroy-정리-순서) 참조**
+
+생성의 역순: 구독 해제 → 외부 이벤트 제거 → 내부 핸들러 제거 → 상태 초기화 → 바인딩 메서드 null
 
 ```javascript
 const { unsubscribe } = GlobalDataPublisher;
 const { removeCustomEvents } = Wkit;
-
-// 1. 구독 해제
-fx.go(
-    Object.entries(this.subscriptions),
-    fx.each(([topic, _]) => unsubscribe(topic, this))
-);
-this.subscriptions = null;
-
-// 2. 외부 이벤트 제거
-removeCustomEvents(this, this.customEvents);
-this.customEvents = null;
-
-// 3. 내부 핸들러 제거 (등록한 모든 리스너)
-const root = this.appendElement;
-if (this._internalHandlers) {
-    root.querySelector('.btn-clear')?.removeEventListener('click', this._internalHandlers.clearClick);
-    root.querySelector('.btn-scroll')?.removeEventListener('click', this._internalHandlers.scrollClick);
-}
-this._internalHandlers = null;
-
-// 4. 상태 초기화
-this._someState = null;
-
-// 5. 바인딩 메서드 null 처리
-this.renderData = null;
-this.renderList = null;
 ```
 
 **핵심:** register에서 생성한 **모든 것**은 beforeDestroy에서 정리합니다.
