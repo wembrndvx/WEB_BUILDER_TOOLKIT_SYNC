@@ -16,9 +16,10 @@ description: 표준 RNBT 컴포넌트를 생성합니다. 페이지가 GlobalDat
 **코드 작성 전 반드시 다음 파일들을 Read 도구로 읽으세요.**
 **이전에 읽었더라도 매번 다시 읽어야 합니다 - 캐싱하거나 생략하지 마세요.**
 
-1. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
-2. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
-3. **기존 컴포넌트 패턴 확인** - `/RNBT_architecture/Components/LogViewer/` 등 기존 컴포넌트의 구조와 패턴을 먼저 확인
+1. [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) - 공통 규칙
+2. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
+3. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+4. **기존 컴포넌트 패턴 확인** - `/RNBT_architecture/Components/LogViewer/` 등 기존 컴포넌트의 구조와 패턴을 먼저 확인
 
 ---
 
@@ -299,7 +300,7 @@ this.customEvents = {
 
 - ❌ 컴포넌트가 직접 fetch (팝업 없이)
 - ❌ 생성 후 정리 누락 (register ↔ beforeDestroy 쌍)
-- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
+- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 - ❌ _internalHandlers에 참조 저장 없이 addEventListener 사용
 - ❌ 검증된 CSS를 "비슷하게" 새로 작성
 

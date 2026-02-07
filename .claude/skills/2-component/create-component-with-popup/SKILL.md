@@ -17,10 +17,11 @@ description: Shadow DOM 팝업을 가진 컴포넌트를 생성합니다. 컴포
 **코드 작성 전 반드시 다음 파일들을 Read 도구로 읽으세요.**
 **이전에 읽었더라도 매번 다시 읽어야 합니다 - 캐싱하거나 생략하지 마세요.**
 
-1. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
-2. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
-3. [/RNBT_architecture/Utils/PopupMixin.js](/RNBT_architecture/Utils/PopupMixin.js) - PopupMixin API
-4. **기존 팝업 컴포넌트 패턴 확인** - UPS, PDU, CRAC 중 하나를 먼저 읽을 것
+1. [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) - 공통 규칙
+2. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
+3. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+4. [/RNBT_architecture/Utils/PopupMixin.js](/RNBT_architecture/Utils/PopupMixin.js) - PopupMixin API
+5. **기존 팝업 컴포넌트 패턴 확인** - UPS, PDU, CRAC 중 하나를 먼저 읽을 것
 
 ---
 
@@ -454,6 +455,7 @@ components/[ComponentName]/
 - ❌ refreshInterval > 0인데 stopRefresh 미구현
 - ❌ metricCode 변경 시 statsKey 없이 변경
 - ❌ destroyPopup() 호출 누락
+- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 

@@ -18,9 +18,10 @@ description: 인라인 SVG HTML을 상태 기반 동적 컴포넌트로 변환�
 **코드 작성 전 반드시 다음 파일들을 Read 도구로 읽으세요.**
 **이전에 읽었더라도 매번 다시 읽어야 합니다 - 캐싱하거나 생략하지 마세요.**
 
-1. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
-2. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
-3. **기존 심볼 컴포넌트 패턴 확인** - Cube3DSymbol의 register.js, component.html, component.css를 먼저 읽을 것
+1. [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) - 공통 규칙
+2. [/RNBT_architecture/README.md](/RNBT_architecture/README.md) - 아키텍처 이해
+3. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일
+4. **기존 심볼 컴포넌트 패턴 확인** - Cube3DSymbol의 register.js, component.html, component.css를 먼저 읽을 것
 
 ---
 
@@ -416,7 +417,7 @@ components/[ComponentName]/
 - ❌ gradient defs를 상태별로 누락
 - ❌ layer 클래스 없이 직접 fill 값 변경
 - ❌ 생성/정리 불일치
-- ❌ subscription 콜백에서 `function(response)` 사용 → `function({ response })` 필수
+- ❌ datasetName 기반 데이터 응답을 받는 함수에서 `function(response)` 사용 → `function({ response })` 필수
 
 ---
 
