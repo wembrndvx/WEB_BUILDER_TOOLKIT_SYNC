@@ -11,38 +11,16 @@
 
 ---
 
-## 패턴 분화: Group A vs Group B
+## 코딩 패턴 (통일 완료)
 
-register.js 코딩 스타일이 2개 그룹으로 분화되어 있음.
-
-### Group A: UPS + CRAC
-
-```javascript
-// statusMap 구조
-statusMap: {
-    labels: { ACTIVE: '정상운영', WARNING: '주의', ... },
-    dataAttrs: { ACTIVE: 'normal', WARNING: 'warning', ... },
-    defaultDataAttr: 'normal',
-}
-
-// fetchModelVendorChain
-fetchModelVendorChain.call(this, asset, chainConfig, ctx);
-
-// renderField (구조분해 파라미터)
-function renderField(ctx, data, { key, selector, transform, dataAttr, fallback }) { ... }
-
-// onPopupCreated 순서
-renderInitialLabels → createChart → bindPopupEvents
-```
-
-### Group B: PDU + TempHumiditySensor
+4개 컴포넌트의 register.js가 동일한 패턴을 사용함.
 
 ```javascript
 // statusMap 구조
 statusMap: {
     ACTIVE: { label: '정상운영', dataAttr: 'normal' },
     WARNING: { label: '주의', dataAttr: 'warning' },
-    DEFAULT: { label: '알수없음', dataAttr: 'normal' },
+    DEFAULT: { label: '알 수 없음', dataAttr: 'normal' },
 }
 
 // fetchModelVendorChain
@@ -55,14 +33,9 @@ function renderField(ctx, data, field) { ... }  // field = { key, selector, ... 
 createChart → bindPopupEvents → renderInitialLabels
 ```
 
-### 분화 판단
-
-이 차이들은 **같은 기능의 다른 구현**이지 도메인 요구사항 차이가 아님.
-코드 생성 시점에 따라 자연스럽게 분화된 것으로 추정.
-두 패턴 모두 정상 작동하며, 기존 컴포넌트는 수정하지 않음.
-
-**SKILL에 반영할 사항**: 정답 패턴을 하나로 지정하여 신규 생성 시 일관성 확보.
-→ Group B 패턴 채택 권장 (statusMap이 더 직관적, 함수 시그니처가 명확)
+> **경위**: 원래 UPS/CRAC(Group A)와 PDU/Sensor(Group B)가 같은 기능을 다른 스타일로 구현하고 있었음.
+> 도메인 요구사항 차이가 아닌 코드 생성 시점에 따른 자연 분화로 판단하여 Group B로 통일함.
+> 상세 변경 내역은 아래 "수정한 불일치 > 5. UPS/CRAC register.js → Group B 패턴 통일" 참조.
 
 ---
 
