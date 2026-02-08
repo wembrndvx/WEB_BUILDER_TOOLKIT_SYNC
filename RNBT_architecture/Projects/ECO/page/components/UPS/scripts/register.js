@@ -715,9 +715,9 @@ function rebuildMetricCodes(trendInfo) {
 function updateGlobalParams(options) {
   const { assetKey, baseUrl, locale } = options;
 
-  if (assetKey !== undefined) {
-    this._defaultAssetKey = assetKey;
-  }
+  if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+  if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+  if (locale !== undefined)   this._locale = locale;
 
   this.datasetInfo.forEach(d => {
     if (assetKey !== undefined) d.param.assetKey = assetKey;
