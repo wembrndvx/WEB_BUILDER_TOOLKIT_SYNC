@@ -89,11 +89,12 @@ this.config = {
         },
     },
 
-    // 상태 매핑 (statusType → UI 표시)
+    // 상태 코드별 레이블/속성 매핑
     statusMap: {
-        labels: { ACTIVE: '정상운영', WARNING: '주의', CRITICAL: '위험' },
-        dataAttrs: { ACTIVE: 'normal', WARNING: 'warning', CRITICAL: 'critical' },
-        defaultDataAttr: 'normal',
+        ACTIVE: { label: '정상운영', dataAttr: 'normal' },
+        WARNING: { label: '주의', dataAttr: 'warning' },
+        CRITICAL: { label: '위험', dataAttr: 'critical' },
+        DEFAULT: { label: '알 수 없음', dataAttr: 'normal' },
     },
 
     // ========================
@@ -205,8 +206,6 @@ applyShadowPopupMixin(this, {
 
 // 차트가 필요하면 추가
 applyEChartsMixin(this);
-// 테이블이 필요하면 추가
-// applyTabulatorMixin(this);
 ```
 
 ### 4. onPopupCreated (팝업 생성 직후 초기화)
@@ -223,14 +222,14 @@ const popupCreatedConfig = {
 };
 
 function onPopupCreated({ chartSelector, events }) {
-    // 1. 초기 라벨 렌더링 (config의 label/unit 값 적용)
-    renderInitialLabels.call(this);
-
-    // 2. 차트 초기화
+    // 1. 차트 초기화
     chartSelector && this.createChart(chartSelector);
 
-    // 3. 팝업 내부 이벤트 바인딩
+    // 2. 팝업 내부 이벤트 바인딩
     events && this.bindPopupEvents(events);
+
+    // 3. 초기 라벨 렌더링 (config의 label/unit 값 적용)
+    this.renderInitialLabels();
 }
 ```
 
@@ -332,25 +331,42 @@ function stopRefresh() {
 config의 `transform`에 사용되는 변환 함수입니다.
 
 ```javascript
-// config에서 참조
-this.statusTypeToLabel = (statusType) =>
-    this.config.statusMap.labels[statusType] || statusType;
+// config에서 참조 (bind 방식)
+this.statusTypeToLabel = statusTypeToLabel.bind(this);
+this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+this.formatDate = formatDate.bind(this);
 
-this.statusTypeToDataAttr = (statusType) =>
-    this.config.statusMap.dataAttrs[statusType] || this.config.statusMap.defaultDataAttr;
+// 변환 함수 정의
+function statusTypeToLabel(statusType) {
+    const { statusMap } = this.config;
+    const entry = statusMap[statusType] || statusMap.DEFAULT;
+    return entry.label;
+}
 
-this.formatDate = (dateStr) =>
-    dateStr ? dateStr.split('T')[0] : '-';
+function statusTypeToDataAttr(statusType) {
+    const { statusMap } = this.config;
+    const entry = statusMap[statusType] || statusMap.DEFAULT;
+    return entry.dataAttr;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch { return dateStr; }
+}
 
 // 범용 필드 렌더링
-function renderField(el, value, field) {
+function renderField(ctx, data, field) {
+    const el = ctx.popupQuery(field.selector);
     if (!el) return;
-    const display = field.transform ? field.transform(value) : value;
-
+    let value = data[field.key] ?? field.fallback ?? '-';
+    if (field.transform) value = field.transform(value);
     if (field.dataAttr) {
-        el.dataset[field.dataAttr] = display;
+        el.dataset[field.dataAttr] = value;
     } else {
-        el.textContent = display ?? field.fallback ?? '-';
+        el.textContent = value;
     }
 }
 ```
@@ -464,5 +480,6 @@ components/[ComponentName]/
 | 참조 | 위치 | 특징 |
 |------|------|------|
 | UPS (기본) | [/RNBT_architecture/Projects/ECO/page/components/UPS/](/RNBT_architecture/Projects/ECO/page/components/UPS/) | config 패턴, 4카드 + 3탭 차트 |
-| PDU (탭 UI + 테이블) | [/RNBT_architecture/Projects/ECO/page/components/PDU/](/RNBT_architecture/Projects/ECO/page/components/PDU/) | Tabulator 통합 |
-| CRAC (듀얼 Y축 차트) | [/RNBT_architecture/Projects/ECO/page/components/CRAC/](/RNBT_architecture/Projects/ECO/page/components/CRAC/) | 듀얼 Y축 ECharts |
+| PDU (탭 UI + 비교 차트) | [/RNBT_architecture/Projects/ECO/page/components/PDU/](/RNBT_architecture/Projects/ECO/page/components/PDU/) | 4탭 차트 + 금일/전일 비교 |
+| CRAC (듀얼 Y축 차트) | [/RNBT_architecture/Projects/ECO/page/components/CRAC/](/RNBT_architecture/Projects/ECO/page/components/CRAC/) | 듀얼 Y축 ECharts + 6개 BOOL 인디케이터 |
+| TempHumiditySensor (센서) | [/RNBT_architecture/Projects/ECO/page/components/TempHumiditySensor/](/RNBT_architecture/Projects/ECO/page/components/TempHumiditySensor/) | 2카드 + 바/라인 복합 차트 |

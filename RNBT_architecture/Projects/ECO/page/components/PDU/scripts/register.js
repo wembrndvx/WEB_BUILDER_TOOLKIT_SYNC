@@ -126,7 +126,7 @@ function initComponent() {
       },
     },
 
-    // 트렌드 차트 영역 (5탭)
+    // 트렌드 차트 영역 (4탭)
     chart: {
       tabs: {
         voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',       unit: 'V',   color: '#3b82f6', scale: 1.0 },

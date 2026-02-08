@@ -5,7 +5,7 @@
   섹션 구조 (기획서 v.0.8_260128 기준):
   1. Header - 자산명 + 상태 badge + 닫기
   2. 기본정보 - 이미지 placeholder + 8필드 테이블
-  3. 실시간 전력추이현황 - 4탭 트렌드 차트 (전압/전류/전력사용량/입력주파수)
+  3. 실시간 전력추이현황 - 4탭 트렌드 차트 (전압/전류/전력사용량/주파수)
 -->
 <template id="popup-pdu">
     <div class="popup-overlay">
@@ -30,32 +30,37 @@
             <div class="popup-body">
                 <!-- Section 1: 기본정보 (이미지 + 테이블) -->
                 <div class="section info-section">
-                    <div class="info-layout">
-                        <div class="info-image-placeholder">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                                <rect x="6" y="4" width="36" height="40" rx="2" stroke="#4b5563" stroke-width="2"/>
-                                <line x1="6" y1="14" x2="42" y2="14" stroke="#4b5563" stroke-width="2"/>
-                                <line x1="6" y1="24" x2="42" y2="24" stroke="#4b5563" stroke-width="2"/>
-                                <line x1="6" y1="34" x2="42" y2="34" stroke="#4b5563" stroke-width="2"/>
-                                <circle cx="14" cy="9" r="2" fill="#4b5563"/>
-                                <circle cx="14" cy="19" r="2" fill="#4b5563"/>
-                                <circle cx="14" cy="29" r="2" fill="#4b5563"/>
-                                <circle cx="14" cy="39" r="2" fill="#4b5563"/>
-                            </svg>
-                            <span class="image-label">PDU</span>
+                    <div class="section-header">
+                        <span class="section-title">기본정보</span>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-layout">
+                            <div class="info-image-placeholder">
+                                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                    <rect x="6" y="4" width="36" height="40" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                    <line x1="6" y1="14" x2="42" y2="14" stroke="#4b5563" stroke-width="2"/>
+                                    <line x1="6" y1="24" x2="42" y2="24" stroke="#4b5563" stroke-width="2"/>
+                                    <line x1="6" y1="34" x2="42" y2="34" stroke="#4b5563" stroke-width="2"/>
+                                    <circle cx="14" cy="9" r="2" fill="#4b5563"/>
+                                    <circle cx="14" cy="19" r="2" fill="#4b5563"/>
+                                    <circle cx="14" cy="29" r="2" fill="#4b5563"/>
+                                    <circle cx="14" cy="39" r="2" fill="#4b5563"/>
+                                </svg>
+                                <span class="image-label">PDU</span>
+                            </div>
+                            <table class="info-table">
+                                <tbody>
+                                    <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                    <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                    <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                    <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                    <tr><th>모델</th><td class="info-model">-</td></tr>
+                                    <tr><th>위치</th><td class="info-location">-</td></tr>
+                                    <tr><th>상태</th><td class="info-status">-</td></tr>
+                                    <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <table class="info-table">
-                            <tbody>
-                                <tr><th>자산명</th><td class="info-name">-</td></tr>
-                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
-                                <tr><th>용도</th><td class="info-usage">-</td></tr>
-                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
-                                <tr><th>모델</th><td class="info-model">-</td></tr>
-                                <tr><th>위치</th><td class="info-location">-</td></tr>
-                                <tr><th>상태</th><td class="info-status">-</td></tr>
-                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
 
@@ -69,7 +74,6 @@
                         <button class="tab-btn" data-tab="current"></button>
                         <button class="tab-btn" data-tab="power"></button>
                         <button class="tab-btn" data-tab="frequency"></button>
-                        <button class="tab-btn" data-tab="energy"></button>
                     </div>
                     <div class="chart-container">
                         <div class="empty-state">차트 데이터를 불러오는 중...</div>

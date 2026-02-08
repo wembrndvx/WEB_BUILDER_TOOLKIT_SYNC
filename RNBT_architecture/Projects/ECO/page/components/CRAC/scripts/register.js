@@ -85,23 +85,14 @@ function initComponent() {
       },
     },
 
-    // 상태 매핑
+    // 상태 코드별 레이블/속성 매핑
     statusMap: {
-      labels: {
-        ACTIVE: '정상운영',
-        WARNING: '주의',
-        CRITICAL: '위험',
-        INACTIVE: '비활성',
-        MAINTENANCE: '유지보수',
-      },
-      dataAttrs: {
-        ACTIVE: 'normal',
-        WARNING: 'warning',
-        CRITICAL: 'critical',
-        INACTIVE: 'inactive',
-        MAINTENANCE: 'maintenance',
-      },
-      defaultDataAttr: 'normal',
+      ACTIVE: { label: '정상운영', dataAttr: 'normal' },
+      WARNING: { label: '주의', dataAttr: 'warning' },
+      CRITICAL: { label: '위험', dataAttr: 'critical' },
+      INACTIVE: { label: '비활성', dataAttr: 'inactive' },
+      MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+      DEFAULT: { label: '알 수 없음', dataAttr: 'normal' },
     },
 
     // ========================
@@ -194,6 +185,7 @@ function initComponent() {
   this.renderStatusCards = renderStatusCards.bind(this);
   this.renderIndicators = renderIndicators.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
+  this.renderInitialLabels = renderInitialLabels.bind(this);
 
   // ======================
   // 6. Public Methods
@@ -321,7 +313,7 @@ function renderBasicInfo({ response }) {
   }
 
   const asset = data.asset;
-  const { header, infoTable, datasetNames } = this.config;
+  const { header, infoTable } = this.config;
 
   // Header 영역
   fx.go(
@@ -336,48 +328,48 @@ function renderBasicInfo({ response }) {
   );
 
   // 제조사명/모델 체이닝
-  if (asset.assetModelKey) {
-    fetchModelVendorChain.call(this, asset.assetModelKey, infoTable.chain, datasetNames);
-  }
+  fetchModelVendorChain(this, asset, infoTable.chain);
 }
 
-function renderField(ctx, data, { key, selector, dataAttr, transform, fallback }) {
-  const el = ctx.popupQuery(selector);
+function renderField(ctx, data, field) {
+  const el = ctx.popupQuery(field.selector);
   if (!el) return;
-
-  let value = data[key] ?? fallback ?? '-';
-  if (transform) value = transform(value);
-
-  if (dataAttr) {
-    el.dataset[dataAttr] = value;
+  let value = data[field.key] ?? field.fallback ?? '-';
+  if (field.transform) value = field.transform(value);
+  if (field.dataAttr) {
+    el.dataset[field.dataAttr] = value;
   } else {
     el.textContent = value;
   }
 }
 
-function fetchModelVendorChain(assetModelKey, chain, datasetNames) {
+function fetchModelVendorChain(ctx, asset, chainConfig) {
+  const { datasetNames } = ctx.config;
   const setCell = (selector, value) => {
-    const el = this.popupQuery(selector);
+    const el = ctx.popupQuery(selector);
     if (el) el.textContent = value ?? '-';
   };
 
-  fetchData(this.page, datasetNames.modelDetail, { baseUrl: this._baseUrl, assetModelKey })
-    .then(resp => {
-      const model = extractData(resp);
-      if (!model) return;
+  if (!asset.assetModelKey) return;
 
-      setCell(chain.model, model.name);
+  fx.go(
+    fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+    (modelResp) => {
+      const model = extractData(modelResp, 'data');
+      if (!model) return;
+      setCell(chainConfig.model, model.name);
 
       if (model.assetVendorKey) {
-        return fetchData(this.page, datasetNames.vendorDetail, { baseUrl: this._baseUrl, assetVendorKey: model.assetVendorKey });
+        fx.go(
+          fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+          (vendorResp) => {
+            const vendor = extractData(vendorResp, 'data');
+            if (vendor) setCell(chainConfig.vendor, vendor.name);
+          }
+        ).catch(() => {});
       }
-    })
-    .then(resp => {
-      if (!resp) return;
-      const vendor = extractData(resp);
-      if (vendor) setCell(chain.vendor, vendor.name);
-    })
-    .catch(() => {});
+    }
+  ).catch(() => {});
 }
 
 // ======================
@@ -595,13 +587,15 @@ function renderTrendChart({ response }) {
 // ======================
 
 function statusTypeToLabel(statusType) {
-  const { labels } = this.config.statusMap;
-  return labels[statusType] || statusType;
+  const { statusMap } = this.config;
+  const entry = statusMap[statusType] || statusMap.DEFAULT;
+  return entry.label;
 }
 
 function statusTypeToDataAttr(statusType) {
-  const { dataAttrs, defaultDataAttr } = this.config.statusMap;
-  return dataAttrs[statusType] || defaultDataAttr;
+  const { statusMap } = this.config;
+  const entry = statusMap[statusType] || statusMap.DEFAULT;
+  return entry.dataAttr;
 }
 
 function formatDate(dateStr) {
@@ -629,9 +623,9 @@ function formatTimestamp(isoString) {
 // ======================
 
 function onPopupCreated({ chartSelector, events }) {
-  renderInitialLabels.call(this);
   chartSelector && this.createChart(chartSelector);
   events && this.bindPopupEvents(events);
+  this.renderInitialLabels();
 }
 
 function renderInitialLabels() {

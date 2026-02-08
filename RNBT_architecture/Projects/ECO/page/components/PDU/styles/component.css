@@ -145,7 +145,7 @@
 /* ======================
    Section 1: 기본정보 (이미지 + 테이블)
    ====================== */
-.info-section {
+.info-section .info-content {
     padding: 16px;
 }
 
