@@ -7,10 +7,10 @@ simpleheat(인라인 포함)로 2D 히트맵을 생성하고, THREE.ShaderMateri
 
 ## 개요
 
-팝업 내 버튼 클릭 시 해당 장비 주변에 온도 히트맵 서피스를 토글 표시.
+팝업 내 버튼 클릭 시 클릭한 인스턴스 위치를 중심으로 주변 온도 분포를 히트맵 서피스로 토글 표시.
 
 ```
-팝업 히트맵 버튼 클릭 → toggleHeatmap() → 센서 데이터 수집 → simpleheat 렌더링 → 3D 서피스 표시
+팝업 히트맵 버튼 클릭 → toggleHeatmap() → mesh 생성 (인스턴스 위치 중심) → 센서 데이터 수집 → 렌더링
 ```
 
 ---
@@ -95,20 +95,16 @@ applyHeatmapMixin(this, {
 
 | 속성 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
-| `width` | number | `20` | X축 너비 |
-| `depth` | number | `20` | Z축 깊이 |
+| `width` | number | `20` | X축 크기 |
+| `depth` | number | `20` | Z축 크기 |
 
-PlaneGeometry의 물리적 크기. 히트맵이 표시될 바닥 영역의 범위를 결정.
+PlaneGeometry의 월드 단위 크기. 서피스 위치는 클릭한 인스턴스의 `getWorldPosition()` 중심 (Y=0, 바닥 위).
 
 ```javascript
-// 넓은 영역
-surfaceSize: { width: 40, depth: 40 }
-
-// 좁은 영역 (장비 바로 주변)
-surfaceSize: { width: 10, depth: 10 }
+surfaceSize: { width: 20, depth: 20 }   // 기본
+surfaceSize: { width: 40, depth: 40 }   // 넓은 영역
+surfaceSize: { width: 10, depth: 10 }   // 좁은 영역
 ```
-
-> 서피스는 `instance.appendElement`의 월드 좌표 중심에 배치됨 (Y=0, 바닥 위).
 
 ---
 
@@ -316,11 +312,10 @@ this.toggleHeatmap();
 
 **ON 시**:
 1. 기존 활성 히트맵 제거 (싱글톤 — 동시에 하나만 존재)
-2. PlaneGeometry + ShaderMaterial mesh 생성
-3. `instance.appendElement`의 월드 좌표 중심에 배치
-4. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (metricLatest API)
-5. simpleheat → colorTexture + displacementTexture 생성
-6. 버튼 `data-active="true"` 설정
+2. PlaneGeometry + ShaderMaterial mesh 생성 (클릭한 인스턴스 위치 중심)
+3. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (metricLatest API)
+4. simpleheat → colorTexture + displacementTexture 생성
+5. 버튼 `data-active="true"` 설정
 
 **OFF 시**:
 1. mesh, geometry, material, texture 모두 dispose

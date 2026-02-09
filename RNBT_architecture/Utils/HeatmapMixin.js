@@ -322,7 +322,6 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.rotation.x = -Math.PI / 2;
 
-    // 컴포넌트 위치에 배치
     const worldPos = new THREE.Vector3();
     instance.appendElement.getWorldPosition(worldPos);
     mesh.position.set(worldPos.x, 0, worldPos.z);
@@ -462,7 +461,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     const hm = instance._heatmap;
     if (!hm.mesh || !hm.heat) return;
 
-    // 서피스 중심 좌표
+    // 서피스 중심 좌표 (mesh 위치 사용)
     const centerX = hm.mesh.position.x;
     const centerZ = hm.mesh.position.z;
 
@@ -509,18 +508,16 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       // 기존 활성 히트맵 제거 (싱글톤)
       if (HeatmapMixin._activeInstance && HeatmapMixin._activeInstance !== instance) {
         HeatmapMixin._activeInstance.destroyHeatmap();
-        // 이전 인스턴스의 버튼 상태도 업데이트
         var prevBtn = HeatmapMixin._activeInstance.popupQuery?.('.heatmap-btn');
         if (prevBtn) prevBtn.dataset.active = 'false';
       }
 
-      // ON
+      // ON: mesh 생성 → 데이터 수집 → 렌더링
       createHeatmapMesh();
       instance._heatmap.visible = true;
       HeatmapMixin._activeInstance = instance;
       syncButtonState(true);
 
-      // 데이터 수집 & 렌더링
       collectSensorData().then(function (dataPoints) {
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
@@ -556,9 +553,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       if (newOptions.baseHeight !== undefined) uniforms.baseHeight.value = newOptions.baseHeight;
       if (newOptions.opacity !== undefined) uniforms.opacity.value = newOptions.opacity;
     } else {
-      // Full rebuild: 메시 재생성 + 데이터 재수집
+      // Full rebuild: destroy → 재생성 → 데이터 재수집
       instance.destroyHeatmap();
-
       createHeatmapMesh();
       instance._heatmap.visible = true;
       HeatmapMixin._activeInstance = instance;

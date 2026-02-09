@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heatmap Config API - Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+            background: #0f1219; color: #e0e6ed; padding: 24px; line-height: 1.5;
+        }
+        h1 { font-size: 20px; margin-bottom: 8px; }
+        .subtitle { font-size: 13px; color: #8892a0; margin-bottom: 24px; }
+        .summary {
+            display: flex; gap: 16px; margin-bottom: 24px; padding: 16px;
+            background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142;
+        }
+        .summary-item { font-size: 14px; }
+        .summary-item .count { font-size: 24px; font-weight: 700; margin-right: 4px; }
+        .pass { color: #22c55e; }
+        .fail { color: #ef4444; }
+        .total { color: #3b82f6; }
+        .category-header {
+            font-size: 15px; font-weight: 600; padding: 12px 0 8px;
+            border-bottom: 1px solid #2a3142; margin-top: 20px; margin-bottom: 4px; color: #8892a0;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th, td { padding: 8px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #1e2433; }
+        th { color: #6b7280; font-weight: 500; background: #161b26; position: sticky; top: 0; }
+        tr:hover { background: rgba(59, 130, 246, 0.05); }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+        }
+        .badge-pass { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .badge-fail { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .component-tag {
+            display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 11px; font-weight: 500; background: rgba(59, 130, 246, 0.12); color: #60a5fa;
+        }
+        .detail { color: #6b7280; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Heatmap Config API - Test Suite</h1>
+    <div class="subtitle">HEATMAP_MIXIN_API.md — updateHeatmapConfig 전수 테스트</div>
+    <div class="summary" id="summary"></div>
+    <div id="results"></div>
+
+    <script>
+    // =========================================================================
+    // 1. TEST FRAMEWORK
+    // =========================================================================
+    const results = [];
+    const capturedWarns = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => { capturedWarns.push(args.join(' ')); originalWarn.apply(console, args); };
+
+    function assert(condition, message) { if (!condition) throw new Error(message || 'Assertion failed'); }
+    function assertEq(actual, expected, label) {
+        if (actual !== expected) throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+    function assertDeepEq(actual, expected, label) {
+        const a = JSON.stringify(actual);
+        const e = JSON.stringify(expected);
+        if (a !== e) throw new Error(`${label}: expected ${e}, got ${a}`);
+    }
+
+    function test(category, component, name, fn) {
+        capturedWarns.length = 0;
+        try { fn(); results.push({ category, component, name, pass: true }); }
+        catch (e) { results.push({ category, component, name, pass: false, error: e.message }); }
+    }
+
+    // =========================================================================
+    // 2. THREE.js MOCK
+    // =========================================================================
+
+    const THREE = {
+        Vector3: function () {
+            this.x = 0; this.y = 0; this.z = 0;
+            this.set = function (x, y, z) { this.x = x; this.y = y; this.z = z; };
+        },
+        PlaneGeometry: function (w, d, ws, hs) {
+            this._width = w; this._depth = d; this._ws = ws; this._hs = hs;
+            this.dispose = function () { this._disposed = true; };
+        },
+        ShaderMaterial: function (opts) {
+            this.uniforms = opts.uniforms;
+            this.dispose = function () { this._disposed = true; };
+        },
+        Mesh: function (geometry, material) {
+            this.geometry = geometry;
+            this.material = material;
+            this.rotation = { x: 0 };
+            this.position = { x: 0, y: 0, z: 0, set: function (x, y, z) { this.x = x; this.y = y; this.z = z; } };
+            this.raycast = null;
+        },
+        CanvasTexture: function (canvas) {
+            this._canvas = canvas;
+            this.needsUpdate = false;
+            this.dispose = function () { this._disposed = true; };
+        },
+        DoubleSide: 2,
+    };
+
+    // =========================================================================
+    // 3. wemb / Wkit MOCK
+    // =========================================================================
+
+    const mockScene = {
+        _children: [],
+        add: function (mesh) { this._children.push(mesh); },
+        remove: function (mesh) {
+            var idx = this._children.indexOf(mesh);
+            if (idx !== -1) this._children.splice(idx, 1);
+        },
+    };
+
+    const wemb = {
+        threeElements: { scene: mockScene },
+    };
+
+    const Wkit = {
+        makeIterator: function () { return []; },
+        fetchData: function () { return Promise.resolve({ response: { data: [] } }); },
+    };
+
+    // =========================================================================
+    // 4. simpleheat MOCK (initHeatmapCanvas에서 호출됨)
+    // =========================================================================
+
+    function simpleheat(canvas) {
+        if (!(this instanceof simpleheat)) return new simpleheat(canvas);
+        this._canvas = canvas;
+        this._max = 1;
+        this._data = [];
+        this._r = 25;
+    }
+    simpleheat.prototype = {
+        data: function (d) { this._data = d; return this; },
+        max: function (m) { this._max = m; return this; },
+        clear: function () { this._data = []; return this; },
+        radius: function (r, blur) { this._r = r + (blur || 15); return this; },
+        gradient: function () { return this; },
+        draw: function () { return this; },
+    };
+
+    // =========================================================================
+    // 5. updateHeatmapConfig (실제 HeatmapMixin.js에서 추출)
+    // =========================================================================
+
+    // --- applyHeatmapMixin 핵심 로직 ---
+
+    var HeatmapMixin = {};
+    HeatmapMixin._activeInstance = null;
+
+    var DEFAULT_GRADIENT = {
+        0.0: '#0044ff', 0.2: '#00aaff', 0.4: '#00ffaa',
+        0.6: '#aaff00', 0.8: '#ffaa00', 1.0: '#ff0000',
+    };
+
+    var VERTEX_SHADER = 'mock_vertex';
+    var FRAGMENT_SHADER = 'mock_fragment';
+
+    HeatmapMixin.applyHeatmapMixin = function (instance, options) {
+        var config = Object.assign({
+            surfaceSize: { width: 20, depth: 20 },
+            temperatureRange: { min: 18, max: 30 },
+            heatmapResolution: 256,
+            segments: 64,
+            displacementScale: 3,
+            baseHeight: 0.5,
+            radius: 60,
+            blur: 25,
+            opacity: 0.75,
+            temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+        }, options);
+
+        instance._heatmap = {
+            visible: false, mesh: null, colorCanvas: null,
+            displacementCanvas: null, heat: null,
+            colorTexture: null, displacementTexture: null,
+            config: config,
+        };
+
+        // 내부 카운터 (테스트용)
+        instance._heatmapCallCount = { createMesh: 0, destroy: 0, collectData: 0 };
+
+        function initHeatmapCanvas() {
+            var colorCanvas = document.createElement('canvas');
+            colorCanvas.width = config.heatmapResolution;
+            colorCanvas.height = config.heatmapResolution;
+            var displacementCanvas = document.createElement('canvas');
+            displacementCanvas.width = config.heatmapResolution;
+            displacementCanvas.height = config.heatmapResolution;
+            var heat = simpleheat(colorCanvas);
+            heat.radius(config.radius, config.blur);
+            heat.max(config.temperatureRange.max);
+            heat.gradient(DEFAULT_GRADIENT);
+            instance._heatmap.colorCanvas = colorCanvas;
+            instance._heatmap.displacementCanvas = displacementCanvas;
+            instance._heatmap.heat = heat;
+        }
+
+        function createHeatmapMesh() {
+            instance._heatmapCallCount.createMesh++;
+            initHeatmapCanvas();
+            var colorTexture = new THREE.CanvasTexture(instance._heatmap.colorCanvas);
+            var displacementTexture = new THREE.CanvasTexture(instance._heatmap.displacementCanvas);
+            instance._heatmap.colorTexture = colorTexture;
+            instance._heatmap.displacementTexture = displacementTexture;
+            var geometry = new THREE.PlaneGeometry(
+                config.surfaceSize.width, config.surfaceSize.depth,
+                config.segments, config.segments
+            );
+            var material = new THREE.ShaderMaterial({
+                uniforms: {
+                    colorMap: { value: colorTexture },
+                    displacementMap: { value: displacementTexture },
+                    displacementScale: { value: config.displacementScale },
+                    opacity: { value: config.opacity },
+                    baseHeight: { value: config.baseHeight },
+                },
+                vertexShader: VERTEX_SHADER,
+                fragmentShader: FRAGMENT_SHADER,
+                transparent: true, side: THREE.DoubleSide, depthWrite: false,
+            });
+            var mesh = new THREE.Mesh(geometry, material);
+            mesh.rotation.x = -Math.PI / 2;
+            var worldPos = new THREE.Vector3();
+            if (instance.appendElement && instance.appendElement.getWorldPosition) {
+                instance.appendElement.getWorldPosition(worldPos);
+            }
+            mesh.position.set(worldPos.x, 0, worldPos.z);
+            mesh.raycast = function () {};
+            instance._heatmap.mesh = mesh;
+            wemb.threeElements.scene.add(mesh);
+        }
+
+        function collectSensorData() {
+            instance._heatmapCallCount.collectData++;
+            return Promise.resolve([]);
+        }
+
+        function renderHeatmap() {}
+
+        function syncButtonState(active) {
+            if (instance.popupQuery) {
+                var btn = instance.popupQuery('.heatmap-btn');
+                if (btn) btn.dataset.active = active ? 'true' : 'false';
+            }
+        }
+
+        instance.toggleHeatmap = function () {
+            if (instance._heatmap.visible) {
+                instance.destroyHeatmap();
+                syncButtonState(false);
+            } else {
+                if (HeatmapMixin._activeInstance && HeatmapMixin._activeInstance !== instance) {
+                    HeatmapMixin._activeInstance.destroyHeatmap();
+                }
+                createHeatmapMesh();
+                instance._heatmap.visible = true;
+                HeatmapMixin._activeInstance = instance;
+                syncButtonState(true);
+                collectSensorData().then(function (dataPoints) {
+                    if (dataPoints.length > 0) renderHeatmap(dataPoints);
+                });
+            }
+        };
+
+        var UNIFORM_KEYS = ['displacementScale', 'baseHeight', 'opacity'];
+
+        instance.updateHeatmapConfig = function (newOptions) {
+            Object.assign(config, newOptions);
+            if (!instance._heatmap.visible) return;
+            var hm = instance._heatmap;
+            var onlyUniforms = Object.keys(newOptions).every(function (key) {
+                return UNIFORM_KEYS.indexOf(key) !== -1;
+            });
+            if (onlyUniforms && hm.mesh) {
+                var uniforms = hm.mesh.material.uniforms;
+                if (newOptions.displacementScale !== undefined) uniforms.displacementScale.value = newOptions.displacementScale;
+                if (newOptions.baseHeight !== undefined) uniforms.baseHeight.value = newOptions.baseHeight;
+                if (newOptions.opacity !== undefined) uniforms.opacity.value = newOptions.opacity;
+            } else {
+                instance.destroyHeatmap();
+                createHeatmapMesh();
+                instance._heatmap.visible = true;
+                HeatmapMixin._activeInstance = instance;
+                syncButtonState(true);
+                collectSensorData().then(function (dataPoints) {
+                    if (dataPoints.length > 0) renderHeatmap(dataPoints);
+                });
+            }
+        };
+
+        instance.destroyHeatmap = function () {
+            instance._heatmapCallCount.destroy++;
+            var hm = instance._heatmap;
+            if (hm.mesh) {
+                if (hm.mesh.geometry) hm.mesh.geometry.dispose();
+                if (hm.mesh.material) hm.mesh.material.dispose();
+                if (hm.colorTexture) { hm.colorTexture.dispose(); hm.colorTexture = null; }
+                if (hm.displacementTexture) { hm.displacementTexture.dispose(); hm.displacementTexture = null; }
+                wemb.threeElements.scene.remove(hm.mesh);
+                hm.mesh = null;
+            }
+            hm.colorCanvas = null;
+            hm.displacementCanvas = null;
+            hm.heat = null;
+            hm.visible = false;
+            if (HeatmapMixin._activeInstance === instance) HeatmapMixin._activeInstance = null;
+        };
+
+        if (instance.destroyPopup) {
+            var originalDestroyPopup = instance.destroyPopup;
+            instance.destroyPopup = function () {
+                instance.destroyHeatmap();
+                originalDestroyPopup.call(instance);
+            };
+        }
+    };
+
+    // =========================================================================
+    // 6. MOCK FACTORY
+    // =========================================================================
+
+    function createMock(name) {
+        HeatmapMixin._activeInstance = null;
+        mockScene._children = [];
+        var instance = {
+            _name: name || 'Sensor',
+            page: {},
+            appendElement: {
+                getWorldPosition: function (vec) { vec.set(10, 0, 5); },
+            },
+            destroyPopup: function () { instance._destroyPopupCalled = true; },
+            popupQuery: function () { return null; },
+            _destroyPopupCalled: false,
+        };
+        HeatmapMixin.applyHeatmapMixin(instance, {
+            surfaceSize: { width: 20, depth: 20 },
+            temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+        });
+        return instance;
+    }
+
+    function activateHeatmap(inst) {
+        inst.toggleHeatmap();
+    }
+
+    // =========================================================================
+    // 7. TEST CASES
+    // =========================================================================
+
+    // ── Category A: OFF 상태에서 config만 업데이트 ──
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'displacementScale 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ displacementScale: 7 });
+        assertEq(inst._heatmap.config.displacementScale, 7, 'displacementScale');
+        assertEq(inst._heatmap.visible, false, 'visible 유지');
+        assertEq(inst._heatmapCallCount.createMesh, 0, 'createMesh 호출 없음');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'baseHeight 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ baseHeight: 2 });
+        assertEq(inst._heatmap.config.baseHeight, 2, 'baseHeight');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'opacity 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ opacity: 0.3 });
+        assertEq(inst._heatmap.config.opacity, 0.3, 'opacity');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'radius 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ radius: 100 });
+        assertEq(inst._heatmap.config.radius, 100, 'radius');
+        assertEq(inst._heatmapCallCount.createMesh, 0, 'rebuild 없음');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'blur 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ blur: 50 });
+        assertEq(inst._heatmap.config.blur, 50, 'blur');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'surfaceSize 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ surfaceSize: { width: 30, depth: 30 } });
+        assertDeepEq(inst._heatmap.config.surfaceSize, { width: 30, depth: 30 }, 'surfaceSize');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'segments 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ segments: 128 });
+        assertEq(inst._heatmap.config.segments, 128, 'segments');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'heatmapResolution 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ heatmapResolution: 512 });
+        assertEq(inst._heatmap.config.heatmapResolution, 512, 'heatmapResolution');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'temperatureRange 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ temperatureRange: { min: 15, max: 35 } });
+        assertDeepEq(inst._heatmap.config.temperatureRange, { min: 15, max: 35 }, 'temperatureRange');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'temperatureMetrics 변경 → config 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ temperatureMetrics: ['SENSOR.HUMIDITY'] });
+        assertDeepEq(inst._heatmap.config.temperatureMetrics, ['SENSOR.HUMIDITY'], 'temperatureMetrics');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', '복수 옵션 동시 변경 → 모두 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ radius: 80, blur: 40, opacity: 0.5, displacementScale: 5 });
+        assertEq(inst._heatmap.config.radius, 80, 'radius');
+        assertEq(inst._heatmap.config.blur, 40, 'blur');
+        assertEq(inst._heatmap.config.opacity, 0.5, 'opacity');
+        assertEq(inst._heatmap.config.displacementScale, 5, 'displacementScale');
+    });
+
+    test('A: OFF 상태 config 업데이트', 'Heatmap', '빈 객체 전달 → 기존값 유지', () => {
+        const inst = createMock();
+        const beforeRadius = inst._heatmap.config.radius;
+        const beforeOpacity = inst._heatmap.config.opacity;
+        inst.updateHeatmapConfig({});
+        assertEq(inst._heatmap.config.radius, beforeRadius, 'radius 유지');
+        assertEq(inst._heatmap.config.opacity, beforeOpacity, 'opacity 유지');
+    });
+
+    // ── Category B: ON 상태에서 uniform-only → 즉시 반영 (hot update) ──
+
+    test('B: ON + uniform hot update', 'Heatmap', 'displacementScale → uniform 즉시 반영', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const meshBefore = inst._heatmap.mesh;
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ displacementScale: 8 });
+        assertEq(inst._heatmap.mesh.material.uniforms.displacementScale.value, 8, 'uniform value');
+        assertEq(inst._heatmap.config.displacementScale, 8, 'config value');
+        assertEq(inst._heatmap.mesh, meshBefore, '같은 mesh (rebuild 없음)');
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore, 'destroy 호출 없음');
+    });
+
+    test('B: ON + uniform hot update', 'Heatmap', 'baseHeight → uniform 즉시 반영', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.updateHeatmapConfig({ baseHeight: 3 });
+        assertEq(inst._heatmap.mesh.material.uniforms.baseHeight.value, 3, 'uniform value');
+        assertEq(inst._heatmap.config.baseHeight, 3, 'config value');
+    });
+
+    test('B: ON + uniform hot update', 'Heatmap', 'opacity → uniform 즉시 반영', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.updateHeatmapConfig({ opacity: 0.2 });
+        assertEq(inst._heatmap.mesh.material.uniforms.opacity.value, 0.2, 'uniform value');
+        assertEq(inst._heatmap.config.opacity, 0.2, 'config value');
+    });
+
+    test('B: ON + uniform hot update', 'Heatmap', '복수 uniform 동시 변경 → 모두 즉시 반영', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const meshBefore = inst._heatmap.mesh;
+        inst.updateHeatmapConfig({ displacementScale: 10, baseHeight: 2, opacity: 0.9 });
+        assertEq(inst._heatmap.mesh.material.uniforms.displacementScale.value, 10, 'displacementScale');
+        assertEq(inst._heatmap.mesh.material.uniforms.baseHeight.value, 2, 'baseHeight');
+        assertEq(inst._heatmap.mesh.material.uniforms.opacity.value, 0.9, 'opacity');
+        assertEq(inst._heatmap.mesh, meshBefore, '같은 mesh');
+    });
+
+    test('B: ON + uniform hot update', 'Heatmap', 'uniform 변경 후 visible 유지', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.updateHeatmapConfig({ opacity: 0.5 });
+        assertEq(inst._heatmap.visible, true, 'visible');
+        assertEq(HeatmapMixin._activeInstance, inst, 'activeInstance');
+    });
+
+    // ── Category C: ON 상태에서 non-uniform → 재생성 (rebuild) ──
+
+    test('C: ON + rebuild', 'Heatmap', 'radius 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const createBefore = inst._heatmapCallCount.createMesh;
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ radius: 100 });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertEq(inst._heatmapCallCount.createMesh, createBefore + 1, 'createMesh 호출');
+        assertEq(inst._heatmap.config.radius, 100, 'config 반영');
+        assertEq(inst._heatmap.visible, true, 'visible 유지');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'blur 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ blur: 50 });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertEq(inst._heatmap.config.blur, 50, 'config 반영');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'surfaceSize 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ surfaceSize: { width: 40, depth: 40 } });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertDeepEq(inst._heatmap.config.surfaceSize, { width: 40, depth: 40 }, 'config 반영');
+        // 새 mesh의 geometry 크기 확인
+        assertEq(inst._heatmap.mesh.geometry._width, 40, 'geometry width');
+        assertEq(inst._heatmap.mesh.geometry._depth, 40, 'geometry depth');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'segments 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ segments: 128 });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertEq(inst._heatmap.mesh.geometry._ws, 128, 'geometry segments');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'heatmapResolution 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ heatmapResolution: 512 });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertEq(inst._heatmap.colorCanvas.width, 512, 'canvas resolution');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'temperatureRange 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ temperatureRange: { min: 10, max: 40 } });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertDeepEq(inst._heatmap.config.temperatureRange, { min: 10, max: 40 }, 'config 반영');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'temperatureMetrics 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ temperatureMetrics: ['SENSOR.HUMIDITY'] });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertDeepEq(inst._heatmap.config.temperatureMetrics, ['SENSOR.HUMIDITY'], 'config 반영');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', '혼합 (uniform + non-uniform) → rebuild로 처리', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출 (rebuild)');
+        assertEq(inst._heatmap.config.opacity, 0.5, 'opacity config');
+        assertEq(inst._heatmap.config.radius, 80, 'radius config');
+        // rebuild 후 새 uniform에도 opacity 반영
+        assertEq(inst._heatmap.mesh.material.uniforms.opacity.value, 0.5, 'uniform opacity');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'rebuild 후 activeInstance 유지', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.updateHeatmapConfig({ radius: 120 });
+        assertEq(HeatmapMixin._activeInstance, inst, 'activeInstance');
+        assertEq(inst._heatmap.visible, true, 'visible');
+    });
+
+    test('C: ON + rebuild', 'Heatmap', 'rebuild 후 scene에 mesh 존재', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.updateHeatmapConfig({ segments: 32 });
+        assert(mockScene._children.indexOf(inst._heatmap.mesh) !== -1, 'mesh in scene');
+    });
+
+    // ── Category D: OFF 상태 업데이트 → 다음 toggle에 반영 ──
+
+    test('D: OFF→toggle 반영', 'Heatmap', 'OFF에서 radius 변경 → toggle 시 새 값 적용', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ radius: 120 });
+        activateHeatmap(inst); // toggle ON
+        // simpleheat가 config.radius=120으로 초기화되었는지 확인
+        assertEq(inst._heatmap.config.radius, 120, 'config radius');
+    });
+
+    test('D: OFF→toggle 반영', 'Heatmap', 'OFF에서 surfaceSize 변경 → toggle 시 geometry 크기 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ surfaceSize: { width: 50, depth: 50 } });
+        activateHeatmap(inst);
+        assertEq(inst._heatmap.mesh.geometry._width, 50, 'geometry width');
+        assertEq(inst._heatmap.mesh.geometry._depth, 50, 'geometry depth');
+    });
+
+    test('D: OFF→toggle 반영', 'Heatmap', 'OFF에서 opacity 변경 → toggle 시 uniform 반영', () => {
+        const inst = createMock();
+        inst.updateHeatmapConfig({ opacity: 0.4 });
+        activateHeatmap(inst);
+        assertEq(inst._heatmap.mesh.material.uniforms.opacity.value, 0.4, 'uniform opacity');
+    });
+
+    // ── Category E: 싱글톤 관리 ──
+
+    test('E: 싱글톤 관리', 'Heatmap', '새 인스턴스 toggle → 이전 인스턴스 자동 destroy', () => {
+        const inst1 = createMock('Sensor1');
+        const inst2 = createMock('Sensor2');
+        activateHeatmap(inst1);
+        assertEq(HeatmapMixin._activeInstance, inst1, 'inst1 active');
+        activateHeatmap(inst2);
+        assertEq(HeatmapMixin._activeInstance, inst2, 'inst2 active');
+        assertEq(inst1._heatmap.visible, false, 'inst1 visible=false');
+        assertEq(inst1._heatmap.mesh, null, 'inst1 mesh=null');
+    });
+
+    test('E: 싱글톤 관리', 'Heatmap', 'toggle OFF → activeInstance null', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        assertEq(HeatmapMixin._activeInstance, inst, 'active');
+        inst.toggleHeatmap(); // OFF
+        assertEq(HeatmapMixin._activeInstance, null, 'null');
+        assertEq(inst._heatmap.visible, false, 'visible=false');
+    });
+
+    // ── Category F: destroyHeatmap 리소스 정리 ──
+
+    test('F: destroy 리소스 정리', 'Heatmap', 'geometry dispose 호출', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const geo = inst._heatmap.mesh.geometry;
+        inst.destroyHeatmap();
+        assertEq(geo._disposed, true, 'geometry disposed');
+    });
+
+    test('F: destroy 리소스 정리', 'Heatmap', 'material dispose 호출', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const mat = inst._heatmap.mesh.material;
+        inst.destroyHeatmap();
+        assertEq(mat._disposed, true, 'material disposed');
+    });
+
+    test('F: destroy 리소스 정리', 'Heatmap', 'texture dispose 호출', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const colorTex = inst._heatmap.colorTexture;
+        const dispTex = inst._heatmap.displacementTexture;
+        inst.destroyHeatmap();
+        assertEq(colorTex._disposed, true, 'colorTexture disposed');
+        assertEq(dispTex._disposed, true, 'displacementTexture disposed');
+    });
+
+    test('F: destroy 리소스 정리', 'Heatmap', 'scene에서 mesh 제거', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const meshBefore = inst._heatmap.mesh;
+        assert(mockScene._children.indexOf(meshBefore) !== -1, 'mesh in scene before');
+        inst.destroyHeatmap();
+        assert(mockScene._children.indexOf(meshBefore) === -1, 'mesh removed');
+    });
+
+    test('F: destroy 리소스 정리', 'Heatmap', '내부 상태 초기화', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        inst.destroyHeatmap();
+        assertEq(inst._heatmap.mesh, null, 'mesh');
+        assertEq(inst._heatmap.colorCanvas, null, 'colorCanvas');
+        assertEq(inst._heatmap.displacementCanvas, null, 'displacementCanvas');
+        assertEq(inst._heatmap.heat, null, 'heat');
+        assertEq(inst._heatmap.visible, false, 'visible');
+        assertEq(inst._heatmap.colorTexture, null, 'colorTexture');
+        assertEq(inst._heatmap.displacementTexture, null, 'displacementTexture');
+    });
+
+    // ── Category G: destroyPopup 체인 ──
+
+    test('G: destroyPopup 체인', 'Heatmap', 'destroyPopup → destroyHeatmap 자동 호출', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        inst.destroyPopup();
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroyHeatmap 호출');
+        assertEq(inst._destroyPopupCalled, true, 'original destroyPopup 호출');
+    });
+
+    test('G: destroyPopup 체인', 'Heatmap', 'destroyPopup 시 heatmap OFF 상태에서도 안전', () => {
+        const inst = createMock();
+        // heatmap OFF 상태에서 destroyPopup
+        inst.destroyPopup();
+        assertEq(inst._destroyPopupCalled, true, 'original destroyPopup 호출');
+    });
+
+    // =========================================================================
+    // 8. RENDER RESULTS
+    // =========================================================================
+
+    const totalCount = results.length;
+    const passCount = results.filter(r => r.pass).length;
+    const failCount = totalCount - passCount;
+
+    document.getElementById('summary').innerHTML = `
+        <div class="summary-item"><span class="count total">${totalCount}</span> Total</div>
+        <div class="summary-item"><span class="count pass">${passCount}</span> Pass</div>
+        <div class="summary-item"><span class="count ${failCount > 0 ? 'fail' : 'pass'}">${failCount}</span> Fail</div>
+    `;
+
+    const groups = {};
+    results.forEach(r => {
+        if (!groups[r.category]) groups[r.category] = [];
+        groups[r.category].push(r);
+    });
+
+    let html = '';
+    Object.entries(groups).forEach(([category, items]) => {
+        const catPass = items.filter(r => r.pass).length;
+        const catTotal = items.length;
+        html += `<div class="category-header">${category} (${catPass}/${catTotal})</div>`;
+        html += `<table><thead><tr><th style="width:90px">Component</th><th>Test</th><th style="width:60px">Result</th><th>Detail</th></tr></thead><tbody>`;
+        items.forEach(r => {
+            const badge = r.pass ? '<span class="badge badge-pass">PASS</span>' : '<span class="badge badge-fail">FAIL</span>';
+            const detail = r.error ? `<span class="detail">${r.error}</span>` : '';
+            html += `<tr><td><span class="component-tag">${r.component}</span></td><td>${r.name}</td><td>${badge}</td><td>${detail}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+    });
+
+    document.getElementById('results').innerHTML = html;
+
+    console.log(`\n=== Heatmap Config API Test Results ===`);
+    console.log(`Total: ${totalCount} | Pass: ${passCount} | Fail: ${failCount}`);
+    if (failCount > 0) {
+        console.log('\nFailed tests:');
+        results.filter(r => !r.pass).forEach(r => console.log(`  [${r.component}] ${r.name}: ${r.error}`));
+    }
+    </script>
+</body>
+</html>
