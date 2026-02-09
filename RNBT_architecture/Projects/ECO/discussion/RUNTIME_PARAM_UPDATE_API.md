@@ -122,7 +122,7 @@ datasetInfo[]._intervalId      — setInterval ID (내부 관리)
 | `baseUrl` | API 서버 변경 |
 | `locale` | 언어 변경 |
 
-**수정 범위**: **모든** `datasetInfo[].param` + 내부 상태(`this._defaultAssetKey` 등) 수정
+**수정 범위**: **모든** `datasetInfo[].param` + 내부 상태(`this._defaultAssetKey`, `this._baseUrl`, `this._locale`) 수정
 
 ### Category D: 갱신 제어
 
@@ -447,9 +447,9 @@ function updateGlobalParams(options) {
   const { assetKey, baseUrl, locale } = options;
 
   // 내부 상태 업데이트
-  if (assetKey !== undefined) {
-    this._defaultAssetKey = assetKey;
-  }
+  if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+  if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+  if (locale !== undefined)   this._locale = locale;
 
   // 모든 데이터셋의 param 변경
   this.datasetInfo.forEach(d => {
@@ -557,18 +557,23 @@ updateUpsTabMetric('voltage', { inputCode, outputCode, statsKey, label, unit })
 ### Category C: `updateGlobalParams`
 
 ```
-updateGlobalParams({ assetKey: 'ASSET_002', baseUrl: '10.23.128.150:8811' })
+updateGlobalParams({ assetKey: 'ASSET_002', baseUrl: '10.23.128.150:8811', locale: 'en' })
   │
   ├─ this._defaultAssetKey = 'ASSET_002'
+  ├─ this._baseUrl = '10.23.128.150:8811'
+  ├─ this._locale = 'en'
   │
   ├─ datasetInfo[0].param.assetKey = 'ASSET_002'  (assetDetail)
   ├─ datasetInfo[0].param.baseUrl = '10.23.128.150:8811'
+  ├─ datasetInfo[0].param.locale = 'en'
   │
   ├─ datasetInfo[1].param.assetKey = 'ASSET_002'  (metricLatest)
   ├─ datasetInfo[1].param.baseUrl = '10.23.128.150:8811'
+  ├─ datasetInfo[1].param.locale = 'en'
   │
   ├─ datasetInfo[2].param.assetKey = 'ASSET_002'  (metricHistory)
-  └─ datasetInfo[2].param.baseUrl = '10.23.128.150:8811'
+  ├─ datasetInfo[2].param.baseUrl = '10.23.128.150:8811'
+  └─ datasetInfo[2].param.locale = 'en'
 ```
 
 ### Category D: `updateRefreshInterval`
@@ -771,4 +776,4 @@ chart: {
 
 ---
 
-*최종 업데이트: 2026-02-07 — switchAsset → updateGlobalParams로 변경 (Category C 정의와 일치)*
+*최종 업데이트: 2026-02-09 — updateGlobalParams 코드/설명/흐름도에 this._baseUrl, this._locale 내부 상태 동기화 반영*
