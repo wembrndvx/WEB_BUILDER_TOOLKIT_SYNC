@@ -305,6 +305,7 @@ temperatureMetrics: ['SENSOR.HUMIDITY']
 | 메서드 | 설명 |
 |--------|------|
 | `toggleHeatmap()` | 히트맵 ON/OFF 토글. 데이터 수집 + 렌더링 자동 실행 |
+| `updateHeatmapConfig(options)` | 런타임에 옵션 변경. 히트맵 활성 시 즉시 반영 |
 | `destroyHeatmap()` | 히트맵 리소스 정리 + 씬에서 제거 |
 
 ### toggleHeatmap()
@@ -333,6 +334,34 @@ this.destroyHeatmap();
 ```
 
 리소스 정리 전용. `destroyPopup()` 체인에 자동 포함되어 팝업 닫기 시 자동 호출됨.
+
+### updateHeatmapConfig(options)
+
+```javascript
+this.updateHeatmapConfig({ radius: 80, blur: 40 });
+```
+
+런타임에 옵션을 변경. 변경 대상에 따라 반영 방식이 다름:
+
+| 반영 방식 | 옵션 | 설명 |
+|-----------|------|------|
+| **즉시 반영** (셰이더 uniform) | `displacementScale`, `baseHeight`, `opacity` | GPU 값만 변경. 메시 재생성 없음 |
+| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 |
+
+히트맵이 꺼진 상태에서 호출하면 config만 업데이트하고 다음 `toggleHeatmap()` 시 반영.
+
+```javascript
+// 즉시 반영 (셰이더 uniform만 변경 → 깜빡임 없음)
+this.updateHeatmapConfig({ opacity: 0.5 });
+this.updateHeatmapConfig({ displacementScale: 5, baseHeight: 1 });
+
+// 재생성 (메시 재구성 필요)
+this.updateHeatmapConfig({ radius: 100, blur: 50 });
+this.updateHeatmapConfig({ surfaceSize: { width: 30, depth: 30 } });
+
+// 혼합 시 재생성으로 처리 (uniform + non-uniform)
+this.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
+```
 
 ---
 

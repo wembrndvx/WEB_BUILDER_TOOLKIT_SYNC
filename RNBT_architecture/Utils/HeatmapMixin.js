@@ -35,8 +35,9 @@
  * 제공 메서드
  * ─────────────────────────────────────────────────────────────
  *
- * - toggleHeatmap()     : 히트맵 ON/OFF 토글
- * - destroyHeatmap()    : 히트맵 리소스 정리 + 씬에서 제거
+ * - toggleHeatmap()              : 히트맵 ON/OFF 토글
+ * - updateHeatmapConfig(options) : 런타임 옵션 변경 (활성 시 즉시 반영)
+ * - destroyHeatmap()             : 히트맵 리소스 정리 + 씬에서 제거
  *
  * ─────────────────────────────────────────────────────────────
  * 싱글톤 관리
@@ -525,6 +526,47 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
           renderHeatmap(dataPoints);
         } else {
           console.warn('[HeatmapMixin] No sensor data collected');
+        }
+      });
+    }
+  };
+
+  // ────────────────────────────────────────
+  // Public: updateHeatmapConfig
+  // ────────────────────────────────────────
+
+  var UNIFORM_KEYS = ['displacementScale', 'baseHeight', 'opacity'];
+
+  instance.updateHeatmapConfig = function (newOptions) {
+    Object.assign(config, newOptions);
+
+    if (!instance._heatmap.visible) return;
+
+    var hm = instance._heatmap;
+
+    // uniform-only 변경인지 판별
+    var onlyUniforms = Object.keys(newOptions).every(function (key) {
+      return UNIFORM_KEYS.indexOf(key) !== -1;
+    });
+
+    if (onlyUniforms && hm.mesh) {
+      // Hot update: 셰이더 uniform만 즉시 반영
+      var uniforms = hm.mesh.material.uniforms;
+      if (newOptions.displacementScale !== undefined) uniforms.displacementScale.value = newOptions.displacementScale;
+      if (newOptions.baseHeight !== undefined) uniforms.baseHeight.value = newOptions.baseHeight;
+      if (newOptions.opacity !== undefined) uniforms.opacity.value = newOptions.opacity;
+    } else {
+      // Full rebuild: 메시 재생성 + 데이터 재수집
+      instance.destroyHeatmap();
+
+      createHeatmapMesh();
+      instance._heatmap.visible = true;
+      HeatmapMixin._activeInstance = instance;
+      syncButtonState(true);
+
+      collectSensorData().then(function (dataPoints) {
+        if (dataPoints.length > 0) {
+          renderHeatmap(dataPoints);
         }
       });
     }
