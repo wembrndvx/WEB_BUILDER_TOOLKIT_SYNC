@@ -219,6 +219,125 @@
         target.refreshInterval = interval;
     }
 
+    // --- Category E-1: updateUpsStatusMetric (UPS) ---
+    function updateUpsStatusMetric(key, options) {
+        const metric = this.config.powerStatus.metrics[key];
+        if (!metric) {
+            console.warn(`[updateUpsStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        const { metricCode, label, unit, scale } = options;
+        if (metricCode !== undefined) metric.metricCode = metricCode;
+        if (label !== undefined)      metric.label = label;
+        if (unit !== undefined)       metric.unit = unit;
+        if (scale !== undefined)      metric.scale = scale;
+    }
+
+    // --- Category E-2: addUpsStatusMetric (UPS) ---
+    function addUpsStatusMetric(key, options) {
+        const { metrics } = this.config.powerStatus;
+        if (metrics[key]) {
+            console.warn(`[addUpsStatusMetric] 이미 존재하는 키: ${key}`);
+            return;
+        }
+        const { label, unit, metricCode = null, scale = 1.0 } = options;
+        if (!label || !unit) {
+            console.warn(`[addUpsStatusMetric] label과 unit은 필수`);
+            return;
+        }
+        metrics[key] = { label, unit, metricCode, scale };
+    }
+
+    // --- Category E-3: removeUpsStatusMetric (UPS) ---
+    function removeUpsStatusMetric(key) {
+        const { metrics } = this.config.powerStatus;
+        if (!metrics[key]) {
+            console.warn(`[removeUpsStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        delete metrics[key];
+    }
+
+    // --- Category E-1: updateCracStatusMetric (CRAC) ---
+    function updateCracStatusMetric(key, options) {
+        const metric = this.config.statusCards.metrics[key];
+        if (!metric) {
+            console.warn(`[updateCracStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        const { metricCode, label, unit, scale } = options;
+        if (metricCode !== undefined) metric.metricCode = metricCode;
+        if (label !== undefined)      metric.label = label;
+        if (unit !== undefined)       metric.unit = unit;
+        if (scale !== undefined)      metric.scale = scale;
+    }
+
+    // --- Category E-2: addCracStatusMetric (CRAC) ---
+    function addCracStatusMetric(key, options) {
+        const { metrics } = this.config.statusCards;
+        if (metrics[key]) {
+            console.warn(`[addCracStatusMetric] 이미 존재하는 키: ${key}`);
+            return;
+        }
+        const { label, unit, metricCode = null, scale = 0.1 } = options;
+        if (!label || !unit) {
+            console.warn(`[addCracStatusMetric] label과 unit은 필수`);
+            return;
+        }
+        metrics[key] = { metricCode, label, unit, scale };
+    }
+
+    // --- Category E-3: removeCracStatusMetric (CRAC) ---
+    function removeCracStatusMetric(key) {
+        const { metrics } = this.config.statusCards;
+        if (!metrics[key]) {
+            console.warn(`[removeCracStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        delete metrics[key];
+    }
+
+    // --- Category E-1: updateSensorStatusMetric (Sensor) ---
+    function updateSensorStatusMetric(key, options) {
+        const metric = this.config.statusCards.metrics[key];
+        if (!metric) {
+            console.warn(`[updateSensorStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        const { metricCode, label, unit, color, scale, targetValue } = options;
+        if (metricCode !== undefined)   metric.metricCode = metricCode;
+        if (label !== undefined)        metric.label = label;
+        if (unit !== undefined)         metric.unit = unit;
+        if (color !== undefined)        metric.color = color;
+        if (scale !== undefined)        metric.scale = scale;
+        if (targetValue !== undefined)  metric.targetValue = targetValue;
+    }
+
+    // --- Category E-2: addSensorStatusMetric (Sensor) ---
+    function addSensorStatusMetric(key, options) {
+        const { metrics } = this.config.statusCards;
+        if (metrics[key]) {
+            console.warn(`[addSensorStatusMetric] 이미 존재하는 키: ${key}`);
+            return;
+        }
+        const { label, unit, metricCode = null, color = '#64748b', scale = 1.0, targetValue = null } = options;
+        if (!label || !unit) {
+            console.warn(`[addSensorStatusMetric] label과 unit은 필수`);
+            return;
+        }
+        metrics[key] = { metricCode, label, unit, color, scale, targetValue };
+    }
+
+    // --- Category E-3: removeSensorStatusMetric (Sensor) ---
+    function removeSensorStatusMetric(key) {
+        const { metrics } = this.config.statusCards;
+        if (!metrics[key]) {
+            console.warn(`[removeSensorStatusMetric] 존재하지 않는 키: ${key}`);
+            return;
+        }
+        delete metrics[key];
+    }
+
     // =========================================================================
     // 3. MOCK FACTORY (각 컴포넌트의 config/datasetInfo를 실제와 동일하게 생성)
     // =========================================================================
@@ -251,6 +370,14 @@
                         frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
                     },
                 },
+                powerStatus: {
+                    metrics: {
+                        batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
+                        batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },
+                        loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
+                        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
+                    },
+                },
             },
             datasetInfo: [],
         };
@@ -264,6 +391,9 @@
         ctx.updateUpsTabMetric = updateUpsTabMetric.bind(ctx);
         ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
         ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        ctx.updateUpsStatusMetric = updateUpsStatusMetric.bind(ctx);
+        ctx.addUpsStatusMetric = addUpsStatusMetric.bind(ctx);
+        ctx.removeUpsStatusMetric = removeUpsStatusMetric.bind(ctx);
         return ctx;
     }
 
@@ -333,6 +463,14 @@
                         humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 0.1 },
                     },
                 },
+                statusCards: {
+                    metrics: {
+                        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 0.1 },
+                        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 0.1 },
+                        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 0.1 },
+                        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 0.1 },
+                    },
+                },
             },
             datasetInfo: [],
         };
@@ -346,6 +484,9 @@
         ctx.updateCracSeriesMetric = updateCracSeriesMetric.bind(ctx);
         ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
         ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        ctx.updateCracStatusMetric = updateCracStatusMetric.bind(ctx);
+        ctx.addCracStatusMetric = addCracStatusMetric.bind(ctx);
+        ctx.removeCracStatusMetric = removeCracStatusMetric.bind(ctx);
         return ctx;
     }
 
@@ -372,6 +513,12 @@
                         humidity: { metricCode: 'SENSOR.HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 1.0 },
                     },
                 },
+                statusCards: {
+                    metrics: {
+                        temperature: { metricCode: 'SENSOR.TEMP', label: '온도', unit: '°C', color: '#3b82f6', scale: 1.0, targetValue: null },
+                        humidity:    { metricCode: 'SENSOR.HUMIDITY', label: '습도', unit: '%', color: '#22c55e', scale: 1.0, targetValue: null },
+                    },
+                },
             },
             datasetInfo: [],
         };
@@ -385,6 +532,9 @@
         ctx.updateSensorSeriesMetric = updateSensorSeriesMetric.bind(ctx);
         ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
         ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        ctx.updateSensorStatusMetric = updateSensorStatusMetric.bind(ctx);
+        ctx.addSensorStatusMetric = addSensorStatusMetric.bind(ctx);
+        ctx.removeSensorStatusMetric = removeSensorStatusMetric.bind(ctx);
         return ctx;
     }
 
@@ -741,6 +891,362 @@
             ctx.updateRefreshInterval('nonExistentDataset', 9999);
             assert(true);
         });
+    });
+
+    // ── Category E-1: updateUpsStatusMetric (UPS) ──
+
+    test('E-1: updateUpsStatusMetric', 'UPS', 'metricCode 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('batterySoc', { metricCode: 'UPS.NEW_BATT' });
+        assertEq(ctx.config.powerStatus.metrics.batterySoc.metricCode, 'UPS.NEW_BATT', 'metricCode');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', 'label만 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('batterySoc', { label: '잔량' });
+        assertEq(ctx.config.powerStatus.metrics.batterySoc.label, '잔량', 'label');
+        assertEq(ctx.config.powerStatus.metrics.batterySoc.metricCode, 'UPS.BATT_PCT', 'metricCode 유지');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', 'unit만 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('batteryVolt', { unit: 'kV' });
+        assertEq(ctx.config.powerStatus.metrics.batteryVolt.unit, 'kV', 'unit');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', 'scale만 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('batteryVolt', { scale: 0.01 });
+        assertEq(ctx.config.powerStatus.metrics.batteryVolt.scale, 0.01, 'scale');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', '복수 필드 동시 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('loadRate', { metricCode: 'UPS.LOAD_NEW', label: '부하', unit: 'W', scale: 0.5 });
+        const m = ctx.config.powerStatus.metrics.loadRate;
+        assertEq(m.metricCode, 'UPS.LOAD_NEW', 'metricCode');
+        assertEq(m.label, '부하', 'label');
+        assertEq(m.unit, 'W', 'unit');
+        assertEq(m.scale, 0.5, 'scale');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsStatusMetric('nonexistent', { label: 'test' });
+        assertWarnCaptured('[updateUpsStatusMetric]');
+    });
+
+    test('E-1: updateUpsStatusMetric', 'UPS', 'undefined 전달 시 기존값 유지', () => {
+        const ctx = createUpsMock();
+        const before = { ...ctx.config.powerStatus.metrics.batterySoc };
+        ctx.updateUpsStatusMetric('batterySoc', {});
+        const after = ctx.config.powerStatus.metrics.batterySoc;
+        assertEq(after.metricCode, before.metricCode, 'metricCode 유지');
+        assertEq(after.label, before.label, 'label 유지');
+        assertEq(after.unit, before.unit, 'unit 유지');
+        assertEq(after.scale, before.scale, 'scale 유지');
+    });
+
+    // ── Category E-1: updateCracStatusMetric (CRAC) ──
+
+    test('E-1: updateCracStatusMetric', 'CRAC', 'metricCode 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('currentTemp', { metricCode: 'CRAC.SUPPLY_TEMP' });
+        assertEq(ctx.config.statusCards.metrics.currentTemp.metricCode, 'CRAC.SUPPLY_TEMP', 'metricCode');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', 'label만 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('currentTemp', { label: '급기온도' });
+        assertEq(ctx.config.statusCards.metrics.currentTemp.label, '급기온도', 'label');
+        assertEq(ctx.config.statusCards.metrics.currentTemp.metricCode, 'CRAC.RETURN_TEMP', 'metricCode 유지');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', 'unit만 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('setTemp', { unit: '°F' });
+        assertEq(ctx.config.statusCards.metrics.setTemp.unit, '°F', 'unit');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', 'scale만 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('currentTemp', { scale: 1.0 });
+        assertEq(ctx.config.statusCards.metrics.currentTemp.scale, 1.0, 'scale');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', '복수 필드 동시 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('setHumid', { metricCode: 'CRAC.HUM_NEW', label: '목표습도', unit: 'g/m³', scale: 1.0 });
+        const m = ctx.config.statusCards.metrics.setHumid;
+        assertEq(m.metricCode, 'CRAC.HUM_NEW', 'metricCode');
+        assertEq(m.label, '목표습도', 'label');
+        assertEq(m.unit, 'g/m³', 'unit');
+        assertEq(m.scale, 1.0, 'scale');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createCracMock();
+        ctx.updateCracStatusMetric('nonexistent', { label: 'test' });
+        assertWarnCaptured('[updateCracStatusMetric]');
+    });
+
+    test('E-1: updateCracStatusMetric', 'CRAC', 'undefined 전달 시 기존값 유지', () => {
+        const ctx = createCracMock();
+        const before = { ...ctx.config.statusCards.metrics.currentTemp };
+        ctx.updateCracStatusMetric('currentTemp', {});
+        const after = ctx.config.statusCards.metrics.currentTemp;
+        assertEq(after.metricCode, before.metricCode, 'metricCode 유지');
+        assertEq(after.label, before.label, 'label 유지');
+        assertEq(after.unit, before.unit, 'unit 유지');
+        assertEq(after.scale, before.scale, 'scale 유지');
+    });
+
+    // ── Category E-1: updateSensorStatusMetric (Sensor) ──
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'metricCode 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('temperature', { metricCode: 'SENSOR.TEMP_EXT' });
+        assertEq(ctx.config.statusCards.metrics.temperature.metricCode, 'SENSOR.TEMP_EXT', 'metricCode');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'label만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('temperature', { label: '외기온도' });
+        assertEq(ctx.config.statusCards.metrics.temperature.label, '외기온도', 'label');
+        assertEq(ctx.config.statusCards.metrics.temperature.metricCode, 'SENSOR.TEMP', 'metricCode 유지');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'unit만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('temperature', { unit: '°F' });
+        assertEq(ctx.config.statusCards.metrics.temperature.unit, '°F', 'unit');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'color만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('temperature', { color: '#ff0000' });
+        assertEq(ctx.config.statusCards.metrics.temperature.color, '#ff0000', 'color');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'scale만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('humidity', { scale: 0.1 });
+        assertEq(ctx.config.statusCards.metrics.humidity.scale, 0.1, 'scale');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'targetValue만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('temperature', { targetValue: 25 });
+        assertEq(ctx.config.statusCards.metrics.temperature.targetValue, 25, 'targetValue');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', '복수 필드 동시 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('humidity', { metricCode: 'SENSOR.HUM_NEW', label: '상대습도', unit: 'g/m³', color: '#00ff00', scale: 0.5, targetValue: 60 });
+        const m = ctx.config.statusCards.metrics.humidity;
+        assertEq(m.metricCode, 'SENSOR.HUM_NEW', 'metricCode');
+        assertEq(m.label, '상대습도', 'label');
+        assertEq(m.unit, 'g/m³', 'unit');
+        assertEq(m.color, '#00ff00', 'color');
+        assertEq(m.scale, 0.5, 'scale');
+        assertEq(m.targetValue, 60, 'targetValue');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorStatusMetric('nonexistent', { label: 'test' });
+        assertWarnCaptured('[updateSensorStatusMetric]');
+    });
+
+    test('E-1: updateSensorStatusMetric', 'Sensor', 'undefined 전달 시 기존값 유지', () => {
+        const ctx = createSensorMock();
+        const before = { ...ctx.config.statusCards.metrics.temperature };
+        ctx.updateSensorStatusMetric('temperature', {});
+        const after = ctx.config.statusCards.metrics.temperature;
+        assertEq(after.metricCode, before.metricCode, 'metricCode 유지');
+        assertEq(after.label, before.label, 'label 유지');
+        assertEq(after.unit, before.unit, 'unit 유지');
+        assertEq(after.color, before.color, 'color 유지');
+        assertEq(after.scale, before.scale, 'scale 유지');
+        assertEq(after.targetValue, before.targetValue, 'targetValue 유지');
+    });
+
+    // ── Category E-2: addUpsStatusMetric (UPS) ──
+
+    test('E-2: addUpsStatusMetric', 'UPS', '새 키 추가 (metricCode 포함)', () => {
+        const ctx = createUpsMock();
+        ctx.addUpsStatusMetric('efficiency', { label: '효율', unit: '%', metricCode: 'UPS.EFF_PCT', scale: 1.0 });
+        const m = ctx.config.powerStatus.metrics.efficiency;
+        assert(m !== undefined, '키 추가됨');
+        assertEq(m.label, '효율', 'label');
+        assertEq(m.unit, '%', 'unit');
+        assertEq(m.metricCode, 'UPS.EFF_PCT', 'metricCode');
+        assertEq(m.scale, 1.0, 'scale');
+    });
+
+    test('E-2: addUpsStatusMetric', 'UPS', 'metricCode 미지정 → null 기본값', () => {
+        const ctx = createUpsMock();
+        ctx.addUpsStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+        assertEq(ctx.config.powerStatus.metrics.newMetric.metricCode, null, 'metricCode = null');
+    });
+
+    test('E-2: addUpsStatusMetric', 'UPS', 'scale 미지정 → 1.0 기본값', () => {
+        const ctx = createUpsMock();
+        ctx.addUpsStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+        assertEq(ctx.config.powerStatus.metrics.newMetric.scale, 1.0, 'scale = 1.0');
+    });
+
+    test('E-2: addUpsStatusMetric', 'UPS', '이미 존재하는 키 → warn + 무시', () => {
+        const ctx = createUpsMock();
+        const origLabel = ctx.config.powerStatus.metrics.batterySoc.label;
+        ctx.addUpsStatusMetric('batterySoc', { label: '덮어쓰기', unit: '%' });
+        assertWarnCaptured('[addUpsStatusMetric]');
+        assertEq(ctx.config.powerStatus.metrics.batterySoc.label, origLabel, 'label 변경 안됨');
+    });
+
+    test('E-2: addUpsStatusMetric', 'UPS', 'label 또는 unit 누락 → warn + 무시', () => {
+        const ctx = createUpsMock();
+        ctx.addUpsStatusMetric('noLabel', { unit: '%' });
+        assertWarnCaptured('[addUpsStatusMetric]');
+        assert(ctx.config.powerStatus.metrics.noLabel === undefined, '키 추가 안됨');
+    });
+
+    // ── Category E-2: addCracStatusMetric (CRAC) ──
+
+    test('E-2: addCracStatusMetric', 'CRAC', '새 키 추가 (metricCode 포함)', () => {
+        const ctx = createCracMock();
+        ctx.addCracStatusMetric('supplyTemp', { label: '급기온도', unit: '°C', metricCode: 'CRAC.SUPPLY_TEMP', scale: 0.1 });
+        const m = ctx.config.statusCards.metrics.supplyTemp;
+        assert(m !== undefined, '키 추가됨');
+        assertEq(m.label, '급기온도', 'label');
+        assertEq(m.unit, '°C', 'unit');
+        assertEq(m.metricCode, 'CRAC.SUPPLY_TEMP', 'metricCode');
+        assertEq(m.scale, 0.1, 'scale');
+    });
+
+    test('E-2: addCracStatusMetric', 'CRAC', 'metricCode 미지정 → null 기본값', () => {
+        const ctx = createCracMock();
+        ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+        assertEq(ctx.config.statusCards.metrics.newMetric.metricCode, null, 'metricCode = null');
+    });
+
+    test('E-2: addCracStatusMetric', 'CRAC', 'scale 미지정 → 0.1 기본값', () => {
+        const ctx = createCracMock();
+        ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+        assertEq(ctx.config.statusCards.metrics.newMetric.scale, 0.1, 'scale = 0.1');
+    });
+
+    test('E-2: addCracStatusMetric', 'CRAC', '이미 존재하는 키 → warn + 무시', () => {
+        const ctx = createCracMock();
+        const origLabel = ctx.config.statusCards.metrics.currentTemp.label;
+        ctx.addCracStatusMetric('currentTemp', { label: '덮어쓰기', unit: '°C' });
+        assertWarnCaptured('[addCracStatusMetric]');
+        assertEq(ctx.config.statusCards.metrics.currentTemp.label, origLabel, 'label 변경 안됨');
+    });
+
+    test('E-2: addCracStatusMetric', 'CRAC', 'label 또는 unit 누락 → warn + 무시', () => {
+        const ctx = createCracMock();
+        ctx.addCracStatusMetric('noLabel', { unit: '°C' });
+        assertWarnCaptured('[addCracStatusMetric]');
+        assert(ctx.config.statusCards.metrics.noLabel === undefined, '키 추가 안됨');
+    });
+
+    // ── Category E-2: addSensorStatusMetric (Sensor) ──
+
+    test('E-2: addSensorStatusMetric', 'Sensor', '모든 필드 지정하여 추가', () => {
+        const ctx = createSensorMock();
+        ctx.addSensorStatusMetric('pressure', { label: '기압', unit: 'hPa', metricCode: 'SENSOR.PRESS', color: '#ff6b6b', scale: 0.1, targetValue: 1013 });
+        const m = ctx.config.statusCards.metrics.pressure;
+        assert(m !== undefined, '키 추가됨');
+        assertEq(m.label, '기압', 'label');
+        assertEq(m.unit, 'hPa', 'unit');
+        assertEq(m.metricCode, 'SENSOR.PRESS', 'metricCode');
+        assertEq(m.color, '#ff6b6b', 'color');
+        assertEq(m.scale, 0.1, 'scale');
+        assertEq(m.targetValue, 1013, 'targetValue');
+    });
+
+    test('E-2: addSensorStatusMetric', 'Sensor', '최소 옵션 → 기본값 적용', () => {
+        const ctx = createSensorMock();
+        ctx.addSensorStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+        const m = ctx.config.statusCards.metrics.newMetric;
+        assertEq(m.metricCode, null, 'metricCode = null');
+        assertEq(m.color, '#64748b', 'color = #64748b');
+        assertEq(m.scale, 1.0, 'scale = 1.0');
+        assertEq(m.targetValue, null, 'targetValue = null');
+    });
+
+    test('E-2: addSensorStatusMetric', 'Sensor', '이미 존재하는 키 → warn + 무시', () => {
+        const ctx = createSensorMock();
+        const origLabel = ctx.config.statusCards.metrics.temperature.label;
+        ctx.addSensorStatusMetric('temperature', { label: '덮어쓰기', unit: '°C' });
+        assertWarnCaptured('[addSensorStatusMetric]');
+        assertEq(ctx.config.statusCards.metrics.temperature.label, origLabel, 'label 변경 안됨');
+    });
+
+    test('E-2: addSensorStatusMetric', 'Sensor', 'label 또는 unit 누락 → warn + 무시', () => {
+        const ctx = createSensorMock();
+        ctx.addSensorStatusMetric('noLabel', { unit: '°C' });
+        assertWarnCaptured('[addSensorStatusMetric]');
+        assert(ctx.config.statusCards.metrics.noLabel === undefined, '키 추가 안됨');
+    });
+
+    test('E-2: addSensorStatusMetric', 'Sensor', '부분 옵션 → 나머지 기본값', () => {
+        const ctx = createSensorMock();
+        ctx.addSensorStatusMetric('co2', { label: 'CO₂', unit: 'ppm', metricCode: 'SENSOR.CO2' });
+        const m = ctx.config.statusCards.metrics.co2;
+        assertEq(m.metricCode, 'SENSOR.CO2', 'metricCode');
+        assertEq(m.color, '#64748b', 'color 기본값');
+        assertEq(m.scale, 1.0, 'scale 기본값');
+        assertEq(m.targetValue, null, 'targetValue 기본값');
+    });
+
+    // ── Category E-3: removeUpsStatusMetric (UPS) ──
+
+    test('E-3: removeUpsStatusMetric', 'UPS', '기존 키 삭제', () => {
+        const ctx = createUpsMock();
+        assert(ctx.config.powerStatus.metrics.batteryTime !== undefined, '삭제 전 존재');
+        ctx.removeUpsStatusMetric('batteryTime');
+        assert(ctx.config.powerStatus.metrics.batteryTime === undefined, '삭제 후 제거됨');
+        assert(ctx.config.powerStatus.metrics.batterySoc !== undefined, '다른 키 유지');
+    });
+
+    test('E-3: removeUpsStatusMetric', 'UPS', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createUpsMock();
+        ctx.removeUpsStatusMetric('nonexistent');
+        assertWarnCaptured('[removeUpsStatusMetric]');
+    });
+
+    // ── Category E-3: removeCracStatusMetric (CRAC) ──
+
+    test('E-3: removeCracStatusMetric', 'CRAC', '기존 키 삭제', () => {
+        const ctx = createCracMock();
+        assert(ctx.config.statusCards.metrics.setHumid !== undefined, '삭제 전 존재');
+        ctx.removeCracStatusMetric('setHumid');
+        assert(ctx.config.statusCards.metrics.setHumid === undefined, '삭제 후 제거됨');
+        assert(ctx.config.statusCards.metrics.currentTemp !== undefined, '다른 키 유지');
+    });
+
+    test('E-3: removeCracStatusMetric', 'CRAC', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createCracMock();
+        ctx.removeCracStatusMetric('nonexistent');
+        assertWarnCaptured('[removeCracStatusMetric]');
+    });
+
+    // ── Category E-3: removeSensorStatusMetric (Sensor) ──
+
+    test('E-3: removeSensorStatusMetric', 'Sensor', '기존 키 삭제', () => {
+        const ctx = createSensorMock();
+        assert(ctx.config.statusCards.metrics.humidity !== undefined, '삭제 전 존재');
+        ctx.removeSensorStatusMetric('humidity');
+        assert(ctx.config.statusCards.metrics.humidity === undefined, '삭제 후 제거됨');
+        assert(ctx.config.statusCards.metrics.temperature !== undefined, '다른 키 유지');
+    });
+
+    test('E-3: removeSensorStatusMetric', 'Sensor', '존재하지 않는 키 → warn + 무시', () => {
+        const ctx = createSensorMock();
+        ctx.removeSensorStatusMetric('nonexistent');
+        assertWarnCaptured('[removeSensorStatusMetric]');
     });
 
     // =========================================================================

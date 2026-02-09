@@ -7,8 +7,8 @@
 
 | 항목 | 값 |
 |------|---:|
-| **Total** | 58 |
-| **Pass** | 58 |
+| **Total** | 130 |
+| **Pass** | 130 |
 | **Fail** | 0 |
 
 ---
@@ -796,6 +796,776 @@ ctx.updateRefreshInterval('nonExistentDataset', 9999);
 
 **검증**:
 - 에러 없이 함수 종료
+
+---
+
+## Category E-1: `updateUpsStatusMetric` — 7 tests (UPS 전용)
+
+UPS 전용. powerStatus 카드의 개별 메트릭 속성을 변경한다.
+
+### E-1-1. metricCode 변경
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('batterySoc', { metricCode: 'UPS.NEW_BATT' });
+```
+
+**검증**:
+- `powerStatus.metrics.batterySoc.metricCode === 'UPS.NEW_BATT'`
+
+---
+
+### E-1-2. label만 변경
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('batterySoc', { label: '잔량' });
+```
+
+**검증**:
+- `powerStatus.metrics.batterySoc.label === '잔량'`
+- `powerStatus.metrics.batterySoc.metricCode === 'UPS.BATT_PCT'` (기존값 유지)
+
+---
+
+### E-1-3. unit만 변경
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('batteryVolt', { unit: 'kV' });
+```
+
+**검증**:
+- `powerStatus.metrics.batteryVolt.unit === 'kV'`
+
+---
+
+### E-1-4. scale만 변경
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('batteryVolt', { scale: 0.01 });
+```
+
+**검증**:
+- `powerStatus.metrics.batteryVolt.scale === 0.01`
+
+---
+
+### E-1-5. 복수 필드 동시 변경
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('loadRate', {
+  metricCode: 'UPS.LOAD_NEW',
+  label: '부하',
+  unit: 'W',
+  scale: 0.5,
+});
+```
+
+**검증**:
+- `powerStatus.metrics.loadRate.metricCode === 'UPS.LOAD_NEW'`
+- `powerStatus.metrics.loadRate.label === '부하'`
+- `powerStatus.metrics.loadRate.unit === 'W'`
+- `powerStatus.metrics.loadRate.scale === 0.5`
+
+---
+
+### E-1-6. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('nonexistent', { label: 'test' });
+```
+
+**검증**:
+- `console.warn` 에 `'[updateUpsStatusMetric]'` 포함
+
+---
+
+### E-1-7. undefined 전달 시 기존값 유지
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.updateUpsStatusMetric('batterySoc', {});
+```
+
+**검증**:
+- 모든 필드(metricCode, label, unit, scale) 호출 전과 동일
+
+---
+
+## Category E-1: `updateCracStatusMetric` — 7 tests (CRAC 전용)
+
+CRAC 전용. statusCards 카드의 개별 메트릭 속성을 변경한다.
+
+### E-1-8. metricCode 변경
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('currentTemp', { metricCode: 'CRAC.SUPPLY_TEMP' });
+```
+
+**검증**:
+- `statusCards.metrics.currentTemp.metricCode === 'CRAC.SUPPLY_TEMP'`
+
+---
+
+### E-1-9. label만 변경
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('currentTemp', { label: '급기온도' });
+```
+
+**검증**:
+- `statusCards.metrics.currentTemp.label === '급기온도'`
+- `statusCards.metrics.currentTemp.metricCode === 'CRAC.RETURN_TEMP'` (기존값 유지)
+
+---
+
+### E-1-10. unit만 변경
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('setTemp', { unit: '°F' });
+```
+
+**검증**:
+- `statusCards.metrics.setTemp.unit === '°F'`
+
+---
+
+### E-1-11. scale만 변경
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('currentTemp', { scale: 1.0 });
+```
+
+**검증**:
+- `statusCards.metrics.currentTemp.scale === 1.0`
+
+---
+
+### E-1-12. 복수 필드 동시 변경
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('setHumid', {
+  metricCode: 'CRAC.HUM_NEW',
+  label: '목표습도',
+  unit: 'g/m³',
+  scale: 1.0,
+});
+```
+
+**검증**:
+- `statusCards.metrics.setHumid.metricCode === 'CRAC.HUM_NEW'`
+- `statusCards.metrics.setHumid.label === '목표습도'`
+- `statusCards.metrics.setHumid.unit === 'g/m³'`
+- `statusCards.metrics.setHumid.scale === 1.0`
+
+---
+
+### E-1-13. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('nonexistent', { label: 'test' });
+```
+
+**검증**:
+- `console.warn` 에 `'[updateCracStatusMetric]'` 포함
+
+---
+
+### E-1-14. undefined 전달 시 기존값 유지
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.updateCracStatusMetric('currentTemp', {});
+```
+
+**검증**:
+- 모든 필드(metricCode, label, unit, scale) 호출 전과 동일
+
+---
+
+## Category E-1: `updateSensorStatusMetric` — 9 tests (Sensor 전용)
+
+Sensor 전용. statusCards 카드의 개별 메트릭 속성을 변경한다. color, targetValue 추가 필드 포함.
+
+### E-1-15. metricCode 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', { metricCode: 'SENSOR.TEMP_EXT' });
+```
+
+**검증**:
+- `statusCards.metrics.temperature.metricCode === 'SENSOR.TEMP_EXT'`
+
+---
+
+### E-1-16. label만 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', { label: '외기온도' });
+```
+
+**검증**:
+- `statusCards.metrics.temperature.label === '외기온도'`
+- `statusCards.metrics.temperature.metricCode === 'SENSOR.TEMP'` (기존값 유지)
+
+---
+
+### E-1-17. unit만 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', { unit: '°F' });
+```
+
+**검증**:
+- `statusCards.metrics.temperature.unit === '°F'`
+
+---
+
+### E-1-18. color만 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', { color: '#ff0000' });
+```
+
+**검증**:
+- `statusCards.metrics.temperature.color === '#ff0000'`
+
+---
+
+### E-1-19. scale만 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('humidity', { scale: 0.1 });
+```
+
+**검증**:
+- `statusCards.metrics.humidity.scale === 0.1`
+
+---
+
+### E-1-20. targetValue만 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', { targetValue: 25 });
+```
+
+**검증**:
+- `statusCards.metrics.temperature.targetValue === 25`
+
+---
+
+### E-1-21. 복수 필드 동시 변경
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('humidity', {
+  metricCode: 'SENSOR.HUM_NEW',
+  label: '상대습도',
+  unit: 'g/m³',
+  color: '#00ff00',
+  scale: 0.5,
+  targetValue: 60,
+});
+```
+
+**검증**:
+- `statusCards.metrics.humidity.metricCode === 'SENSOR.HUM_NEW'`
+- `statusCards.metrics.humidity.label === '상대습도'`
+- `statusCards.metrics.humidity.unit === 'g/m³'`
+- `statusCards.metrics.humidity.color === '#00ff00'`
+- `statusCards.metrics.humidity.scale === 0.5`
+- `statusCards.metrics.humidity.targetValue === 60`
+
+---
+
+### E-1-22. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('nonexistent', { label: 'test' });
+```
+
+**검증**:
+- `console.warn` 에 `'[updateSensorStatusMetric]'` 포함
+
+---
+
+### E-1-23. undefined 전달 시 기존값 유지
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.updateSensorStatusMetric('temperature', {});
+```
+
+**검증**:
+- 모든 필드(metricCode, label, unit, color, scale, targetValue) 호출 전과 동일
+
+---
+
+## Category E-2: `addUpsStatusMetric` — 5 tests (UPS 전용)
+
+UPS 전용. powerStatus에 새 메트릭 키를 추가한다.
+
+### E-2-1. 새 키 추가 (metricCode 포함)
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.addUpsStatusMetric('efficiency', {
+  label: '효율',
+  unit: '%',
+  metricCode: 'UPS.EFF_PCT',
+  scale: 1.0,
+});
+```
+
+**검증**:
+- `powerStatus.metrics.efficiency` 존재
+- `.label === '효율'`, `.unit === '%'`
+- `.metricCode === 'UPS.EFF_PCT'`, `.scale === 1.0`
+
+---
+
+### E-2-2. metricCode 미지정 → null 기본값
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.addUpsStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+```
+
+**검증**:
+- `powerStatus.metrics.newMetric.metricCode === null`
+
+---
+
+### E-2-3. scale 미지정 → 1.0 기본값
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.addUpsStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+```
+
+**검증**:
+- `powerStatus.metrics.newMetric.scale === 1.0`
+
+---
+
+### E-2-4. 이미 존재하는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.addUpsStatusMetric('batterySoc', { label: '덮어쓰기', unit: '%' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addUpsStatusMetric]'` 포함
+- `powerStatus.metrics.batterySoc.label` 변경 안 됨 (기존값 유지)
+
+---
+
+### E-2-5. label 또는 unit 누락 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.addUpsStatusMetric('noLabel', { unit: '%' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addUpsStatusMetric]'` 포함
+- `powerStatus.metrics.noLabel === undefined` (키 추가 안 됨)
+
+---
+
+## Category E-2: `addCracStatusMetric` — 5 tests (CRAC 전용)
+
+CRAC 전용. statusCards에 새 메트릭 키를 추가한다.
+
+### E-2-6. 새 키 추가 (metricCode 포함)
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.addCracStatusMetric('supplyTemp', {
+  label: '급기온도',
+  unit: '°C',
+  metricCode: 'CRAC.SUPPLY_TEMP',
+  scale: 0.1,
+});
+```
+
+**검증**:
+- `statusCards.metrics.supplyTemp` 존재
+- `.label === '급기온도'`, `.unit === '°C'`
+- `.metricCode === 'CRAC.SUPPLY_TEMP'`, `.scale === 0.1`
+
+---
+
+### E-2-7. metricCode 미지정 → null 기본값
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+```
+
+**검증**:
+- `statusCards.metrics.newMetric.metricCode === null`
+
+---
+
+### E-2-8. scale 미지정 → 0.1 기본값
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+```
+
+**검증**:
+- `statusCards.metrics.newMetric.scale === 0.1`
+
+---
+
+### E-2-9. 이미 존재하는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.addCracStatusMetric('currentTemp', { label: '덮어쓰기', unit: '°C' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addCracStatusMetric]'` 포함
+- `statusCards.metrics.currentTemp.label` 변경 안 됨
+
+---
+
+### E-2-10. label 또는 unit 누락 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.addCracStatusMetric('noLabel', { unit: '°C' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addCracStatusMetric]'` 포함
+- `statusCards.metrics.noLabel === undefined`
+
+---
+
+## Category E-2: `addSensorStatusMetric` — 5 tests (Sensor 전용)
+
+Sensor 전용. statusCards에 새 메트릭 키를 추가한다. color, targetValue 기본값 포함.
+
+### E-2-11. 모든 필드 지정하여 추가
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.addSensorStatusMetric('pressure', {
+  label: '기압',
+  unit: 'hPa',
+  metricCode: 'SENSOR.PRESS',
+  color: '#ff6b6b',
+  scale: 0.1,
+  targetValue: 1013,
+});
+```
+
+**검증**:
+- `statusCards.metrics.pressure` 존재
+- `.label === '기압'`, `.unit === 'hPa'`
+- `.metricCode === 'SENSOR.PRESS'`, `.color === '#ff6b6b'`
+- `.scale === 0.1`, `.targetValue === 1013`
+
+---
+
+### E-2-12. 최소 옵션 → 기본값 적용
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.addSensorStatusMetric('newMetric', { label: '신규', unit: 'EA' });
+```
+
+**검증**:
+- `.metricCode === null`
+- `.color === '#64748b'`
+- `.scale === 1.0`
+- `.targetValue === null`
+
+---
+
+### E-2-13. 이미 존재하는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.addSensorStatusMetric('temperature', { label: '덮어쓰기', unit: '°C' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addSensorStatusMetric]'` 포함
+- `statusCards.metrics.temperature.label` 변경 안 됨
+
+---
+
+### E-2-14. label 또는 unit 누락 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.addSensorStatusMetric('noLabel', { unit: '°C' });
+```
+
+**검증**:
+- `console.warn` 에 `'[addSensorStatusMetric]'` 포함
+- `statusCards.metrics.noLabel === undefined`
+
+---
+
+### E-2-15. 부분 옵션 → 나머지 기본값
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.addSensorStatusMetric('co2', {
+  label: 'CO₂',
+  unit: 'ppm',
+  metricCode: 'SENSOR.CO2',
+});
+```
+
+**검증**:
+- `.metricCode === 'SENSOR.CO2'`
+- `.color === '#64748b'` (기본값)
+- `.scale === 1.0` (기본값)
+- `.targetValue === null` (기본값)
+
+---
+
+## Category E-3: `removeUpsStatusMetric` — 2 tests (UPS 전용)
+
+UPS 전용. powerStatus에서 메트릭 키를 삭제한다.
+
+### E-3-1. 기존 키 삭제
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.removeUpsStatusMetric('batteryTime');
+```
+
+**검증**:
+- `powerStatus.metrics.batteryTime === undefined` (삭제됨)
+- `powerStatus.metrics.batterySoc !== undefined` (다른 키 유지)
+
+---
+
+### E-3-2. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| UPS | PASS |
+
+```javascript
+ctx.removeUpsStatusMetric('nonexistent');
+```
+
+**검증**:
+- `console.warn` 에 `'[removeUpsStatusMetric]'` 포함
+
+---
+
+## Category E-3: `removeCracStatusMetric` — 2 tests (CRAC 전용)
+
+CRAC 전용. statusCards에서 메트릭 키를 삭제한다.
+
+### E-3-3. 기존 키 삭제
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.removeCracStatusMetric('setHumid');
+```
+
+**검증**:
+- `statusCards.metrics.setHumid === undefined` (삭제됨)
+- `statusCards.metrics.currentTemp !== undefined` (다른 키 유지)
+
+---
+
+### E-3-4. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| CRAC | PASS |
+
+```javascript
+ctx.removeCracStatusMetric('nonexistent');
+```
+
+**검증**:
+- `console.warn` 에 `'[removeCracStatusMetric]'` 포함
+
+---
+
+## Category E-3: `removeSensorStatusMetric` — 2 tests (Sensor 전용)
+
+Sensor 전용. statusCards에서 메트릭 키를 삭제한다.
+
+### E-3-5. 기존 키 삭제
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.removeSensorStatusMetric('humidity');
+```
+
+**검증**:
+- `statusCards.metrics.humidity === undefined` (삭제됨)
+- `statusCards.metrics.temperature !== undefined` (다른 키 유지)
+
+---
+
+### E-3-6. 존재하지 않는 키 → warn + 무시
+
+| Component | Result |
+|-----------|--------|
+| Sensor | PASS |
+
+```javascript
+ctx.removeSensorStatusMetric('nonexistent');
+```
+
+**검증**:
+- `console.warn` 에 `'[removeSensorStatusMetric]'` 포함
 
 ---
 
