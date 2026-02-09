@@ -85,6 +85,7 @@ applyHeatmapMixin(this, {
     blur:               25,
     opacity:            0.75,
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    refreshInterval:    5000,
 });
 ```
 
@@ -332,6 +333,36 @@ temperatureMetrics: ['SENSOR.HUMIDITY']
 
 ---
 
+#### `refreshInterval` — 자동 데이터 갱신 주기
+
+| 타입 | 기본값 | 범위 |
+|------|--------|------|
+| number | `5000` | 0 = 비활성, 1000 이상 권장 |
+
+히트맵 활성(ON) 상태에서 센서 데이터를 주기적으로 재수집하여 히트맵을 갱신하는 간격 (ms).
+`0`으로 설정하면 자동 갱신을 비활성화 (최초 1회 렌더링만).
+
+```javascript
+refreshInterval: 5000     // 기본 (5초마다 갱신, 카드 새로고침과 동일 주기)
+refreshInterval: 10000    // 10초마다 갱신 (부하 감소)
+refreshInterval: 0        // 자동 갱신 비활성화 (최초 1회만)
+```
+
+갱신 흐름:
+```
+toggleHeatmap() ON
+  → 최초 collectSensorData + renderHeatmap
+  → setInterval(refreshInterval)
+    → collectSensorData → renderHeatmap (반복)
+  ...
+toggleHeatmap() OFF / destroyHeatmap()
+  → clearInterval
+```
+
+> `updateHeatmapConfig({ refreshInterval: 10000 })` 호출 시 기존 인터벌을 중지하고 새 주기로 재시작.
+
+---
+
 ## 제공 메서드
 
 | 메서드 | 설명 |
@@ -351,12 +382,14 @@ this.toggleHeatmap();
 2. PlaneGeometry + ShaderMaterial mesh 생성 (클릭한 인스턴스 위치 중심)
 3. 모든 3D 인스턴스에서 `temperatureMetrics` 데이터 수집 (metricLatest API)
 4. simpleheat → colorTexture + displacementTexture 생성
-5. 버튼 `data-active="true"` 설정
+5. 자동 갱신 인터벌 시작 (`refreshInterval > 0`인 경우)
+6. 버튼 `data-active="true"` 설정
 
 **OFF 시**:
-1. mesh, geometry, material, texture 모두 dispose
-2. 씬에서 제거
-3. 버튼 `data-active="false"` 설정
+1. 자동 갱신 인터벌 중지
+2. mesh, geometry, material, texture 모두 dispose
+3. 씬에서 제거
+4. 버튼 `data-active="false"` 설정
 
 ### destroyHeatmap()
 
@@ -364,7 +397,8 @@ this.toggleHeatmap();
 this.destroyHeatmap();
 ```
 
-리소스 정리 전용. `destroyPopup()` 체인에 자동 포함되어 팝업 닫기 시 자동 호출됨.
+리소스 정리 전용. 자동 갱신 인터벌 중지 포함.
+`destroyPopup()` 체인에 자동 포함되어 팝업 닫기 시 자동 호출됨.
 
 ### updateHeatmapConfig(options)
 
@@ -377,7 +411,8 @@ this.updateHeatmapConfig({ radius: 80, blur: 40 });
 | 반영 방식 | 옵션 | 설명 |
 |-----------|------|------|
 | **즉시 반영** (셰이더 uniform) | `displacementScale`, `baseHeight`, `opacity` | GPU 값만 변경. 메시 재생성 없음 |
-| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 |
+| **인터벌 재시작** | `refreshInterval` | 기존 인터벌 중지 → 새 주기로 재시작. 메시 변경 없음 |
+| **재생성** (메시 + 데이터 재수집) | 그 외 모든 옵션 | destroy → 재생성 → 데이터 수집 → 렌더링 → 인터벌 재시작 |
 
 히트맵이 꺼진 상태에서 호출하면 config만 업데이트하고 다음 `toggleHeatmap()` 시 반영.
 
@@ -389,6 +424,10 @@ this.updateHeatmapConfig({ displacementScale: 5, baseHeight: 1 });
 // 재생성 (메시 재구성 필요)
 this.updateHeatmapConfig({ radius: 100, blur: 50 });
 this.updateHeatmapConfig({ surfaceSize: { width: 30, depth: 30 } });
+
+// 인터벌만 변경 (메시 재생성 없음)
+this.updateHeatmapConfig({ refreshInterval: 10000 });
+this.updateHeatmapConfig({ refreshInterval: 0 });  // 자동 갱신 중지
 
 // 혼합 시 재생성으로 처리 (uniform + non-uniform)
 this.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
@@ -461,6 +500,7 @@ mesh.raycast = function () {};
 
 `destroyPopup()` 호출 시 자동 정리 (체인 확장):
 
+- 자동 갱신 인터벌 clearInterval
 - PlaneGeometry dispose
 - ShaderMaterial dispose
 - colorTexture, displacementTexture dispose

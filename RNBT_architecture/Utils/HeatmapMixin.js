@@ -241,6 +241,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       blur: 25,
       opacity: 0.75,
       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+      refreshInterval: 5000,
     },
     options
   );
@@ -254,6 +255,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     heat: null,
     colorTexture: null,
     displacementTexture: null,
+    refreshIntervalId: null,
     config: config,
   };
 
@@ -489,6 +491,35 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
+  // 실시간 갱신
+  // ────────────────────────────────────────
+
+  function refreshHeatmapData() {
+    if (!instance._heatmap.visible || !instance._heatmap.mesh) return;
+
+    collectSensorData().then(function (dataPoints) {
+      if (!instance._heatmap.visible || !instance._heatmap.mesh) return;
+      if (dataPoints.length > 0) {
+        renderHeatmap(dataPoints);
+      }
+    });
+  }
+
+  function startRefreshInterval() {
+    stopRefreshInterval();
+    if (config.refreshInterval > 0) {
+      instance._heatmap.refreshIntervalId = setInterval(refreshHeatmapData, config.refreshInterval);
+    }
+  }
+
+  function stopRefreshInterval() {
+    if (instance._heatmap.refreshIntervalId) {
+      clearInterval(instance._heatmap.refreshIntervalId);
+      instance._heatmap.refreshIntervalId = null;
+    }
+  }
+
+  // ────────────────────────────────────────
   // 버튼 active 상태 동기화
   // ────────────────────────────────────────
 
@@ -528,6 +559,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         } else {
           console.warn('[HeatmapMixin] No sensor data collected');
         }
+        startRefreshInterval();
       });
     }
   };
@@ -543,10 +575,20 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
     if (!instance._heatmap.visible) return;
 
+    // refreshInterval 변경 시 인터벌 재시작
+    if (newOptions.refreshInterval !== undefined) {
+      startRefreshInterval();
+    }
+
     var hm = instance._heatmap;
 
-    // uniform-only 변경인지 판별
-    var onlyUniforms = Object.keys(newOptions).every(function (key) {
+    // refreshInterval 제외한 키로 rebuild 판별
+    var effectKeys = Object.keys(newOptions).filter(function (key) {
+      return key !== 'refreshInterval';
+    });
+    if (effectKeys.length === 0) return;
+
+    var onlyUniforms = effectKeys.every(function (key) {
       return UNIFORM_KEYS.indexOf(key) !== -1;
     });
 
@@ -568,6 +610,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         }
+        startRefreshInterval();
       });
     }
   };
@@ -577,6 +620,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   instance.destroyHeatmap = function () {
+    stopRefreshInterval();
     var hm = instance._heatmap;
 
     if (hm.mesh) {
