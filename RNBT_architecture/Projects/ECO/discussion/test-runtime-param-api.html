@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runtime Parameter Update API - Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+            background: #0f1219; color: #e0e6ed; padding: 24px; line-height: 1.5;
+        }
+        h1 { font-size: 20px; margin-bottom: 8px; }
+        .subtitle { font-size: 13px; color: #8892a0; margin-bottom: 24px; }
+        .summary {
+            display: flex; gap: 16px; margin-bottom: 24px; padding: 16px;
+            background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142;
+        }
+        .summary-item { font-size: 14px; }
+        .summary-item .count { font-size: 24px; font-weight: 700; margin-right: 4px; }
+        .pass { color: #22c55e; }
+        .fail { color: #ef4444; }
+        .warn-count { color: #f59e0b; }
+        .total { color: #3b82f6; }
+        .category-header {
+            font-size: 15px; font-weight: 600; padding: 12px 0 8px;
+            border-bottom: 1px solid #2a3142; margin-top: 20px; margin-bottom: 4px; color: #8892a0;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th, td { padding: 8px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid #1e2433; }
+        th { color: #6b7280; font-weight: 500; background: #161b26; position: sticky; top: 0; }
+        tr:hover { background: rgba(59, 130, 246, 0.05); }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+        }
+        .badge-pass { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .badge-fail { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .component-tag {
+            display: inline-block; padding: 1px 6px; border-radius: 3px;
+            font-size: 11px; font-weight: 500; background: rgba(59, 130, 246, 0.12); color: #60a5fa;
+        }
+        .detail { color: #6b7280; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Runtime Parameter Update API - Test Suite</h1>
+    <div class="subtitle">RUNTIME_PARAM_UPDATE_API.md 설계 문서 기반 전수 테스트</div>
+    <div class="summary" id="summary"></div>
+    <div id="results"></div>
+
+    <script>
+    // =========================================================================
+    // 1. TEST FRAMEWORK
+    // =========================================================================
+    const results = [];
+    const capturedWarns = [];
+    const originalWarn = console.warn;
+    console.warn = (...args) => { capturedWarns.push(args.join(' ')); originalWarn.apply(console, args); };
+
+    function assert(condition, message) { if (!condition) throw new Error(message || 'Assertion failed'); }
+    function assertEq(actual, expected, label) {
+        if (actual !== expected) throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+    }
+    function assertArrayEq(actual, expected, label) {
+        const a = JSON.stringify([...actual].sort());
+        const e = JSON.stringify([...expected].sort());
+        if (a !== e) throw new Error(`${label}: expected ${e}, got ${a}`);
+    }
+    function assertIncludes(arr, item, label) {
+        if (!arr.includes(item)) throw new Error(`${label}: ${JSON.stringify(arr)} does not include ${JSON.stringify(item)}`);
+    }
+    function assertNotIncludes(arr, item, label) {
+        if (arr.includes(item)) throw new Error(`${label}: ${JSON.stringify(arr)} should not include ${JSON.stringify(item)}`);
+    }
+    function assertWarnCaptured(keyword) {
+        const found = capturedWarns.some(w => w.includes(keyword));
+        if (!found) throw new Error(`Expected console.warn containing "${keyword}"`);
+    }
+
+    function test(category, component, name, fn) {
+        capturedWarns.length = 0;
+        try { fn(); results.push({ category, component, name, pass: true }); }
+        catch (e) { results.push({ category, component, name, pass: false, error: e.message }); }
+    }
+
+    // =========================================================================
+    // 2. API FUNCTIONS (실제 register.js에서 복사)
+    // =========================================================================
+
+    // --- Category A: updateTrendParams (공통) ---
+    function updateTrendParams(options) {
+        const { datasetNames } = this.config;
+        const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+        if (!trendInfo) return;
+        const { timeRange, interval, apiEndpoint, timeField } = options;
+        if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
+        if (interval !== undefined)    trendInfo.param.interval = interval;
+        if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
+        if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+    }
+
+    // --- Category B-1: updateUpsTabMetric (UPS) ---
+    function updateUpsTabMetric(tabName, options) {
+        const { datasetNames, chart } = this.config;
+        const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+        if (!trendInfo) return;
+        const tab = chart.tabs[tabName];
+        if (!tab) return;
+        const { inputCode, outputCode, statsKey, label, unit } = options;
+        if ((inputCode !== undefined || outputCode !== undefined) && statsKey === undefined) {
+            console.warn(`[updateUpsTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+            return;
+        }
+        if (inputCode !== undefined) { tab.inputCode = inputCode; this.config.api.statsKeyMap[inputCode] = statsKey; }
+        if (outputCode !== undefined) { tab.outputCode = outputCode; this.config.api.statsKeyMap[outputCode] = statsKey; }
+        if (label !== undefined) tab.label = label;
+        if (unit !== undefined)  tab.unit = unit;
+        rebuildMetricCodesUps.call(this, trendInfo);
+    }
+    function rebuildMetricCodesUps(trendInfo) {
+        const codes = trendInfo.param.metricCodes; codes.length = 0;
+        const { tabs } = this.config.chart;
+        Object.values(tabs).forEach(tab => {
+            if (tab.inputCode && !codes.includes(tab.inputCode))   codes.push(tab.inputCode);
+            if (tab.outputCode && !codes.includes(tab.outputCode)) codes.push(tab.outputCode);
+        });
+    }
+
+    // --- Category B-2: updatePduTabMetric (PDU) ---
+    function updatePduTabMetric(tabName, options) {
+        const { datasetNames, chart } = this.config;
+        const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+        if (!trendInfo) return;
+        const tab = chart.tabs[tabName];
+        if (!tab) return;
+        const { metricCode, statsKey, label, unit, color, scale } = options;
+        if (metricCode !== undefined && statsKey === undefined) {
+            console.warn(`[updatePduTabMetric] metricCode 변경 시 statsKey 필수 (tab: ${tabName})`);
+            return;
+        }
+        if (metricCode !== undefined) { tab.metricCode = metricCode; this.config.api.statsKeyMap[metricCode] = statsKey; }
+        if (label !== undefined) tab.label = label;
+        if (unit !== undefined)  tab.unit = unit;
+        if (color !== undefined) tab.color = color;
+        if (scale !== undefined) tab.scale = scale;
+        rebuildMetricCodesPdu.call(this, trendInfo);
+    }
+    function rebuildMetricCodesPdu(trendInfo) {
+        const codes = trendInfo.param.metricCodes; codes.length = 0;
+        const { tabs } = this.config.chart;
+        Object.values(tabs).forEach(tab => {
+            if (tab.metricCode && !codes.includes(tab.metricCode)) codes.push(tab.metricCode);
+        });
+    }
+
+    // --- Category B-3: updateCracSeriesMetric (CRAC) ---
+    function updateCracSeriesMetric(seriesName, options) {
+        const { datasetNames, chart } = this.config;
+        const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+        if (!trendInfo) return;
+        const seriesConfig = chart.series[seriesName];
+        if (!seriesConfig) return;
+        const { metricCode, statsKey, scale, label } = options;
+        if (metricCode !== undefined && statsKey === undefined) {
+            console.warn(`[updateCracSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+            return;
+        }
+        if (metricCode !== undefined) { seriesConfig.metricCode = metricCode; this.config.api.statsKeyMap[metricCode] = statsKey; }
+        if (scale !== undefined) seriesConfig.scale = scale;
+        if (label !== undefined) seriesConfig.label = label;
+        rebuildMetricCodesSeries.call(this, trendInfo);
+    }
+
+    // --- Category B-4: updateSensorSeriesMetric (Sensor) ---
+    function updateSensorSeriesMetric(seriesName, options) {
+        const { datasetNames, chart } = this.config;
+        const trendInfo = this.datasetInfo.find(d => d.datasetName === datasetNames.metricHistory);
+        if (!trendInfo) return;
+        const seriesConfig = chart.series[seriesName];
+        if (!seriesConfig) return;
+        const { metricCode, statsKey, scale, label } = options;
+        if (metricCode !== undefined && statsKey === undefined) {
+            console.warn(`[updateSensorSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+            return;
+        }
+        if (metricCode !== undefined) { seriesConfig.metricCode = metricCode; this.config.api.statsKeyMap[metricCode] = statsKey; }
+        if (scale !== undefined) seriesConfig.scale = scale;
+        if (label !== undefined) seriesConfig.label = label;
+        rebuildMetricCodesSeries.call(this, trendInfo);
+    }
+
+    // CRAC/Sensor 공통 rebuildMetricCodes
+    function rebuildMetricCodesSeries(trendInfo) {
+        const codes = trendInfo.param.metricCodes; codes.length = 0;
+        const { series } = this.config.chart;
+        Object.values(series).forEach(s => {
+            if (s.metricCode && !codes.includes(s.metricCode)) codes.push(s.metricCode);
+        });
+    }
+
+    // --- Category C: updateGlobalParams (공통) ---
+    function updateGlobalParams(options) {
+        const { assetKey, baseUrl, locale } = options;
+        if (assetKey !== undefined) this._defaultAssetKey = assetKey;
+        if (baseUrl !== undefined)  this._baseUrl = baseUrl;
+        if (locale !== undefined)   this._locale = locale;
+        this.datasetInfo.forEach(d => {
+            if (assetKey !== undefined) d.param.assetKey = assetKey;
+            if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
+            if (locale !== undefined)   d.param.locale = locale;
+        });
+    }
+
+    // --- Category D: updateRefreshInterval (공통) ---
+    function updateRefreshInterval(datasetName, interval) {
+        const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+        if (!target) return;
+        target.refreshInterval = interval;
+    }
+
+    // =========================================================================
+    // 3. MOCK FACTORY (각 컴포넌트의 config/datasetInfo를 실제와 동일하게 생성)
+    // =========================================================================
+
+    function createUpsMock() {
+        const ctx = {
+            _defaultAssetKey: 'UPS_001', _baseUrl: '10.23.128.140:8811', _locale: 'ko',
+            config: {
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified', metricLatest: 'metricLatest',
+                    metricHistory: 'metricHistoryStats', modelDetail: 'modelDetail', vendorDetail: 'vendorDetail',
+                },
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h', timeRange: 86400000,
+                        metricCodes: ['UPS.INPUT_A_SUM', 'UPS.OUTPUT_A_SUM', 'UPS.INPUT_V_AVG', 'UPS.OUTPUT_V_AVG', 'UPS.INPUT_F_AVG', 'UPS.OUTPUT_F_AVG'],
+                        statsKeys: [], timeField: 'time',
+                    },
+                    statsKeyMap: {
+                        'UPS.INPUT_A_SUM': 'sum', 'UPS.OUTPUT_A_SUM': 'sum',
+                        'UPS.INPUT_V_AVG': 'avg', 'UPS.OUTPUT_V_AVG': 'avg',
+                        'UPS.INPUT_F_AVG': 'avg', 'UPS.OUTPUT_F_AVG': 'avg',
+                    },
+                },
+                chart: {
+                    tabs: {
+                        current:   { label: '입/출력 전류',   unit: 'A',  inputCode: 'UPS.INPUT_A_SUM',  outputCode: 'UPS.OUTPUT_A_SUM' },
+                        voltage:   { label: '입/출력 전압',   unit: 'V',  inputCode: 'UPS.INPUT_V_AVG',  outputCode: 'UPS.OUTPUT_V_AVG' },
+                        frequency: { label: '입/출력 주파수', unit: 'Hz', inputCode: 'UPS.INPUT_F_AVG',  outputCode: 'UPS.OUTPUT_F_AVG' },
+                    },
+                },
+            },
+            datasetInfo: [],
+        };
+        const baseParam = { baseUrl: ctx._baseUrl, assetKey: ctx._defaultAssetKey, locale: ctx._locale };
+        ctx.datasetInfo = [
+            { datasetName: 'assetDetailUnified', param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+            { datasetName: 'metricLatest', param: { ...baseParam }, render: ['renderPowerStatus'], refreshInterval: 5000 },
+            { datasetName: 'metricHistoryStats', param: { ...baseParam, ...ctx.config.api.trendParams, apiEndpoint: ctx.config.api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+        ];
+        ctx.updateTrendParams = updateTrendParams.bind(ctx);
+        ctx.updateUpsTabMetric = updateUpsTabMetric.bind(ctx);
+        ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
+        ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        return ctx;
+    }
+
+    function createPduMock() {
+        const ctx = {
+            _defaultAssetKey: 'PDU_001', _baseUrl: '10.23.128.140:8811', _locale: 'ko',
+            config: {
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified', metricHistory: 'metricHistoryStats',
+                    modelDetail: 'modelDetail', vendorDetail: 'vendorDetail',
+                },
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h', timeRange: 86400000,
+                        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ'],
+                        statsKeys: [], timeField: 'time',
+                    },
+                    statsKeyMap: {
+                        'DIST.V_LN_AVG': 'avg', 'DIST.CURRENT_AVG_A': 'avg',
+                        'DIST.ACTIVE_POWER_TOTAL_KW': 'avg', 'DIST.FREQUENCY_HZ': 'avg',
+                    },
+                },
+                chart: {
+                    tabs: {
+                        voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',   unit: 'V',   color: '#3b82f6', scale: 1.0 },
+                        current:   { metricCode: 'DIST.CURRENT_AVG_A',         label: '평균 전류',   unit: 'A',   color: '#f59e0b', scale: 1.0 },
+                        power:     { metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW', label: '전력사용량',  unit: 'kW',  scale: 1.0, comparison: true, series: { today: { label: '금일', color: '#3b82f6' }, yesterday: { label: '전일', color: '#94a3b8' } } },
+                        frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',      unit: 'Hz',  color: '#22c55e', scale: 1.0 },
+                    },
+                },
+            },
+            datasetInfo: [],
+        };
+        const baseParam = { baseUrl: ctx._baseUrl, assetKey: ctx._defaultAssetKey, locale: ctx._locale };
+        ctx.datasetInfo = [
+            { datasetName: 'assetDetailUnified', param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+            { datasetName: 'metricHistoryStats', param: { ...baseParam, ...ctx.config.api.trendParams, apiEndpoint: ctx.config.api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+        ];
+        ctx.updateTrendParams = updateTrendParams.bind(ctx);
+        ctx.updatePduTabMetric = updatePduTabMetric.bind(ctx);
+        ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
+        ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        return ctx;
+    }
+
+    function createCracMock() {
+        const ctx = {
+            _defaultAssetKey: 'CRAC_001', _baseUrl: '10.23.128.140:8811', _locale: 'ko',
+            config: {
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified', metricLatest: 'metricLatest',
+                    metricHistory: 'metricHistoryStats', modelDetail: 'modelDetail', vendorDetail: 'vendorDetail',
+                },
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h', timeRange: 86400000,
+                        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
+                        statsKeys: ['avg'], timeField: 'time',
+                    },
+                    statsKeyMap: { 'CRAC.RETURN_TEMP': 'avg', 'CRAC.RETURN_HUMIDITY': 'avg' },
+                },
+                chart: {
+                    series: {
+                        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 0.1 },
+                        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 0.1 },
+                    },
+                },
+            },
+            datasetInfo: [],
+        };
+        const baseParam = { baseUrl: ctx._baseUrl, assetKey: ctx._defaultAssetKey, locale: ctx._locale };
+        ctx.datasetInfo = [
+            { datasetName: 'assetDetailUnified', param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+            { datasetName: 'metricLatest', param: { ...baseParam }, render: ['renderStatusCards', 'renderIndicators'], refreshInterval: 5000 },
+            { datasetName: 'metricHistoryStats', param: { ...baseParam, ...ctx.config.api.trendParams, apiEndpoint: ctx.config.api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+        ];
+        ctx.updateTrendParams = updateTrendParams.bind(ctx);
+        ctx.updateCracSeriesMetric = updateCracSeriesMetric.bind(ctx);
+        ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
+        ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        return ctx;
+    }
+
+    function createSensorMock() {
+        const ctx = {
+            _defaultAssetKey: 'SENSOR_001', _baseUrl: '10.23.128.140:8811', _locale: 'ko',
+            config: {
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified', metricLatest: 'metricLatest',
+                    metricHistory: 'metricHistoryStats', modelDetail: 'modelDetail', vendorDetail: 'vendorDetail',
+                },
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h', timeRange: 86400000,
+                        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
+                        statsKeys: ['avg'], timeField: 'time',
+                    },
+                    statsKeyMap: { 'SENSOR.TEMP': 'avg', 'SENSOR.HUMIDITY': 'avg' },
+                },
+                chart: {
+                    series: {
+                        temp:     { metricCode: 'SENSOR.TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 1.0 },
+                        humidity: { metricCode: 'SENSOR.HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 1.0 },
+                    },
+                },
+            },
+            datasetInfo: [],
+        };
+        const baseParam = { baseUrl: ctx._baseUrl, assetKey: ctx._defaultAssetKey, locale: ctx._locale };
+        ctx.datasetInfo = [
+            { datasetName: 'assetDetailUnified', param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+            { datasetName: 'metricLatest', param: { ...baseParam }, render: ['renderStatusCards', 'renderIndicators'], refreshInterval: 5000 },
+            { datasetName: 'metricHistoryStats', param: { ...baseParam, ...ctx.config.api.trendParams, apiEndpoint: ctx.config.api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+        ];
+        ctx.updateTrendParams = updateTrendParams.bind(ctx);
+        ctx.updateSensorSeriesMetric = updateSensorSeriesMetric.bind(ctx);
+        ctx.updateGlobalParams = updateGlobalParams.bind(ctx);
+        ctx.updateRefreshInterval = updateRefreshInterval.bind(ctx);
+        return ctx;
+    }
+
+    // trendInfo 헬퍼
+    function getTrendInfo(ctx) {
+        return ctx.datasetInfo.find(d => d.datasetName === ctx.config.datasetNames.metricHistory);
+    }
+
+    // =========================================================================
+    // 4. TEST CASES
+    // =========================================================================
+
+    // ── Category A: updateTrendParams ──
+
+    ['UPS', 'PDU', 'CRAC', 'Sensor'].forEach(comp => {
+        const factory = { UPS: createUpsMock, PDU: createPduMock, CRAC: createCracMock, Sensor: createSensorMock }[comp];
+
+        test('A: updateTrendParams', comp, 'timeRange만 변경', () => {
+            const ctx = factory();
+            ctx.updateTrendParams({ timeRange: 3600000 });
+            assertEq(getTrendInfo(ctx).param.timeRange, 3600000, 'timeRange');
+            assertEq(getTrendInfo(ctx).param.interval, '1h', 'interval 유지');
+        });
+
+        test('A: updateTrendParams', comp, 'interval만 변경', () => {
+            const ctx = factory();
+            ctx.updateTrendParams({ interval: '5m' });
+            assertEq(getTrendInfo(ctx).param.interval, '5m', 'interval');
+            assertEq(getTrendInfo(ctx).param.timeRange, 86400000, 'timeRange 유지');
+        });
+
+        test('A: updateTrendParams', comp, 'apiEndpoint만 변경', () => {
+            const ctx = factory();
+            ctx.updateTrendParams({ apiEndpoint: '/api/v2/mhs/l' });
+            assertEq(getTrendInfo(ctx).param.apiEndpoint, '/api/v2/mhs/l', 'apiEndpoint');
+        });
+
+        test('A: updateTrendParams', comp, 'timeField만 변경', () => {
+            const ctx = factory();
+            ctx.updateTrendParams({ timeField: 'eventedAt' });
+            assertEq(getTrendInfo(ctx).param.timeField, 'eventedAt', 'timeField');
+        });
+
+        test('A: updateTrendParams', comp, '복수 파라미터 동시 변경', () => {
+            const ctx = factory();
+            ctx.updateTrendParams({ timeRange: 7200000, interval: '15m', apiEndpoint: '/api/v3', timeField: 'ts' });
+            const p = getTrendInfo(ctx).param;
+            assertEq(p.timeRange, 7200000, 'timeRange');
+            assertEq(p.interval, '15m', 'interval');
+            assertEq(p.apiEndpoint, '/api/v3', 'apiEndpoint');
+            assertEq(p.timeField, 'ts', 'timeField');
+        });
+
+        test('A: updateTrendParams', comp, 'undefined 전달 시 기존값 유지', () => {
+            const ctx = factory();
+            const before = { ...getTrendInfo(ctx).param };
+            ctx.updateTrendParams({});
+            const after = getTrendInfo(ctx).param;
+            assertEq(after.timeRange, before.timeRange, 'timeRange');
+            assertEq(after.interval, before.interval, 'interval');
+            assertEq(after.apiEndpoint, before.apiEndpoint, 'apiEndpoint');
+            assertEq(after.timeField, before.timeField, 'timeField');
+        });
+
+        test('A: updateTrendParams', comp, 'trendInfo 없을 때 에러 없이 무시', () => {
+            const ctx = factory();
+            ctx.datasetInfo = ctx.datasetInfo.filter(d => d.datasetName !== ctx.config.datasetNames.metricHistory);
+            ctx.updateTrendParams({ timeRange: 999 }); // 에러 없이 통과
+            assert(true);
+        });
+    });
+
+    // ── Category B-1: updateUpsTabMetric (UPS) ──
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'inputCode + outputCode + statsKey → 3곳 동기화', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('voltage', { inputCode: 'UPS.BATT_V_IN', outputCode: 'UPS.BATT_V_OUT', statsKey: 'avg' });
+        const tab = ctx.config.chart.tabs.voltage;
+        assertEq(tab.inputCode, 'UPS.BATT_V_IN', 'inputCode');
+        assertEq(tab.outputCode, 'UPS.BATT_V_OUT', 'outputCode');
+        assertEq(ctx.config.api.statsKeyMap['UPS.BATT_V_IN'], 'avg', 'statsKeyMap input');
+        assertEq(ctx.config.api.statsKeyMap['UPS.BATT_V_OUT'], 'avg', 'statsKeyMap output');
+        assertIncludes(getTrendInfo(ctx).param.metricCodes, 'UPS.BATT_V_IN', 'metricCodes input');
+        assertIncludes(getTrendInfo(ctx).param.metricCodes, 'UPS.BATT_V_OUT', 'metricCodes output');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'inputCode만 + statsKey → inputCode만 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('voltage', { inputCode: 'UPS.NEW_INPUT', statsKey: 'max' });
+        assertEq(ctx.config.chart.tabs.voltage.inputCode, 'UPS.NEW_INPUT', 'inputCode');
+        assertEq(ctx.config.chart.tabs.voltage.outputCode, 'UPS.OUTPUT_V_AVG', 'outputCode 유지');
+        assertEq(ctx.config.api.statsKeyMap['UPS.NEW_INPUT'], 'max', 'statsKeyMap');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'outputCode만 + statsKey → outputCode만 변경', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('current', { outputCode: 'UPS.NEW_OUTPUT', statsKey: 'sum' });
+        assertEq(ctx.config.chart.tabs.current.outputCode, 'UPS.NEW_OUTPUT', 'outputCode');
+        assertEq(ctx.config.chart.tabs.current.inputCode, 'UPS.INPUT_A_SUM', 'inputCode 유지');
+        assertEq(ctx.config.api.statsKeyMap['UPS.NEW_OUTPUT'], 'sum', 'statsKeyMap');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'label만 변경 (statsKey 불필요)', () => {
+        const ctx = createUpsMock();
+        const origInput = ctx.config.chart.tabs.voltage.inputCode;
+        ctx.updateUpsTabMetric('voltage', { label: '배터리 전압' });
+        assertEq(ctx.config.chart.tabs.voltage.label, '배터리 전압', 'label');
+        assertEq(ctx.config.chart.tabs.voltage.inputCode, origInput, 'inputCode 유지');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'unit만 변경 (statsKey 불필요)', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('frequency', { unit: 'kHz' });
+        assertEq(ctx.config.chart.tabs.frequency.unit, 'kHz', 'unit');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'metricCode 변경 + statsKey 누락 → warn + 무시', () => {
+        const ctx = createUpsMock();
+        const origInput = ctx.config.chart.tabs.voltage.inputCode;
+        ctx.updateUpsTabMetric('voltage', { inputCode: 'UPS.SHOULD_NOT_APPLY' });
+        assertWarnCaptured('[updateUpsTabMetric]');
+        assertEq(ctx.config.chart.tabs.voltage.inputCode, origInput, 'inputCode 변경 안됨');
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', '존재하지 않는 tabName → 무시', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('nonexistent', { label: 'test' }); // 에러 없이 통과
+        assert(true);
+    });
+
+    test('B-1: updateUpsTabMetric', 'UPS', 'rebuildMetricCodes 후 metricCodes 정확성', () => {
+        const ctx = createUpsMock();
+        ctx.updateUpsTabMetric('voltage', { inputCode: 'UPS.NEW_V_IN', outputCode: 'UPS.NEW_V_OUT', statsKey: 'avg' });
+        const codes = getTrendInfo(ctx).param.metricCodes;
+        // current 탭 2개 + voltage 탭 2개(새 값) + frequency 탭 2개 = 6개
+        assertEq(codes.length, 6, 'metricCodes length');
+        assertIncludes(codes, 'UPS.NEW_V_IN', 'new inputCode');
+        assertIncludes(codes, 'UPS.NEW_V_OUT', 'new outputCode');
+        assertNotIncludes(codes, 'UPS.INPUT_V_AVG', 'old inputCode 제거됨');
+        assertNotIncludes(codes, 'UPS.OUTPUT_V_AVG', 'old outputCode 제거됨');
+        assertIncludes(codes, 'UPS.INPUT_A_SUM', 'current input 유지');
+        assertIncludes(codes, 'UPS.INPUT_F_AVG', 'frequency input 유지');
+    });
+
+    // ── Category B-2: updatePduTabMetric (PDU) ──
+
+    test('B-2: updatePduTabMetric', 'PDU', 'metricCode + statsKey → 3곳 동기화', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('voltage', { metricCode: 'DIST.V_LL_AVG', statsKey: 'avg' });
+        assertEq(ctx.config.chart.tabs.voltage.metricCode, 'DIST.V_LL_AVG', 'metricCode');
+        assertEq(ctx.config.api.statsKeyMap['DIST.V_LL_AVG'], 'avg', 'statsKeyMap');
+        assertIncludes(getTrendInfo(ctx).param.metricCodes, 'DIST.V_LL_AVG', 'metricCodes');
+        assertNotIncludes(getTrendInfo(ctx).param.metricCodes, 'DIST.V_LN_AVG', 'old code 제거됨');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'label만 변경', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('voltage', { label: '선간 전압' });
+        assertEq(ctx.config.chart.tabs.voltage.label, '선간 전압', 'label');
+        assertEq(ctx.config.chart.tabs.voltage.metricCode, 'DIST.V_LN_AVG', 'metricCode 유지');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'unit만 변경', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('current', { unit: 'mA' });
+        assertEq(ctx.config.chart.tabs.current.unit, 'mA', 'unit');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'color만 변경', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('voltage', { color: '#ff0000' });
+        assertEq(ctx.config.chart.tabs.voltage.color, '#ff0000', 'color');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'scale만 변경', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('power', { scale: 0.001 });
+        assertEq(ctx.config.chart.tabs.power.scale, 0.001, 'scale');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'metricCode 변경 + statsKey 누락 → warn + 무시', () => {
+        const ctx = createPduMock();
+        const orig = ctx.config.chart.tabs.voltage.metricCode;
+        ctx.updatePduTabMetric('voltage', { metricCode: 'DIST.SHOULD_NOT' });
+        assertWarnCaptured('[updatePduTabMetric]');
+        assertEq(ctx.config.chart.tabs.voltage.metricCode, orig, 'metricCode 변경 안됨');
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', '존재하지 않는 tabName → 무시', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('nonexistent', { label: 'test' });
+        assert(true);
+    });
+
+    test('B-2: updatePduTabMetric', 'PDU', 'comparison 탭(power) metricCode 변경 → comparison 유지', () => {
+        const ctx = createPduMock();
+        ctx.updatePduTabMetric('power', { metricCode: 'DIST.REACTIVE_POWER', statsKey: 'avg' });
+        assertEq(ctx.config.chart.tabs.power.metricCode, 'DIST.REACTIVE_POWER', 'metricCode');
+        assertEq(ctx.config.chart.tabs.power.comparison, true, 'comparison 유지');
+        assertEq(ctx.config.chart.tabs.power.series.today.label, '금일', 'series.today 유지');
+    });
+
+    // ── Category B-3: updateCracSeriesMetric (CRAC) ──
+
+    test('B-3: updateCracSeriesMetric', 'CRAC', 'metricCode + statsKey → 3곳 동기화', () => {
+        const ctx = createCracMock();
+        ctx.updateCracSeriesMetric('temp', { metricCode: 'CRAC.SUPPLY_TEMP', statsKey: 'avg' });
+        assertEq(ctx.config.chart.series.temp.metricCode, 'CRAC.SUPPLY_TEMP', 'metricCode');
+        assertEq(ctx.config.api.statsKeyMap['CRAC.SUPPLY_TEMP'], 'avg', 'statsKeyMap');
+        assertIncludes(getTrendInfo(ctx).param.metricCodes, 'CRAC.SUPPLY_TEMP', 'metricCodes');
+        assertNotIncludes(getTrendInfo(ctx).param.metricCodes, 'CRAC.RETURN_TEMP', 'old code 제거됨');
+    });
+
+    test('B-3: updateCracSeriesMetric', 'CRAC', 'scale만 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracSeriesMetric('temp', { scale: 1.0 });
+        assertEq(ctx.config.chart.series.temp.scale, 1.0, 'scale');
+        assertEq(ctx.config.chart.series.temp.metricCode, 'CRAC.RETURN_TEMP', 'metricCode 유지');
+    });
+
+    test('B-3: updateCracSeriesMetric', 'CRAC', 'label만 변경', () => {
+        const ctx = createCracMock();
+        ctx.updateCracSeriesMetric('humidity', { label: '상대습도' });
+        assertEq(ctx.config.chart.series.humidity.label, '상대습도', 'label');
+    });
+
+    test('B-3: updateCracSeriesMetric', 'CRAC', 'metricCode 변경 + statsKey 누락 → warn + 무시', () => {
+        const ctx = createCracMock();
+        const orig = ctx.config.chart.series.temp.metricCode;
+        ctx.updateCracSeriesMetric('temp', { metricCode: 'CRAC.SHOULD_NOT' });
+        assertWarnCaptured('[updateCracSeriesMetric]');
+        assertEq(ctx.config.chart.series.temp.metricCode, orig, 'metricCode 변경 안됨');
+    });
+
+    test('B-3: updateCracSeriesMetric', 'CRAC', '존재하지 않는 seriesName → 무시', () => {
+        const ctx = createCracMock();
+        ctx.updateCracSeriesMetric('nonexistent', { label: 'test' });
+        assert(true);
+    });
+
+    // ── Category B-4: updateSensorSeriesMetric (Sensor) ──
+
+    test('B-4: updateSensorSeriesMetric', 'Sensor', 'metricCode + statsKey → 3곳 동기화', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorSeriesMetric('temp', { metricCode: 'SENSOR.TEMP_EXT', statsKey: 'max' });
+        assertEq(ctx.config.chart.series.temp.metricCode, 'SENSOR.TEMP_EXT', 'metricCode');
+        assertEq(ctx.config.api.statsKeyMap['SENSOR.TEMP_EXT'], 'max', 'statsKeyMap');
+        assertIncludes(getTrendInfo(ctx).param.metricCodes, 'SENSOR.TEMP_EXT', 'metricCodes');
+        assertNotIncludes(getTrendInfo(ctx).param.metricCodes, 'SENSOR.TEMP', 'old code 제거됨');
+    });
+
+    test('B-4: updateSensorSeriesMetric', 'Sensor', 'scale만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorSeriesMetric('humidity', { scale: 0.01 });
+        assertEq(ctx.config.chart.series.humidity.scale, 0.01, 'scale');
+        assertEq(ctx.config.chart.series.humidity.metricCode, 'SENSOR.HUMIDITY', 'metricCode 유지');
+    });
+
+    test('B-4: updateSensorSeriesMetric', 'Sensor', 'label만 변경', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorSeriesMetric('temp', { label: '외기온도' });
+        assertEq(ctx.config.chart.series.temp.label, '외기온도', 'label');
+    });
+
+    test('B-4: updateSensorSeriesMetric', 'Sensor', 'metricCode 변경 + statsKey 누락 → warn + 무시', () => {
+        const ctx = createSensorMock();
+        const orig = ctx.config.chart.series.temp.metricCode;
+        ctx.updateSensorSeriesMetric('temp', { metricCode: 'SENSOR.SHOULD_NOT' });
+        assertWarnCaptured('[updateSensorSeriesMetric]');
+        assertEq(ctx.config.chart.series.temp.metricCode, orig, 'metricCode 변경 안됨');
+    });
+
+    test('B-4: updateSensorSeriesMetric', 'Sensor', '존재하지 않는 seriesName → 무시', () => {
+        const ctx = createSensorMock();
+        ctx.updateSensorSeriesMetric('nonexistent', { label: 'test' });
+        assert(true);
+    });
+
+    // ── Category C: updateGlobalParams ──
+
+    ['UPS', 'PDU', 'CRAC', 'Sensor'].forEach(comp => {
+        const factory = { UPS: createUpsMock, PDU: createPduMock, CRAC: createCracMock, Sensor: createSensorMock }[comp];
+
+        test('C: updateGlobalParams', comp, 'assetKey만 변경 → 내부상태 + 전체 datasetInfo', () => {
+            const ctx = factory();
+            ctx.updateGlobalParams({ assetKey: 'NEW_ASSET' });
+            assertEq(ctx._defaultAssetKey, 'NEW_ASSET', '_defaultAssetKey');
+            ctx.datasetInfo.forEach((d, i) => assertEq(d.param.assetKey, 'NEW_ASSET', `datasetInfo[${i}].param.assetKey`));
+            assertEq(ctx._baseUrl, '10.23.128.140:8811', '_baseUrl 유지');
+            assertEq(ctx._locale, 'ko', '_locale 유지');
+        });
+
+        test('C: updateGlobalParams', comp, 'baseUrl만 변경 → 내부상태 + 전체 datasetInfo', () => {
+            const ctx = factory();
+            ctx.updateGlobalParams({ baseUrl: '192.168.1.100:9090' });
+            assertEq(ctx._baseUrl, '192.168.1.100:9090', '_baseUrl');
+            ctx.datasetInfo.forEach((d, i) => assertEq(d.param.baseUrl, '192.168.1.100:9090', `datasetInfo[${i}].param.baseUrl`));
+            assertEq(ctx._defaultAssetKey, ctx.datasetInfo[0].param.assetKey, 'assetKey 유지');
+        });
+
+        test('C: updateGlobalParams', comp, 'locale만 변경 → 내부상태 + 전체 datasetInfo', () => {
+            const ctx = factory();
+            ctx.updateGlobalParams({ locale: 'en' });
+            assertEq(ctx._locale, 'en', '_locale');
+            ctx.datasetInfo.forEach((d, i) => assertEq(d.param.locale, 'en', `datasetInfo[${i}].param.locale`));
+        });
+
+        test('C: updateGlobalParams', comp, '3개 동시 변경', () => {
+            const ctx = factory();
+            ctx.updateGlobalParams({ assetKey: 'ALL_NEW', baseUrl: '10.0.0.1:8080', locale: 'ja' });
+            assertEq(ctx._defaultAssetKey, 'ALL_NEW', '_defaultAssetKey');
+            assertEq(ctx._baseUrl, '10.0.0.1:8080', '_baseUrl');
+            assertEq(ctx._locale, 'ja', '_locale');
+            ctx.datasetInfo.forEach((d, i) => {
+                assertEq(d.param.assetKey, 'ALL_NEW', `datasetInfo[${i}].assetKey`);
+                assertEq(d.param.baseUrl, '10.0.0.1:8080', `datasetInfo[${i}].baseUrl`);
+                assertEq(d.param.locale, 'ja', `datasetInfo[${i}].locale`);
+            });
+        });
+
+        test('C: updateGlobalParams', comp, 'undefined 전달 시 기존값 유지', () => {
+            const ctx = factory();
+            const origAsset = ctx._defaultAssetKey;
+            const origUrl = ctx._baseUrl;
+            const origLocale = ctx._locale;
+            ctx.updateGlobalParams({});
+            assertEq(ctx._defaultAssetKey, origAsset, '_defaultAssetKey 유지');
+            assertEq(ctx._baseUrl, origUrl, '_baseUrl 유지');
+            assertEq(ctx._locale, origLocale, '_locale 유지');
+        });
+    });
+
+    // ── Category D: updateRefreshInterval ──
+
+    ['UPS', 'PDU', 'CRAC', 'Sensor'].forEach(comp => {
+        const factory = { UPS: createUpsMock, PDU: createPduMock, CRAC: createCracMock, Sensor: createSensorMock }[comp];
+
+        test('D: updateRefreshInterval', comp, '유효한 datasetName → refreshInterval 변경', () => {
+            const ctx = factory();
+            ctx.updateRefreshInterval('metricHistoryStats', 10000);
+            const target = ctx.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+            assertEq(target.refreshInterval, 10000, 'refreshInterval');
+        });
+
+        test('D: updateRefreshInterval', comp, 'interval = 0 → 갱신 중지', () => {
+            const ctx = factory();
+            ctx.updateRefreshInterval('metricHistoryStats', 0);
+            const target = ctx.datasetInfo.find(d => d.datasetName === 'metricHistoryStats');
+            assertEq(target.refreshInterval, 0, 'refreshInterval = 0');
+        });
+
+        test('D: updateRefreshInterval', comp, '존재하지 않는 datasetName → 무시', () => {
+            const ctx = factory();
+            ctx.updateRefreshInterval('nonExistentDataset', 9999);
+            assert(true);
+        });
+    });
+
+    // =========================================================================
+    // 5. RENDER RESULTS
+    // =========================================================================
+
+    const totalCount = results.length;
+    const passCount = results.filter(r => r.pass).length;
+    const failCount = totalCount - passCount;
+
+    // Summary
+    document.getElementById('summary').innerHTML = `
+        <div class="summary-item"><span class="count total">${totalCount}</span> Total</div>
+        <div class="summary-item"><span class="count pass">${passCount}</span> Pass</div>
+        <div class="summary-item"><span class="count ${failCount > 0 ? 'fail' : 'pass'}">${failCount}</span> Fail</div>
+    `;
+
+    // Group by category
+    const groups = {};
+    results.forEach(r => {
+        if (!groups[r.category]) groups[r.category] = [];
+        groups[r.category].push(r);
+    });
+
+    let html = '';
+    Object.entries(groups).forEach(([category, items]) => {
+        const catPass = items.filter(r => r.pass).length;
+        const catTotal = items.length;
+        html += `<div class="category-header">${category} (${catPass}/${catTotal})</div>`;
+        html += `<table><thead><tr><th style="width:90px">Component</th><th>Test</th><th style="width:60px">Result</th><th>Detail</th></tr></thead><tbody>`;
+        items.forEach(r => {
+            const badge = r.pass ? '<span class="badge badge-pass">PASS</span>' : '<span class="badge badge-fail">FAIL</span>';
+            const detail = r.error ? `<span class="detail">${r.error}</span>` : '';
+            html += `<tr><td><span class="component-tag">${r.component}</span></td><td>${r.name}</td><td>${badge}</td><td>${detail}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+    });
+
+    document.getElementById('results').innerHTML = html;
+
+    // Console summary
+    console.log(`\n=== Runtime Param API Test Results ===`);
+    console.log(`Total: ${totalCount} | Pass: ${passCount} | Fail: ${failCount}`);
+    if (failCount > 0) {
+        console.log('\nFailed tests:');
+        results.filter(r => !r.pass).forEach(r => console.log(`  [${r.component}] ${r.name}: ${r.error}`));
+    }
+    </script>
+</body>
+</html>
