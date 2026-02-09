@@ -212,15 +212,15 @@ const FRAGMENT_SHADER = `
 `;
 
 // ─────────────────────────────────────────────────────────────
-// 기본 그라디언트 (18°C ~ 30°C)
+// 기본 그라디언트 (온도 프리셋: 17°C ~ 31°C)
 // ─────────────────────────────────────────────────────────────
 const DEFAULT_GRADIENT = {
-  0.0: '#0044ff',
-  0.2: '#00aaff',
-  0.4: '#00ffaa',
-  0.6: '#aaff00',
-  0.8: '#ffaa00',
-  1.0: '#ff0000',
+  0.00: '#1068D9',  // ≤17°C 과냉
+  0.29: '#4AA3DF',  // 18-21°C 정상(저온)
+  0.57: '#2ECC71',  // 22-25°C 최적
+  0.71: '#A3D977',  // 26-27°C 정상 상한
+  0.93: '#F7A318',  // 28-30°C 경고
+  1.00: '#E74C3C',  // ≥31°C 위험
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -231,7 +231,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   const config = Object.assign(
     {
       surfaceSize: { width: 20, depth: 20 },
-      temperatureRange: { min: 18, max: 30 },
+      temperatureRange: { min: 17, max: 31 },
+      gradient: null,
       heatmapResolution: 256,
       segments: 64,
       displacementScale: 3,
@@ -261,7 +262,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function initHeatmapCanvas() {
-    const { heatmapResolution, radius, blur, temperatureRange } = config;
+    const { heatmapResolution, radius, blur } = config;
 
     const colorCanvas = document.createElement('canvas');
     colorCanvas.width = heatmapResolution;
@@ -273,8 +274,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
     const heat = simpleheat(colorCanvas);
     heat.radius(radius, blur);
-    heat.max(temperatureRange.max);
-    heat.gradient(DEFAULT_GRADIENT);
+    heat.max(1);
+    heat.gradient(config.gradient || DEFAULT_GRADIENT);
 
     instance._heatmap.colorCanvas = colorCanvas;
     instance._heatmap.displacementCanvas = displacementCanvas;
@@ -465,10 +466,13 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     const centerX = hm.mesh.position.x;
     const centerZ = hm.mesh.position.z;
 
-    // 월드좌표 → 캔버스좌표 변환
+    // 월드좌표 → 캔버스좌표 변환 + 값 정규화 (0~1)
+    const { min, max } = config.temperatureRange;
+    const range = max - min || 1;
     const canvasData = dataPoints.map(function (point) {
       const coords = worldToCanvas(point.worldX, point.worldZ, centerX, centerZ);
-      return [coords[0], coords[1], point.temperature];
+      const normalized = Math.max(0, Math.min(1, (point.temperature - min) / range));
+      return [coords[0], coords[1], normalized];
     });
 
     // simpleheat 렌더링

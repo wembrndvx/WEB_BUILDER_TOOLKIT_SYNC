@@ -157,8 +157,8 @@
     HeatmapMixin._activeInstance = null;
 
     var DEFAULT_GRADIENT = {
-        0.0: '#0044ff', 0.2: '#00aaff', 0.4: '#00ffaa',
-        0.6: '#aaff00', 0.8: '#ffaa00', 1.0: '#ff0000',
+        0.00: '#1068D9', 0.29: '#4AA3DF', 0.57: '#2ECC71',
+        0.71: '#A3D977', 0.93: '#F7A318', 1.00: '#E74C3C',
     };
 
     var VERTEX_SHADER = 'mock_vertex';
@@ -167,7 +167,8 @@
     HeatmapMixin.applyHeatmapMixin = function (instance, options) {
         var config = Object.assign({
             surfaceSize: { width: 20, depth: 20 },
-            temperatureRange: { min: 18, max: 30 },
+            temperatureRange: { min: 17, max: 31 },
+            gradient: null,
             heatmapResolution: 256,
             segments: 64,
             displacementScale: 3,
@@ -197,8 +198,8 @@
             displacementCanvas.height = config.heatmapResolution;
             var heat = simpleheat(colorCanvas);
             heat.radius(config.radius, config.blur);
-            heat.max(config.temperatureRange.max);
-            heat.gradient(DEFAULT_GRADIENT);
+            heat.max(1);
+            heat.gradient(config.gradient || DEFAULT_GRADIENT);
             instance._heatmap.colorCanvas = colorCanvas;
             instance._heatmap.displacementCanvas = displacementCanvas;
             instance._heatmap.heat = heat;
@@ -421,6 +422,14 @@
         assertDeepEq(inst._heatmap.config.temperatureMetrics, ['SENSOR.HUMIDITY'], 'temperatureMetrics');
     });
 
+    test('A: OFF 상태 config 업데이트', 'Heatmap', 'gradient 변경 → config 반영', () => {
+        const inst = createMock();
+        const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+        inst.updateHeatmapConfig({ gradient: customGradient });
+        assertDeepEq(inst._heatmap.config.gradient, customGradient, 'gradient');
+        assertEq(inst._heatmapCallCount.createMesh, 0, 'rebuild 없음');
+    });
+
     test('A: OFF 상태 config 업데이트', 'Heatmap', '복수 옵션 동시 변경 → 모두 반영', () => {
         const inst = createMock();
         inst.updateHeatmapConfig({ radius: 80, blur: 40, opacity: 0.5, displacementScale: 5 });
@@ -559,6 +568,16 @@
         assertDeepEq(inst._heatmap.config.temperatureMetrics, ['SENSOR.HUMIDITY'], 'config 반영');
     });
 
+    test('C: ON + rebuild', 'Heatmap', 'gradient 변경 → destroy + rebuild', () => {
+        const inst = createMock();
+        activateHeatmap(inst);
+        const destroyBefore = inst._heatmapCallCount.destroy;
+        const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+        inst.updateHeatmapConfig({ gradient: customGradient });
+        assertEq(inst._heatmapCallCount.destroy, destroyBefore + 1, 'destroy 호출');
+        assertDeepEq(inst._heatmap.config.gradient, customGradient, 'config 반영');
+    });
+
     test('C: ON + rebuild', 'Heatmap', '혼합 (uniform + non-uniform) → rebuild로 처리', () => {
         const inst = createMock();
         activateHeatmap(inst);
@@ -602,6 +621,14 @@
         activateHeatmap(inst);
         assertEq(inst._heatmap.mesh.geometry._width, 50, 'geometry width');
         assertEq(inst._heatmap.mesh.geometry._depth, 50, 'geometry depth');
+    });
+
+    test('D: OFF→toggle 반영', 'Heatmap', 'OFF에서 gradient 변경 → toggle 시 적용', () => {
+        const inst = createMock();
+        const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+        inst.updateHeatmapConfig({ gradient: customGradient });
+        activateHeatmap(inst);
+        assertDeepEq(inst._heatmap.config.gradient, customGradient, 'config gradient');
     });
 
     test('D: OFF→toggle 반영', 'Heatmap', 'OFF에서 opacity 변경 → toggle 시 uniform 반영', () => {

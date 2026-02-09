@@ -7,13 +7,13 @@
 
 | 항목 | 값 |
 |------|---:|
-| **Total** | 40 |
-| **Pass** | 40 |
+| **Total** | 43 |
+| **Pass** | 43 |
 | **Fail** | 0 |
 
 ---
 
-## Category A: OFF 상태 config 업데이트 — 12 tests
+## Category A: OFF 상태 config 업데이트 — 13 tests
 
 히트맵 OFF 상태에서 `updateHeatmapConfig` 호출 시, config만 저장되고 mesh 생성/rebuild 없음.
 
@@ -170,7 +170,24 @@ inst.updateHeatmapConfig({ temperatureMetrics: ['SENSOR.HUMIDITY'] });
 
 ---
 
-### A-11. 복수 옵션 동시 변경 → 모두 반영
+### A-11. gradient 변경 → config 반영
+
+| Component | Result |
+|-----------|--------|
+| Heatmap | PASS |
+
+```javascript
+const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+inst.updateHeatmapConfig({ gradient: customGradient });
+```
+
+**검증**:
+- `inst._heatmap.config.gradient === customGradient`
+- `inst._heatmapCallCount.createMesh === 0` (rebuild 없음)
+
+---
+
+### A-12. 복수 옵션 동시 변경 → 모두 반영
 
 | Component | Result |
 |-----------|--------|
@@ -188,7 +205,7 @@ inst.updateHeatmapConfig({ radius: 80, blur: 40, opacity: 0.5, displacementScale
 
 ---
 
-### A-12. 빈 객체 전달 → 기존값 유지
+### A-13. 빈 객체 전달 → 기존값 유지
 
 | Component | Result |
 |-----------|--------|
@@ -297,7 +314,7 @@ inst.updateHeatmapConfig({ opacity: 0.5 });
 
 ---
 
-## Category C: ON + rebuild — 11 tests
+## Category C: ON + rebuild — 12 tests
 
 히트맵 ON 상태에서 non-uniform 키 변경 시, `destroyHeatmap()` → `createHeatmapMesh()` → `collectSensorData()` 전체 재생성.
 
@@ -423,7 +440,25 @@ inst.updateHeatmapConfig({ temperatureMetrics: ['SENSOR.HUMIDITY'] });
 
 ---
 
-### C-8. 혼합 (uniform + non-uniform) → rebuild로 처리
+### C-8. gradient 변경 → destroy + rebuild
+
+| Component | Result |
+|-----------|--------|
+| Heatmap | PASS |
+
+```javascript
+activateHeatmap(inst);
+const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+inst.updateHeatmapConfig({ gradient: customGradient });
+```
+
+**검증**:
+- `destroyHeatmap` 호출됨
+- `inst._heatmap.config.gradient === customGradient`
+
+---
+
+### C-9. 혼합 (uniform + non-uniform) → rebuild로 처리
 
 | Component | Result |
 |-----------|--------|
@@ -442,7 +477,7 @@ inst.updateHeatmapConfig({ opacity: 0.5, radius: 80 });
 
 ---
 
-### C-9. rebuild 후 activeInstance 유지
+### C-10. rebuild 후 activeInstance 유지
 
 | Component | Result |
 |-----------|--------|
@@ -459,7 +494,7 @@ inst.updateHeatmapConfig({ radius: 120 });
 
 ---
 
-### C-10. rebuild 후 scene에 mesh 존재
+### C-11. rebuild 후 scene에 mesh 존재
 
 | Component | Result |
 |-----------|--------|
@@ -475,7 +510,7 @@ inst.updateHeatmapConfig({ segments: 32 });
 
 ---
 
-## Category D: OFF→toggle 반영 — 3 tests
+## Category D: OFF→toggle 반영 — 4 tests
 
 OFF 상태에서 config 변경 후, 다음 `toggleHeatmap()` 시 변경된 config로 생성.
 
@@ -512,7 +547,24 @@ activateHeatmap(inst);
 
 ---
 
-### D-3. OFF에서 opacity 변경 → toggle 시 uniform 반영
+### D-3. OFF에서 gradient 변경 → toggle 시 적용
+
+| Component | Result |
+|-----------|--------|
+| Heatmap | PASS |
+
+```javascript
+const customGradient = { 0.0: '#0000ff', 0.5: '#00ff00', 1.0: '#ff0000' };
+inst.updateHeatmapConfig({ gradient: customGradient });
+activateHeatmap(inst);
+```
+
+**검증**:
+- `inst._heatmap.config.gradient === customGradient`
+
+---
+
+### D-4. OFF에서 opacity 변경 → toggle 시 uniform 반영
 
 | Component | Result |
 |-----------|--------|
@@ -717,6 +769,7 @@ inst.destroyPopup();
 | `heatmapResolution` | config만 저장 | **full rebuild** |
 | `temperatureRange` | config만 저장 | **full rebuild** |
 | `temperatureMetrics` | config만 저장 | **full rebuild** |
+| `gradient` | config만 저장 | **full rebuild** |
 | uniform + non-uniform 혼합 | config만 저장 | **full rebuild** |
 
 ---

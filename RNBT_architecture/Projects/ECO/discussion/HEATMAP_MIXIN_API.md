@@ -75,7 +75,8 @@ applyHeatmapMixin(instance, options)
 ```javascript
 applyHeatmapMixin(this, {
     surfaceSize:        { width: 20, depth: 20 },
-    temperatureRange:   { min: 18, max: 30 },
+    temperatureRange:   { min: 17, max: 31 },
+    gradient:           null,            // null = DEFAULT_GRADIENT (온도 프리셋)
     heatmapResolution:  256,
     segments:           64,
     displacementScale:  3,
@@ -108,28 +109,63 @@ surfaceSize: { width: 10, depth: 10 }   // 좁은 영역
 
 ---
 
-#### `temperatureRange` — 온도 매핑 범위
+#### `temperatureRange` — 값 매핑 범위
 
 | 속성 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
-| `min` | number | `18` | 최저 온도 (파란색) |
-| `max` | number | `30` | 최고 온도 (빨간색) |
+| `min` | number | `17` | 최저값 (gradient 0.0) |
+| `max` | number | `31` | 최고값 (gradient 1.0) |
 
-simpleheat의 `max` 값으로 사용. 이 범위 내에서 색상 그라디언트가 매핑됨.
+데이터 값을 `(value - min) / (max - min)`으로 정규화하여 gradient의 0.0~1.0에 매핑.
+범위 밖 값은 0.0 또는 1.0으로 클램핑됨.
 
 ```javascript
-// 넓은 온도 범위 (색상 변화가 부드러움)
-temperatureRange: { min: 15, max: 35 }
+// 온도 (기본 — DEFAULT_GRADIENT와 매칭)
+temperatureRange: { min: 17, max: 31 }
 
-// 좁은 온도 범위 (온도차가 크게 보임)
-temperatureRange: { min: 20, max: 26 }
+// 습도 (humidity gradient와 함께 사용)
+temperatureRange: { min: 20, max: 71 }
 ```
 
-색상 그라디언트 (0.0 → 1.0):
+---
+
+#### `gradient` — 색상 그라디언트
+
+| 타입 | 기본값 | 설명 |
+|------|--------|------|
+| object 또는 `null` | `null` | `null`이면 DEFAULT_GRADIENT (온도 프리셋) 사용 |
+
+simpleheat의 색상 매핑. 키는 0.0~1.0 위치, 값은 CSS 색상.
+
+**온도 프리셋 (DEFAULT_GRADIENT, 기본)**:
+
+```javascript
+// gradient: null 또는 생략 시 이 프리셋 사용
+gradient: {
+    0.00: '#1068D9',   // ≤17°C 과냉
+    0.29: '#4AA3DF',   // 18-21°C 정상(저온)
+    0.57: '#2ECC71',   // 22-25°C 최적
+    0.71: '#A3D977',   // 26-27°C 정상 상한
+    0.93: '#F7A318',   // 28-30°C 경고
+    1.00: '#E74C3C',   // ≥31°C 위험
+}
 ```
-#0044ff → #00aaff → #00ffaa → #aaff00 → #ffaa00 → #ff0000
- 차가움     시원함     적정      따뜻함     더움      고온
+
+**습도 프리셋**:
+
+```javascript
+gradient: {
+    0.00: '#154360',   // ≤20%  과건조 (정전기 위험)
+    0.37: '#5DADE2',   // 21-39% 건조 주의
+    0.69: '#27AE60',   // 40-55% 최적
+    0.78: '#A9DFBF',   // 56-60% 정상 상한
+    0.98: '#F39C12',   // 61-70% 고습 경고
+    1.00: '#C0392B',   // ≥71%  위험 (결로 가능)
+}
+// temperatureRange: { min: 20, max: 71 } 과 함께 사용
 ```
+
+> gradient stop 위치 = `(경계값 - min) / (max - min)`
 
 ---
 
