@@ -77,18 +77,14 @@
                         <div class="popup-body">
                             <div class="section info-section">
                                 <div class="info-layout">
-                                    <div class="info-image-placeholder">
-                                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                                            <rect x="6" y="4" width="36" height="40" rx="2" stroke="#4b5563" stroke-width="2"/>
-                                            <line x1="6" y1="14" x2="42" y2="14" stroke="#4b5563" stroke-width="2"/>
-                                            <line x1="6" y1="24" x2="42" y2="24" stroke="#4b5563" stroke-width="2"/>
-                                            <line x1="6" y1="34" x2="42" y2="34" stroke="#4b5563" stroke-width="2"/>
-                                            <circle cx="14" cy="9" r="2" fill="#4b5563"/>
-                                            <circle cx="14" cy="19" r="2" fill="#4b5563"/>
-                                            <circle cx="14" cy="29" r="2" fill="#4b5563"/>
-                                            <circle cx="14" cy="39" r="2" fill="#4b5563"/>
-                                        </svg>
-                                        <span class="image-label">PDU</span>
+                                    <div class="switch-panel">
+                                        <div class="switch-panel-header">
+                                            <span class="switch-panel-title">회로 차단기</span>
+                                            <span class="switch-panel-count">-</span>
+                                        </div>
+                                        <div class="switch-panel-body">
+                                            <div class="switch-panel-empty">연결된 장비 조회 중...</div>
+                                        </div>
                                     </div>
                                     <table class="info-table">
                                         <tbody>
@@ -173,14 +169,42 @@
             /* 기본정보 */
             .info-section { padding: 16px; }
             .info-layout { display: flex; gap: 16px; }
-            .info-image-placeholder {
-                width: 100px; min-height: 100px; background: #1a1f2e;
-                border-radius: 8px; border: 1px solid #2a3142;
-                display: flex; flex-direction: column; align-items: center; justify-content: center;
-                gap: 8px; flex-shrink: 0;
+            /* Switch Panel (회로 차단기) */
+            .switch-panel {
+                width: 140px; background: #1a1f2e; border-radius: 8px;
+                border: 1px solid #2a3142; flex-shrink: 0;
+                display: flex; flex-direction: column; overflow: hidden;
             }
-            .info-image-placeholder svg { opacity: 0.5; }
-            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .switch-panel-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 6px 10px; border-bottom: 1px solid #2a3142;
+            }
+            .switch-panel-title { font-size: 11px; color: #8892a0; font-weight: 500; }
+            .switch-panel-count { font-size: 10px; color: #6b7280; }
+            .switch-panel-body {
+                padding: 6px; display: flex; flex-direction: column; gap: 4px;
+                max-height: 180px; overflow-y: auto;
+            }
+            .switch-panel-empty { padding: 12px 4px; text-align: center; color: #6b7280; font-size: 11px; }
+            .switch-item {
+                display: flex; align-items: center; gap: 8px;
+                padding: 4px 6px; border-radius: 4px; cursor: pointer;
+                transition: background 0.15s;
+            }
+            .switch-item:hover { background: #252b3b; }
+            .switch-toggle {
+                width: 28px; height: 14px; border-radius: 7px;
+                background: #374151; position: relative; flex-shrink: 0;
+                transition: background 0.2s;
+            }
+            .switch-toggle::after {
+                content: ''; position: absolute; top: 2px; left: 2px;
+                width: 10px; height: 10px; border-radius: 50%;
+                background: #6b7280; transition: transform 0.2s, background 0.2s;
+            }
+            .switch-toggle[data-on="true"] { background: rgba(34, 197, 94, 0.3); }
+            .switch-toggle[data-on="true"]::after { transform: translateX(14px); background: #22c55e; }
+            .switch-label { font-size: 11px; color: #e0e6ed; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
             .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
             .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
             .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
@@ -279,6 +303,23 @@
             }
         };
 
+        // 자식 자산 (스위치 패널) mock 데이터
+        const mockRelationChildren = [
+            { fromAssetKey: 'child-breaker-001', toAssetKey: 'mock-pdu-001', relationType: 'POWER_FEED' },
+            { fromAssetKey: 'child-breaker-002', toAssetKey: 'mock-pdu-001', relationType: 'POWER_FEED' },
+            { fromAssetKey: 'child-breaker-003', toAssetKey: 'mock-pdu-001', relationType: 'POWER_FEED' },
+            { fromAssetKey: 'child-breaker-004', toAssetKey: 'mock-pdu-001', relationType: 'POWER_FEED' },
+            { fromAssetKey: 'child-breaker-005', toAssetKey: 'mock-pdu-001', relationType: 'POWER_FEED' },
+        ];
+
+        const mockChildAssets = {
+            'child-breaker-001': { assetKey: 'child-breaker-001', name: 'CB-01 (서버랙 A)', statusType: 'ACTIVE' },
+            'child-breaker-002': { assetKey: 'child-breaker-002', name: 'CB-02 (서버랙 B)', statusType: 'ACTIVE' },
+            'child-breaker-003': { assetKey: 'child-breaker-003', name: 'CB-03 (냉각장치)', statusType: 'WARNING' },
+            'child-breaker-004': { assetKey: 'child-breaker-004', name: 'CB-04 (조명)', statusType: 'INACTIVE' },
+            'child-breaker-005': { assetKey: 'child-breaker-005', name: 'CB-05 (UPS)', statusType: 'ACTIVE' },
+        };
+
         const mockModelData = {
             'model-pdu-001': { name: 'SUS-PDB-800', assetVendorKey: 'vendor-ls' },
             'model-pdu-002': { name: 'PDU-4200', assetVendorKey: 'vendor-schneider' },
@@ -311,6 +352,8 @@
             switch (datasetName) {
                 case 'assetDetailUnified': return mockAssetData[currentStatus];
                 case 'metricHistoryStats': return generateTrendData();
+                case 'relationChildren': return mockRelationChildren.filter(r => r.toAssetKey === param?.toAssetKey);
+                case 'assetDetail': return mockChildAssets[param?.assetKey] || null;
                 case 'modelDetail': return mockModelData[param?.assetModelKey] || null;
                 case 'vendorDetail': return mockVendorData[param?.assetVendorKey] || null;
                 default: return {};
@@ -491,6 +534,8 @@
                     metricHistory: 'metricHistoryStats',
                     modelDetail: 'modelDetail',
                     vendorDetail: 'vendorDetail',
+                    relationChildren: 'relationChildren',
+                    childAssetDetail: 'assetDetail',
                 },
 
                 // API 엔드포인트 및 파라미터
@@ -532,6 +577,23 @@
                     chain: {
                         model: '.info-model',
                         vendor: '.info-vendor',
+                    },
+                },
+
+                // 스위치 패널 영역 (자식 자산)
+                switchPanel: {
+                    relationType: 'POWER_FEED',
+                    selectors: {
+                        body: '.switch-panel-body',
+                        count: '.switch-panel-count',
+                        empty: '.switch-panel-empty',
+                    },
+                    statusToOn: {
+                        ACTIVE: true,
+                        WARNING: true,
+                        CRITICAL: true,
+                        INACTIVE: false,
+                        MAINTENANCE: false,
                     },
                 },
 
@@ -577,6 +639,8 @@
             this.renderBasicInfo = renderBasicInfo.bind(this);
             this.renderTrendChart = renderTrendChart.bind(this);
             this.renderInitialLabels = renderInitialLabels.bind(this);
+            this.fetchChildAssets = fetchChildAssets.bind(this);
+            this.renderSwitchPanel = renderSwitchPanel.bind(this);
 
             // ======================
             // 6. Public Methods
@@ -655,7 +719,10 @@
                 )
             ).catch((e) => { console.error('[PDU] Data load error:', e); });
 
-            // 2) 트렌드 차트 호출 (mhs/l)
+            // 2) 자식 자산 (스위치 패널) fetch
+            this.fetchChildAssets();
+
+            // 3) 트렌드 차트 호출 (mhs/l)
             fetchTrendData.call(this);
         }
 
@@ -1074,6 +1141,74 @@
                     if (btn) btn.textContent = cfg.label;
                 })
             );
+        }
+
+        // ======================
+        // RENDER: 스위치 패널 (자식 자산)
+        // ======================
+
+        function fetchChildAssets() {
+            const { switchPanel, datasetNames } = this.config;
+
+            Wkit.fetchData(this.page, datasetNames.relationChildren, {
+                baseUrl: this._baseUrl,
+                toAssetKey: this._defaultAssetKey,
+                relationType: switchPanel.relationType,
+            })
+                .then(relResp => {
+                    const relations = relResp?.response?.data || [];
+                    const childKeys = relations.map(r => r.fromAssetKey);
+
+                    if (childKeys.length === 0) {
+                        this.renderSwitchPanel([]);
+                        return;
+                    }
+
+                    return Promise.all(
+                        childKeys.map(key =>
+                            Wkit.fetchData(this.page, datasetNames.childAssetDetail, { baseUrl: this._baseUrl, assetKey: key })
+                                .then(resp => resp?.response?.data || null)
+                                .catch(() => null)
+                        )
+                    ).then(assets => {
+                        this.renderSwitchPanel(assets.filter(Boolean));
+                    });
+                })
+                .catch(e => {
+                    console.warn('[PDU] fetchChildAssets failed:', e);
+                    this.renderSwitchPanel([]);
+                });
+        }
+
+        function renderSwitchPanel(children) {
+            const { switchPanel } = this.config;
+            const body = this.popupQuery(switchPanel.selectors.body);
+            const countEl = this.popupQuery(switchPanel.selectors.count);
+            if (!body) return;
+
+            if (countEl) countEl.textContent = children.length + '개';
+
+            if (children.length === 0) {
+                body.innerHTML = '<div class="switch-panel-empty">연결된 장비 없음</div>';
+                return;
+            }
+
+            body.innerHTML = '';
+            children.forEach(asset => {
+                const isOn = switchPanel.statusToOn[asset.statusType] ?? false;
+                const item = document.createElement('div');
+                item.className = 'switch-item';
+                item.dataset.assetKey = asset.assetKey;
+                item.innerHTML =
+                    '<div class="switch-toggle" data-on="' + isOn + '"></div>' +
+                    '<span class="switch-label">' + (asset.name || asset.assetKey) + '</span>';
+
+                item.addEventListener('click', () => {
+                    console.log('[PDU] Switch clicked - assetKey:', asset.assetKey);
+                });
+
+                body.appendChild(item);
+            });
         }
 
         // ======================

@@ -154,28 +154,107 @@
     gap: 16px;
 }
 
-.info-image-placeholder {
-    width: 100px;
-    min-height: 100px;
+/* ======================
+   Switch Panel (회로 차단기)
+   ====================== */
+.switch-panel {
+    width: 140px;
     background: #1a1f2e;
     border-radius: 8px;
     border: 1px solid #2a3142;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.switch-panel-header {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-shrink: 0;
+    padding: 6px 10px;
+    border-bottom: 1px solid #2a3142;
 }
 
-.info-image-placeholder svg {
-    opacity: 0.5;
-}
-
-.image-label {
+.switch-panel-title {
     font-size: 11px;
-    color: #6b7280;
+    color: #8892a0;
     font-weight: 500;
+}
+
+.switch-panel-count {
+    font-size: 10px;
+    color: #6b7280;
+}
+
+.switch-panel-body {
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.switch-panel-empty {
+    padding: 12px 4px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+.switch-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.switch-item:hover {
+    background: #252b3b;
+}
+
+.switch-toggle {
+    width: 28px;
+    height: 14px;
+    border-radius: 7px;
+    background: #374151;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.switch-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #6b7280;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.switch-toggle[data-on="true"] {
+    background: rgba(34, 197, 94, 0.3);
+}
+
+.switch-toggle[data-on="true"]::after {
+    transform: translateX(14px);
+    background: #22c55e;
+}
+
+.switch-label {
+    font-size: 11px;
+    color: #e0e6ed;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
 }
 
 .info-table {

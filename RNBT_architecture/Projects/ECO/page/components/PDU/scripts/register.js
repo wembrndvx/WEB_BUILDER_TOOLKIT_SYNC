@@ -76,6 +76,8 @@ function initComponent() {
       metricHistory: 'metricHistoryStats',
       modelDetail: 'modelDetail',
       vendorDetail: 'vendorDetail',
+      relationChildren: 'relationChildren',
+      childAssetDetail: 'assetDetail',
     },
 
     // API 엔드포인트 및 파라미터
@@ -126,6 +128,23 @@ function initComponent() {
       },
     },
 
+    // 스위치 패널 영역 (자식 자산)
+    switchPanel: {
+      relationType: 'POWER_FEED',
+      selectors: {
+        body: '.switch-panel-body',
+        count: '.switch-panel-count',
+        empty: '.switch-panel-empty',
+      },
+      statusToOn: {
+        ACTIVE: true,
+        WARNING: true,
+        CRITICAL: true,
+        INACTIVE: false,
+        MAINTENANCE: false,
+      },
+    },
+
     // 트렌드 차트 영역 (4탭)
     chart: {
       tabs: {
@@ -168,6 +187,8 @@ function initComponent() {
   this.renderBasicInfo = renderBasicInfo.bind(this);
   this.renderTrendChart = renderTrendChart.bind(this);
   this.renderInitialLabels = renderInitialLabels.bind(this);
+  this.fetchChildAssets = fetchChildAssets.bind(this);
+  this.renderSwitchPanel = renderSwitchPanel.bind(this);
 
   // ======================
   // 6. Public Methods
@@ -239,6 +260,9 @@ function showDetail() {
     this.datasetInfo,
     fx.each(d => fetchDatasetAndRender.call(this, d))
   );
+
+  // 자식 자산 (스위치 패널) fetch
+  this.fetchChildAssets();
 
   // 기존 interval 정리 후 재설정
   this.stopRefresh();
@@ -660,6 +684,81 @@ function renderInitialLabels() {
     fx.each(([tabKey, cfg]) => {
       const btn = this.popupQuery(`${chart.selectors.tabBtn}[data-tab="${tabKey}"]`);
       if (btn) btn.textContent = cfg.label;
+    })
+  );
+}
+
+// ======================
+// RENDER: 스위치 패널 (자식 자산)
+// ======================
+
+function fetchChildAssets() {
+  const { switchPanel, datasetNames } = this.config;
+
+  fetchData(this.page, datasetNames.relationChildren, {
+    baseUrl: this._baseUrl,
+    toAssetKey: this._defaultAssetKey,
+    relationType: switchPanel.relationType,
+  })
+    .then(relResp => {
+      const relations = relResp?.response?.data || [];
+      const childKeys = relations.map(r => r.fromAssetKey);
+
+      if (childKeys.length === 0) {
+        this.renderSwitchPanel([]);
+        return;
+      }
+
+      // 각 자식 자산의 기본정보 조회
+      return Promise.all(
+        childKeys.map(key =>
+          fetchData(this.page, datasetNames.childAssetDetail, { baseUrl: this._baseUrl, assetKey: key })
+            .then(resp => resp?.response?.data || null)
+            .catch(() => null)
+        )
+      ).then(assets => {
+        this.renderSwitchPanel(assets.filter(Boolean));
+      });
+    })
+    .catch(e => {
+      console.warn('[PDU] fetchChildAssets failed:', e);
+      this.renderSwitchPanel([]);
+    });
+}
+
+function renderSwitchPanel(children) {
+  const { switchPanel } = this.config;
+  const body = this.popupQuery(switchPanel.selectors.body);
+  const countEl = this.popupQuery(switchPanel.selectors.count);
+  if (!body) return;
+
+  // 카운트 업데이트
+  if (countEl) countEl.textContent = children.length + '개';
+
+  // 비어있으면 안내 메시지
+  if (children.length === 0) {
+    body.innerHTML = '<div class="switch-panel-empty">연결된 장비 없음</div>';
+    return;
+  }
+
+  // 스위치 아이템 렌더링
+  body.innerHTML = '';
+  fx.go(
+    children,
+    fx.each(asset => {
+      const isOn = switchPanel.statusToOn[asset.statusType] ?? false;
+      const item = document.createElement('div');
+      item.className = 'switch-item';
+      item.dataset.assetKey = asset.assetKey;
+      item.innerHTML =
+        '<div class="switch-toggle" data-on="' + isOn + '"></div>' +
+        '<span class="switch-label">' + (asset.name || asset.assetKey) + '</span>';
+
+      item.addEventListener('click', () => {
+        console.log('[PDU] Switch clicked - assetKey:', asset.assetKey);
+      });
+
+      body.appendChild(item);
     })
   );
 }
