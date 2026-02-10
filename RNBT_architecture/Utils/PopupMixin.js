@@ -245,7 +245,7 @@ PopupMixin.applyEChartsMixin = function(instance) {
         }
 
         try {
-            chart.setOption(option);
+            chart.setOption(option, { replaceMerge: ['series'] });
         } catch (e) {
             console.error(`[PopupMixin] Chart setOption error:`, e);
         }
