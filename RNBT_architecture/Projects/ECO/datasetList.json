@@ -32,16 +32,8 @@
           "param_type": "string",
           "default_value": "10.23.128.125:4004"
         },
-        {
-          "param_name": "page",
-          "param_type": "number",
-          "default_value": "0"
-        },
-        {
-          "param_name": "size",
-          "param_type": "number",
-          "default_value": "20"
-        }
+        { "param_name": "page", "param_type": "number", "default_value": "0" },
+        { "param_name": "size", "param_type": "number", "default_value": "20" }
       ],
       "data_type": "1",
       "interval": "0",
@@ -230,57 +222,6 @@
           "default_value": "10.23.128.125:4004"
         },
         {
-          "param_name": "assetKey",
-          "param_type": "string",
-          "default_value": "ups-001"
-        },
-        {
-          "param_name": "interval",
-          "param_type": "string",
-          "default_value": "1h"
-        },
-        {
-          "param_name": "metricCodes",
-          "param_type": "string",
-          "default_value": "SENSOR.TEMP,SENSOR.HUMIDITY"
-        },
-        {
-          "param_name": "timeFrom",
-          "param_type": "string",
-          "default_value": "2025-01-01 00:00:00"
-        },
-        {
-          "param_name": "timeTo",
-          "param_type": "string",
-          "default_value": "2025-01-01 23:59:59"
-        },
-        {
-          "param_name": "statsKeys",
-          "param_type": "string",
-          "default_value": "avg,min,max"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Metric API v1 - 메트릭 통계 기간 리스트 조회 (트렌드 차트용)",
-      "dataset_id": "mhs-list-001",
-      "name": "metricHistoryStats",
-      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mhs/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"interval\\\":\\\"#{interval}\\\",\\\"metricCodes\\\":[\\\"#{metricCodes}\\\"],\\\"timeFrom\\\":\\\"#{timeFrom}\\\",\\\"timeTo\\\":\\\"#{timeTo}\\\"},\\\"statsKeys\\\":[\\\"#{statsKeys}\\\"],\\\"sort\\\":[]}\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "baseUrl",
-          "param_type": "string",
-          "default_value": "10.23.128.125:4004"
-        },
-        {
           "param_name": "assetModelKey",
           "param_type": "string",
           "default_value": "model-001"
@@ -321,6 +262,57 @@
       "dataset_id": "vdr-detail-001",
       "name": "vendorDetail",
       "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/vdr/g\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetVendorKey\\\":\\\"#{assetVendorKey}\\\"}\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "baseUrl",
+          "param_type": "string",
+          "default_value": "10.23.128.140:8811"
+        },
+        {
+          "param_name": "assetKey",
+          "param_type": "string",
+          "default_value": "DC1-PDU-01"
+        },
+        {
+          "param_name": "interval",
+          "param_type": "string",
+          "default_value": "1h"
+        },
+        {
+          "param_name": "metricCodes",
+          "param_type": "Array",
+          "default_value": ["SENSOR.TEMP", "SENSOR.HUMIDITY"]
+        },
+        {
+          "param_name": "timeFrom",
+          "param_type": "string",
+          "default_value": "2025-01-01 00:00:00"
+        },
+        {
+          "param_name": "timeTo",
+          "param_type": "string",
+          "default_value": "2025-01-01 23:59:59"
+        },
+        {
+          "param_name": "statsKeys",
+          "param_type": "Array",
+          "default_value": ["avg"]
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "GLOBAL",
+      "query": "",
+      "query_type": "",
+      "description": "Metric API v1 - 메트릭 통계 기간 리스트 조회 (트렌드 차트용)",
+      "dataset_id": "mhs-list-001",
+      "name": "metricHistoryStats",
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/mhs/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"interval\\\":\\\"#{interval}\\\",\\\"metricCodes\\\":\\\"#{metricCodes}\\\",\\\"timeFrom\\\":\\\"#{timeFrom}\\\",\\\"timeTo\\\":\\\"#{timeTo}\\\"},\\\"statsKeys\\\":\\\"#{statsKeys}\\\",\\\"sort\\\":[]}\"}"
     }
   ],
   "datasource": []
