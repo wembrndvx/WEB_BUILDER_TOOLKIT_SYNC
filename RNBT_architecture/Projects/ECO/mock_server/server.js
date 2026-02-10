@@ -645,7 +645,10 @@ app.post('/api/v1/ast/gx', (req, res) => {
         };
     });
 
-    // 6. 응답 생성
+    // 6. 모델명 조인
+    const model = MODEL_DATA.find(m => m.assetModelKey === asset.assetModelKey);
+
+    // 7. 응답 생성
     const responseData = {
         asset: {
             assetKey: asset.assetKey,
@@ -656,6 +659,7 @@ app.post('/api/v1/ast/gx', (req, res) => {
             locationLabel: asset.locationLabel,
             serialNumber: asset.serialNumber,
             assetModelKey: asset.assetModelKey,
+            assetModelName: model ? model.name : null,
             installDate: asset.installDate,
             ownerUserId: asset.ownerUserId,
             description: asset.description
