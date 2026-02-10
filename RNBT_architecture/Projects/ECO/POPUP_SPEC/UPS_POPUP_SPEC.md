@@ -91,7 +91,7 @@
 | 배터리 사용률 | 83% | `mh/gl` | 메트릭에서 계산 (현재 metricConfig에 미정의) |
 | 배터리 잔여시간 | 8.3 h | `mh/gl` | 메트릭에서 계산 (현재 metricConfig에 미정의) |
 | 부하율 | 54% | `mh/gl` | 메트릭에서 계산 (현재 metricConfig에 미정의) |
-| 배터리 출력전압 | 220V | `mh/gl` | `UPS.BATT_V` × scale(0.1) |
+| 배터리 출력전압 | 220V | `mh/gl` | `UPS.BATT_V` × scale(1.0) |
 
 ### 데이터 커버리지
 

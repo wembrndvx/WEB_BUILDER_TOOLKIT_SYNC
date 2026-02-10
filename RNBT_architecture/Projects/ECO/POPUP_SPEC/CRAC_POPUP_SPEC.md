@@ -92,10 +92,10 @@ UPS/PDU 팝업과 동일한 8개 필드. 공통 기본정보 참조.
 
 | 항목 | 예시 값 | 데이터 소스 | 매핑 |
 |------|---------|------------|------|
-| 현재온도 | 24 °C | `mh/gl` | `CRAC.RETURN_TEMP` × scale(0.1) |
-| 설정온도 | 32 °C | `mh/gl` | `CRAC.TEMP_SET` × scale(0.1) |
-| 현재습도 | 23 % | `mh/gl` | `CRAC.RETURN_HUMIDITY` × scale(0.1) |
-| 설정습도 | 38 % | `mh/gl` | `CRAC.HUMIDITY_SET` × scale(0.1) |
+| 현재온도 | 24 °C | `mh/gl` | `CRAC.RETURN_TEMP` × scale(1.0) |
+| 설정온도 | 32 °C | `mh/gl` | `CRAC.TEMP_SET` × scale(1.0) |
+| 현재습도 | 23 % | `mh/gl` | `CRAC.RETURN_HUMIDITY` × scale(1.0) |
+| 설정습도 | 38 % | `mh/gl` | `CRAC.HUMIDITY_SET` × scale(1.0) |
 
 ### 데이터 커버리지
 

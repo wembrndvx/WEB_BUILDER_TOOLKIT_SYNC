@@ -129,10 +129,10 @@ function initComponent() {
     // 상태정보 카드 영역 (온습도 현재값/설정값)
     statusCards: {
       metrics: {
-        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 0.1 },
-        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 0.1 },
-        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 0.1 },
-        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 0.1 },
+        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 1.0 },
+        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 1.0 },
+        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 1.0 },
+        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 1.0 },
       },
       selectors: {
         card: '.status-card',
@@ -162,8 +162,8 @@ function initComponent() {
     // 트렌드 차트 영역 (바+라인 복합)
     chart: {
       series: {
-        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C',  color: '#3b82f6', scale: 0.1 },
-        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',   color: '#22c55e', scale: 0.1 },
+        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C',  color: '#3b82f6', scale: 1.0 },
+        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',   color: '#22c55e', scale: 1.0 },
       },
       selectors: {
         container: '.chart-container',
@@ -806,7 +806,7 @@ function addCracStatusMetric(key, options) {
     return;
   }
 
-  const { label, unit, metricCode = null, scale = 0.1 } = options;
+  const { label, unit, metricCode = null, scale = 1.0 } = options;
   if (!label || !unit) {
     console.warn(`[addCracStatusMetric] label과 unit은 필수`);
     return;

@@ -85,7 +85,7 @@
     "description": "인입(환기) 온도",
     "valueType": "NUMBER",
     "unit": "°C",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_CRAC"
   },
   "CRAC.RETURN_HUMIDITY": {
@@ -93,7 +93,7 @@
     "description": "인입(환기) 습도",
     "valueType": "NUMBER",
     "unit": "%RH",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_CRAC"
   },
   "CRAC.TEMP_SET": {
@@ -101,7 +101,7 @@
     "description": "온도 설정값",
     "valueType": "NUMBER",
     "unit": "°C",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_CRAC"
   },
   "CRAC.HUMIDITY_SET": {
@@ -109,7 +109,7 @@
     "description": "습도 설정값",
     "valueType": "NUMBER",
     "unit": "%RH",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_CRAC"
   },
   "CRAC.SUPPLY_TEMP": {
@@ -117,7 +117,7 @@
     "description": "공급(급기) 온도",
     "valueType": "NUMBER",
     "unit": "°C",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_CRAC"
   },
 
@@ -126,7 +126,7 @@
     "description": "입력전압 1상(R)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_V_2": {
@@ -134,7 +134,7 @@
     "description": "입력전압 2상(S)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_V_3": {
@@ -142,7 +142,7 @@
     "description": "입력전압 3상(T)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_F_1": {
@@ -150,7 +150,7 @@
     "description": "입력주파수 1상(R)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_F_2": {
@@ -158,7 +158,7 @@
     "description": "입력주파수 2상(S)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_F_3": {
@@ -166,7 +166,7 @@
     "description": "입력주파수 3상(T)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_A_1": {
@@ -174,7 +174,7 @@
     "description": "입력전류 1상(R)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_A_2": {
@@ -182,7 +182,7 @@
     "description": "입력전류 2상(S)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_A_3": {
@@ -190,7 +190,7 @@
     "description": "입력전류 3상(T)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_V_1": {
@@ -198,7 +198,7 @@
     "description": "출력전압 1상(R)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_V_2": {
@@ -206,7 +206,7 @@
     "description": "출력전압 2상(S)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_V_3": {
@@ -214,7 +214,7 @@
     "description": "출력전압 3상(T)",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_F_1": {
@@ -222,7 +222,7 @@
     "description": "출력주파수 1상(R)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_F_2": {
@@ -230,7 +230,7 @@
     "description": "출력주파수 2상(S)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_F_3": {
@@ -238,7 +238,7 @@
     "description": "출력주파수 3상(T)",
     "valueType": "NUMBER",
     "unit": "Hz",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_A_1": {
@@ -246,7 +246,7 @@
     "description": "출력전류 1상(R)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_A_2": {
@@ -254,7 +254,7 @@
     "description": "출력전류 2상(S)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.OUTPUT_A_3": {
@@ -262,7 +262,7 @@
     "description": "출력전류 3상(T)",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.BATT_V": {
@@ -270,7 +270,7 @@
     "description": "배터리 전압",
     "valueType": "NUMBER",
     "unit": "V",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.BATT_A": {
@@ -278,7 +278,7 @@
     "description": "배터리 전류",
     "valueType": "NUMBER",
     "unit": "A",
-    "scale": 0.1,
+    "scale": 1.0,
     "interface": "PERF_UPS"
   },
   "UPS.INPUT_BAD_STATE": {

@@ -279,7 +279,7 @@
             console.warn(`[addCracStatusMetric] 이미 존재하는 키: ${key}`);
             return;
         }
-        const { label, unit, metricCode = null, scale = 0.1 } = options;
+        const { label, unit, metricCode = null, scale = 1.0 } = options;
         if (!label || !unit) {
             console.warn(`[addCracStatusMetric] label과 unit은 필수`);
             return;
@@ -375,7 +375,7 @@
                         batterySoc:   { label: '배터리 사용률',   unit: '%', metricCode: 'UPS.BATT_PCT', scale: 1.0 },
                         batteryTime:  { label: '배터리 잔여시간', unit: 'h', metricCode: null,          scale: 1.0 },
                         loadRate:     { label: '부하율',         unit: '%', metricCode: 'UPS.LOAD_PCT', scale: 1.0 },
-                        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 0.1 },
+                        batteryVolt:  { label: '배터리 출력전압', unit: 'V', metricCode: 'UPS.BATT_V',   scale: 1.0 },
                     },
                 },
             },
@@ -459,16 +459,16 @@
                 },
                 chart: {
                     series: {
-                        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 0.1 },
-                        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 0.1 },
+                        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 1.0 },
+                        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 1.0 },
                     },
                 },
                 statusCards: {
                     metrics: {
-                        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 0.1 },
-                        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 0.1 },
-                        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 0.1 },
-                        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 0.1 },
+                        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 1.0 },
+                        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 1.0 },
+                        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 1.0 },
+                        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 1.0 },
                     },
                 },
             },
@@ -1130,10 +1130,10 @@
         assertEq(ctx.config.statusCards.metrics.newMetric.metricCode, null, 'metricCode = null');
     });
 
-    test('E-2: addCracStatusMetric', 'CRAC', 'scale 미지정 → 0.1 기본값', () => {
+    test('E-2: addCracStatusMetric', 'CRAC', 'scale 미지정 → 1.0 기본값', () => {
         const ctx = createCracMock();
         ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
-        assertEq(ctx.config.statusCards.metrics.newMetric.scale, 0.1, 'scale = 0.1');
+        assertEq(ctx.config.statusCards.metrics.newMetric.scale, 1.0, 'scale = 1.0');
     });
 
     test('E-2: addCracStatusMetric', 'CRAC', '이미 존재하는 키 → warn + 무시', () => {

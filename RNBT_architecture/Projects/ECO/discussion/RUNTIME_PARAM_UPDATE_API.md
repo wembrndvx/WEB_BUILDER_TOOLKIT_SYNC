@@ -432,7 +432,7 @@ function rebuildMetricCodes(trendInfo) {
 this.updateCracSeriesMetric('temp', {
   metricCode: 'CRAC.RETURN_TEMP_C',
   statsKey: 'avg',
-  scale: 0.1,
+  scale: 1.0,
   label: '환기온도',
 });
 
@@ -566,7 +566,7 @@ this.updateUpsStatusMetric('batterySoc', {
   metricCode: 'UPS.OUTPUT_W',
   label: '출력전력',
   unit: 'W',
-  scale: 0.1,
+  scale: 1.0,
 });
 ```
 
@@ -609,7 +609,7 @@ function updateCracStatusMetric(key, options) {
 this.updateCracStatusMetric('currentTemp', {
   metricCode: 'CRAC.SUPPLY_TEMP',
   label: '공급온도',
-  scale: 0.1,
+  scale: 1.0,
 });
 ```
 
@@ -722,7 +722,7 @@ this.addUpsStatusMetric('outputPower', {
   label: '출력전력',
   unit: 'W',
   metricCode: 'UPS.OUTPUT_W',
-  scale: 0.1,
+  scale: 1.0,
 });
 
 // 기존 카드 제거
@@ -745,7 +745,7 @@ this.removeUpsStatusMetric('batteryVolt');
  * @param {string}      options.label        - 카드 라벨 (필수)
  * @param {string}      options.unit         - 단위 (필수)
  * @param {string|null} [options.metricCode] - 메트릭 코드 (기본 null)
- * @param {number}      [options.scale]      - 스케일 계수 (기본 0.1)
+ * @param {number}      [options.scale]      - 스케일 계수 (기본 1.0)
  */
 function addCracStatusMetric(key, options) {
   const { metrics } = this.config.statusCards;
@@ -754,7 +754,7 @@ function addCracStatusMetric(key, options) {
     return;
   }
 
-  const { label, unit, metricCode = null, scale = 0.1 } = options;
+  const { label, unit, metricCode = null, scale = 1.0 } = options;
   if (!label || !unit) {
     console.warn(`[addCracStatusMetric] label과 unit은 필수`);
     return;
@@ -786,7 +786,7 @@ this.addCracStatusMetric('supplyTemp', {
   label: '공급온도',
   unit: '°C',
   metricCode: 'CRAC.SUPPLY_TEMP',
-  scale: 0.1,
+  scale: 1.0,
 });
 
 // 설정습도 카드 제거
@@ -1123,9 +1123,9 @@ updateRefreshInterval('metricHistoryStats', 10000)
 ### Category E: `updateXxxStatusMetric` / `addXxxStatusMetric` / `removeXxxStatusMetric`
 
 ```
-updateUpsStatusMetric('batterySoc', { scale: 0.1 })
+updateUpsStatusMetric('batterySoc', { scale: 0.5 })
   │
-  └─ config.powerStatus.metrics.batterySoc.scale = 0.1
+  └─ config.powerStatus.metrics.batterySoc.scale = 0.5
      (config 1곳만 수정 → 동기화 불필요)
 
 addUpsStatusMetric('outputPower', { label, unit, metricCode, scale })

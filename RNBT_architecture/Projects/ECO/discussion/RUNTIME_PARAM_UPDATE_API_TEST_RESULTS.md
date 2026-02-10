@@ -1316,7 +1316,7 @@ ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
 
 ---
 
-### E-2-8. scale 미지정 → 0.1 기본값
+### E-2-8. scale 미지정 → 1.0 기본값
 
 | Component | Result |
 |-----------|--------|
@@ -1327,7 +1327,7 @@ ctx.addCracStatusMetric('newMetric', { label: '신규', unit: 'EA' });
 ```
 
 **검증**:
-- `statusCards.metrics.newMetric.scale === 0.1`
+- `statusCards.metrics.newMetric.scale === 1.0`
 
 ---
 
