@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWBD - Preview (스펙 v.0.8_260128)</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .preview-controls { display: flex; gap: 12px; }
+
+        .preview-btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .preview-btn:hover { background: #2563eb; }
+        .preview-btn.warning { background: #eab308; color: #000; }
+        .preview-btn.critical { background: #ef4444; }
+        .preview-btn.destroy { background: #6b7280; }
+        .preview-btn.destroy:hover { background: #4b5563; }
+
+        .instance-info { font-size: 12px; color: #6b7280; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="preview-controls">
+        <button class="preview-btn" onclick="showNormal()">Normal SWBD</button>
+        <button class="preview-btn warning" onclick="showWarning()">Warning SWBD</button>
+        <button class="preview-btn critical" onclick="showCritical()">Critical SWBD</button>
+        <button class="preview-btn destroy" onclick="destroyInstance()">Destroy</button>
+    </div>
+    <div class="instance-info" id="instance-info">Instance: not created</div>
+
+    <div id="popup-host"></div>
+
+    <script>
+        // ======================
+        // HTML TEMPLATE (component.html 인라인)
+        // ======================
+        const htmlCode = `
+            <template id="popup-swbd">
+                <div class="popup-overlay">
+                    <div class="popup-content">
+                        <div class="popup-header">
+                            <div class="header-info">
+                                <h2 class="swbd-name">-</h2>
+                                <span class="swbd-zone">-</span>
+                            </div>
+                            <div class="header-actions">
+                                <span class="swbd-status" data-status="normal">Normal</span>
+                                <button class="close-btn" type="button" aria-label="Close">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="popup-body">
+                            <div class="section info-section">
+                                <div class="section-header">
+                                    <span class="section-title">기본정보</span>
+                                </div>
+                                <div class="info-content">
+                                    <div class="info-layout">
+                                        <div class="info-image-placeholder">
+                                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                                <rect x="4" y="6" width="40" height="36" rx="2" stroke="#4b5563" stroke-width="2"/>
+                                                <line x1="16" y1="6" x2="16" y2="42" stroke="#4b5563" stroke-width="1.5"/>
+                                                <line x1="32" y1="6" x2="32" y2="42" stroke="#4b5563" stroke-width="1.5"/>
+                                                <rect x="7" y="12" width="6" height="8" rx="1" stroke="#22c55e" stroke-width="1.2"/>
+                                                <rect x="21" y="12" width="6" height="8" rx="1" stroke="#3b82f6" stroke-width="1.2"/>
+                                                <rect x="35" y="12" width="6" height="8" rx="1" stroke="#f59e0b" stroke-width="1.2"/>
+                                                <rect x="7" y="28" width="6" height="8" rx="1" stroke="#22c55e" stroke-width="1.2"/>
+                                                <rect x="21" y="28" width="6" height="8" rx="1" stroke="#3b82f6" stroke-width="1.2"/>
+                                                <rect x="35" y="28" width="6" height="8" rx="1" stroke="#f59e0b" stroke-width="1.2"/>
+                                            </svg>
+                                            <span class="image-label">SWBD</span>
+                                        </div>
+                                        <table class="info-table">
+                                            <tbody>
+                                                <tr><th>자산명</th><td class="info-name">-</td></tr>
+                                                <tr><th>자산타입</th><td class="info-type">-</td></tr>
+                                                <tr><th>용도</th><td class="info-usage">-</td></tr>
+                                                <tr><th>제조사명</th><td class="info-vendor">-</td></tr>
+                                                <tr><th>모델</th><td class="info-model">-</td></tr>
+                                                <tr><th>위치</th><td class="info-location">-</td></tr>
+                                                <tr><th>상태</th><td class="info-status">-</td></tr>
+                                                <tr><th>설치일</th><td class="info-install-date">-</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section chart-section">
+                                <div class="section-header">
+                                    <span class="section-title">고압반 운전 상태 추이</span>
+                                </div>
+                                <div class="tab-header">
+                                    <button class="tab-btn active" data-tab="voltage"></button>
+                                    <button class="tab-btn" data-tab="current"></button>
+                                    <button class="tab-btn" data-tab="frequency"></button>
+                                    <button class="tab-btn" data-tab="power"></button>
+                                </div>
+                                <div class="chart-container">
+                                    <div class="empty-state">차트 데이터를 불러오는 중...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        `;
+
+        // ======================
+        // CSS (component.css 인라인)
+        // ======================
+        const cssCode = `
+            .popup-overlay {
+                position: absolute; top: 0; right: 0; height: 100%;
+                pointer-events: none; z-index: 1000;
+            }
+            .popup-content {
+                background: #1a1f2e; border-radius: 12px 0 0 12px;
+                width: 560px; height: 100%;
+                overflow: hidden; box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142; border-right: none;
+                display: flex; flex-direction: column; pointer-events: auto;
+            }
+            .popup-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 20px 24px; border-bottom: 1px solid #2a3142; flex-shrink: 0;
+            }
+            .header-info { display: flex; flex-direction: column; gap: 4px; }
+            .swbd-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
+            .swbd-zone { font-size: 13px; color: #8892a0; }
+            .header-actions { display: flex; align-items: center; gap: 12px; }
+            .swbd-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+            .swbd-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+            .swbd-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+            .swbd-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+            .close-btn {
+                display: flex; align-items: center; justify-content: center;
+                width: 32px; height: 32px; padding: 0;
+                background: transparent; border: none; border-radius: 6px;
+                color: #8892a0; cursor: pointer; transition: background 0.15s, color 0.15s;
+            }
+            .close-btn:hover { background: #2a3142; color: #e0e6ed; }
+            .popup-body {
+                padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;
+                flex: 1; min-height: 0; overflow-y: auto;
+            }
+            .section { background: #252b3b; border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+            .section-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 12px 16px; border-bottom: 1px solid #2a3142;
+            }
+            .section-title { font-size: 13px; font-weight: 500; color: #8892a0; letter-spacing: 0.5px; }
+
+            /* 기본정보 */
+            .info-section .info-content { padding: 16px; }
+            .info-layout { display: flex; gap: 16px; }
+            .info-image-placeholder {
+                width: 100px; min-height: 100px;
+                background: #1a1f2e; border-radius: 8px; border: 1px solid #2a3142;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 8px; flex-shrink: 0;
+            }
+            .info-image-placeholder svg { opacity: 0.5; }
+            .image-label { font-size: 11px; color: #6b7280; font-weight: 500; }
+            .info-table { flex: 1; border-collapse: collapse; font-size: 13px; }
+            .info-table th, .info-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(42, 49, 66, 0.5); }
+            .info-table th { color: #8892a0; font-weight: 400; white-space: nowrap; width: 70px; }
+            .info-table td { color: #e0e6ed; font-weight: 500; }
+            .info-table tr:last-child th, .info-table tr:last-child td { border-bottom: none; }
+
+            /* 차트 */
+            .chart-section { flex: 1; min-height: 280px; display: flex; flex-direction: column; }
+            .tab-header { display: flex; gap: 4px; padding: 8px 16px; border-bottom: 1px solid #2a3142; flex-shrink: 0; }
+            .tab-btn {
+                padding: 6px 12px; background: transparent; border: none; border-radius: 6px;
+                color: #8892a0; font-size: 12px; font-weight: 500; cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+            }
+            .tab-btn:hover { background: #252b3b; color: #e0e6ed; }
+            .tab-btn.active { background: #3b82f6; color: #fff; }
+            .chart-container { flex: 1; min-height: 200px; width: 100%; }
+            .empty-state { padding: 24px 16px; text-align: center; color: #6b7280; font-size: 13px; }
+            .error-state { padding: 24px 16px; text-align: center; color: #ef4444; font-size: 13px; }
+        `;
+
+        // ======================
+        // MOCK IMPLEMENTATIONS
+        // ======================
+
+        const fx = {
+            go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
+            each: (fn, arr) => {
+                if (arr === undefined) return (arr2) => { arr2.forEach(fn); return arr2; };
+                arr.forEach(fn); return arr;
+            },
+            filter: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.filter(fn);
+                return arr.filter(fn);
+            },
+            reduce: (fn, init, arr) => {
+                if (arr === undefined) return (arr2) => arr2.reduce(fn, init);
+                return arr.reduce(fn, init);
+            },
+            map: (fn, arr) => {
+                if (arr === undefined) return (arr2) => arr2.map(fn);
+                return arr.map(fn);
+            }
+        };
+
+        // ======================
+        // RESPONSE HELPER
+        // ======================
+        function extractData(response, path = 'data') {
+            if (!response?.response) return null;
+            const data = response.response[path];
+            return data !== null && data !== undefined ? data : null;
+        }
+
+        let currentStatus = 'normal';
+
+        const Wkit = {
+            bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
+            fetchData: (page, datasetName, param) => {
+                console.log('[Wkit.fetchData]', datasetName, param);
+                return Promise.resolve({ response: { data: getMockData(datasetName, param) } });
+            }
+        };
+
+        // ======================
+        // MOCK DATA
+        // ======================
+
+        const mockAssetData = {
+            normal: {
+                asset: {
+                    name: 'MHV #2', locationLabel: '지하 1층 전기실 / Zone-A',
+                    statusType: 'ACTIVE', assetType: '고압반',
+                    usageCode: '전력차단 및 변전계통보호', installDate: '2025-10-23T00:00:00.000Z',
+                    assetModelKey: 'model-swbd-001', assetModelName: 'SUSOL MCC Panel',
+                    assetVendorKey: 'vendor-ls'
+                },
+                properties: []
+            },
+            warning: {
+                asset: {
+                    name: 'MHV #3', locationLabel: '지하 1층 전기실 / Zone-B',
+                    statusType: 'WARNING', assetType: '고압반',
+                    usageCode: '비상전원 공급', installDate: '2024-08-15T00:00:00.000Z',
+                    assetModelKey: 'model-swbd-001', assetModelName: 'SUSOL MCC Panel',
+                    assetVendorKey: 'vendor-ls'
+                },
+                properties: []
+            },
+            critical: {
+                asset: {
+                    name: 'MHV #5', locationLabel: '지하 2층 전기실 / Zone-C',
+                    statusType: 'CRITICAL', assetType: '고압반',
+                    usageCode: '냉각설비 전원', installDate: '2024-03-10T00:00:00.000Z',
+                    assetModelKey: 'model-swbd-002', assetModelName: 'VCB Panel HV-24',
+                    assetVendorKey: 'vendor-hyundai'
+                },
+                properties: []
+            }
+        };
+
+        const mockVendorData = {
+            'vendor-ls': { name: 'LS ELECTRIC' },
+            'vendor-hyundai': { name: '현대일렉트릭' },
+        };
+
+        function generateTrendData(timeFrom, timeTo) {
+            const result = [];
+            const from = timeFrom ? new Date(timeFrom) : new Date(Date.now() - 24 * 3600000);
+            const to = timeTo ? new Date(timeTo) : new Date();
+
+            // 정시(XX:00) 기준으로 생성하여 금일/전일 HH:MM 키가 일치하도록 함
+            const start = new Date(from);
+            start.setMinutes(0, 0, 0);
+            if (start < from) start.setHours(start.getHours() + 1);
+
+            for (let t = new Date(start); t <= to; t.setHours(t.getHours() + 1)) {
+                const time = new Date(t);
+                const h = time.getHours();
+                result.push(
+                    { time: time.toISOString(), metricCode: 'SWBD.VOLTAGE_V', statsBody: { avg: 22900 + (Math.random() - 0.5) * 400 } },
+                    { time: time.toISOString(), metricCode: 'SWBD.CURRENT_A', statsBody: { avg: 1200 + Math.sin(h / 4) * 200 + (Math.random() - 0.5) * 100 } },
+                    { time: time.toISOString(), metricCode: 'SWBD.ACTIVE_POWER_KW', statsBody: { avg: 350 + Math.sin(h / 5) * 50 + (Math.random() - 0.5) * 30 } },
+                    { time: time.toISOString(), metricCode: 'SWBD.FREQUENCY_HZ', statsBody: { avg: 60 + (Math.random() - 0.5) * 0.4 } }
+                );
+            }
+            return result;
+        }
+
+        function getMockData(datasetName, param) {
+            switch (datasetName) {
+                case 'assetDetailUnified': return mockAssetData[currentStatus];
+                case 'metricHistoryStats': return generateTrendData(param?.timeFrom, param?.timeTo);
+                case 'vendorDetail': return mockVendorData[param?.assetVendorKey] || null;
+                default: return {};
+            }
+        }
+
+        // ======================
+        // Mock PopupMixin
+        // ======================
+        const PopupMixin = {
+            applyShadowPopupMixin: (ctx, config) => {
+                let shadowRoot = null;
+                let _chart = null;
+
+                ctx.showPopup = () => {
+                    const host = ctx.page.element;
+                    if (!host.shadowRoot) {
+                        shadowRoot = host.attachShadow({ mode: 'open' });
+                    } else {
+                        shadowRoot = host.shadowRoot;
+                        shadowRoot.innerHTML = '';
+                    }
+                    const style = document.createElement('style');
+                    style.textContent = config.getStyles();
+                    shadowRoot.appendChild(style);
+                    const content = document.createElement('div');
+                    content.innerHTML = config.getHTML();
+                    shadowRoot.appendChild(content);
+                    ctx._shadowRoot = shadowRoot;
+                    config.onCreated?.();
+                    console.log('[PopupMixin] Popup shown');
+                };
+
+                ctx.hidePopup = () => {
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; console.log('[PopupMixin] Popup hidden'); }
+                };
+
+                ctx.destroyPopup = () => {
+                    if (_chart) { _chart.dispose(); _chart = null; }
+                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; ctx._shadowRoot = null; }
+                    console.log('[PopupMixin] Popup destroyed');
+                };
+
+                ctx.popupQuery = (sel) => ctx._shadowRoot?.querySelector(sel);
+                ctx.popupQueryAll = (sel) => ctx._shadowRoot?.querySelectorAll(sel) || [];
+                ctx.bindPopupEvents = (events) => {
+                    Object.entries(events).forEach(([eventType, handlers]) => {
+                        Object.entries(handlers).forEach(([selector, handler]) => {
+                            ctx.popupQueryAll(selector).forEach(el => el.addEventListener(eventType, handler));
+                        });
+                    });
+                };
+
+                ctx._getChartRef = () => _chart;
+                ctx._setChartRef = (c) => { _chart = c; };
+            },
+
+            applyEChartsMixin: (ctx) => {
+                ctx.createChart = (selector) => {
+                    const container = ctx.popupQuery(selector);
+                    if (container) {
+                        const chart = echarts.init(container);
+                        ctx._setChartRef(chart);
+                        console.log('[EChartsMixin] Chart created');
+                    }
+                };
+                ctx.updateChart = (selector, option) => {
+                    let chart = ctx._getChartRef();
+                    if (!chart) {
+                        const container = ctx.popupQuery(selector);
+                        if (container) { chart = echarts.init(container); ctx._setChartRef(chart); }
+                    }
+                    if (chart) { chart.setOption(option, true); console.log('[EChartsMixin] Chart updated'); }
+                };
+            }
+        };
+
+        // ======================
+        // TEMPLATE HELPER
+        // ======================
+        function extractTemplate(htmlCode, templateId) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlCode, 'text/html');
+            const template = doc.querySelector(`template#${templateId}`);
+            return template?.innerHTML || '';
+        }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // ======================
+        // COMPONENT INSTANCE
+        // ======================
+        let instance = null;
+
+        function createInstance() {
+            if (instance) { onInstanceUnLoad.call(instance); }
+            instance = {
+                id: 'preview-swbd',
+                page: { element: document.getElementById('popup-host') },
+                properties: { publishCode: { htmlCode, cssCode } },
+                setter: { assetInfo: { assetKey: 'mock-swbd-001' } }
+            };
+            initComponent.call(instance);
+            updateInstanceInfo();
+        }
+
+        function updateInstanceInfo() {
+            const info = document.getElementById('instance-info');
+            info.textContent = instance ? `Instance: ${instance.id}` : 'Instance: not created';
+        }
+
+        // ======================
+        // COMPONENT LIFECYCLE (register.js 로직 미러)
+        // ======================
+
+        function statusTypeToLabel(statusType) {
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.label;
+        }
+
+        function statusTypeToDataAttr(statusType) {
+            const { statusMap } = this.config;
+            const entry = statusMap[statusType] || statusMap.DEFAULT;
+            return entry.dataAttr;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try { return new Date(dateStr).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }); }
+            catch { return dateStr; }
+        }
+
+        function initComponent() {
+            const { bind3DEvents, fetchData } = Wkit;
+            const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+
+            // ======================
+            // 1. 내부 상태
+            // ======================
+            this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
+            this._baseUrl = '10.23.128.140:8811';
+            this._locale = 'ko';
+            this._popupTemplateId = 'popup-swbd';
+            this._trendData = null;
+            this._trendDataComparison = null;
+            this._activeTab = 'voltage';
+
+            // ======================
+            // 2. 변환 함수 바인딩
+            // ======================
+            this.statusTypeToLabel = statusTypeToLabel.bind(this);
+            this.statusTypeToDataAttr = statusTypeToDataAttr.bind(this);
+            this.formatDate = formatDate.bind(this);
+
+            // ======================
+            // 3. Config 통합
+            // ======================
+            this.config = {
+                statusMap: {
+                    ACTIVE: { label: '정상운영', dataAttr: 'normal' },
+                    WARNING: { label: '주의', dataAttr: 'warning' },
+                    CRITICAL: { label: '위험', dataAttr: 'critical' },
+                    INACTIVE: { label: '비활성', dataAttr: 'inactive' },
+                    MAINTENANCE: { label: '유지보수', dataAttr: 'maintenance' },
+                    DEFAULT: { label: '알 수 없음', dataAttr: 'normal' },
+                },
+
+                datasetNames: {
+                    assetDetail: 'assetDetailUnified',
+                    metricHistory: 'metricHistoryStats',
+                    vendorDetail: 'vendorDetail',
+                },
+
+                api: {
+                    trendHistory: '/api/v1/mhs/l',
+                    trendParams: {
+                        interval: '1h',
+                        timeRange: 24 * 60 * 60 * 1000,
+                        metricCodes: ['SWBD.VOLTAGE_V', 'SWBD.CURRENT_A', 'SWBD.FREQUENCY_HZ', 'SWBD.ACTIVE_POWER_KW'],
+                        statsKeys: [],
+                        timeField: 'time',
+                    },
+                    statsKeyMap: {
+                        'SWBD.VOLTAGE_V': 'avg',
+                        'SWBD.CURRENT_A': 'avg',
+                        'SWBD.FREQUENCY_HZ': 'avg',
+                        'SWBD.ACTIVE_POWER_KW': 'avg',
+                    },
+                },
+
+                header: {
+                    fields: [
+                        { key: 'name', selector: '.swbd-name' },
+                        { key: 'locationLabel', selector: '.swbd-zone' },
+                        { key: 'statusType', selector: '.swbd-status', transform: this.statusTypeToLabel },
+                        { key: 'statusType', selector: '.swbd-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+                    ],
+                },
+
+                infoTable: {
+                    fields: [
+                        { key: 'name', selector: '.info-name' },
+                        { key: 'assetType', selector: '.info-type' },
+                        { key: 'usageCode', selector: '.info-usage', fallback: '-' },
+                        { key: 'assetModelName', selector: '.info-model', fallback: '-' },
+                        { key: 'locationLabel', selector: '.info-location' },
+                        { key: 'statusType', selector: '.info-status', transform: this.statusTypeToLabel },
+                        { key: 'installDate', selector: '.info-install-date', transform: this.formatDate },
+                    ],
+                    chain: {
+                        vendor: '.info-vendor',
+                    },
+                },
+
+                chart: {
+                    tabs: {
+                        voltage:   { metricCode: 'SWBD.VOLTAGE_V',       label: '전압',     unit: 'V',  color: '#3b82f6', scale: 1.0 },
+                        current:   { metricCode: 'SWBD.CURRENT_A',        label: '전류',     unit: 'A',  color: '#f59e0b', scale: 1.0 },
+                        frequency: { metricCode: 'SWBD.FREQUENCY_HZ',     label: '주파수',   unit: 'Hz', color: '#22c55e', scale: 1.0 },
+                        power: {
+                            metricCode: 'SWBD.ACTIVE_POWER_KW',
+                            label: '유효전력',
+                            unit: 'kW',
+                            scale: 1.0,
+                            comparison: true,
+                            series: {
+                                today:     { label: '금일', color: '#3b82f6' },
+                                yesterday: { label: '전일', color: '#94a3b8' },
+                            },
+                        },
+                    },
+                    selectors: {
+                        container: '.chart-container',
+                        tabBtn: '.tab-btn',
+                    },
+                },
+            };
+
+            // ======================
+            // 4. 데이터셋 정의
+            // ======================
+            const { datasetNames, api } = this.config;
+            const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+            this.datasetInfo = [
+                { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
+                { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+            ];
+
+            // ======================
+            // 5. 렌더링 함수 바인딩
+            // ======================
+            this.renderBasicInfo = renderBasicInfo.bind(this);
+            this.renderTrendChart = renderTrendChart.bind(this);
+            this.renderInitialLabels = renderInitialLabels.bind(this);
+
+            // ======================
+            // 6. Public Methods
+            // ======================
+            this.showDetail = showDetail.bind(this);
+            this.hideDetail = hideDetail.bind(this);
+            this.stopRefresh = stopRefresh.bind(this);
+            this._switchTab = switchTab.bind(this);
+
+            // ======================
+            // 7. 3D 이벤트 바인딩
+            // ======================
+            this.customEvents = { click: '@assetClicked' };
+            bind3DEvents(this, this.customEvents);
+
+            // ======================
+            // 8. Popup (template 기반)
+            // ======================
+            const popupCreatedConfig = {
+                chartSelector: this.config.chart.selectors.container,
+                events: {
+                    click: {
+                        '.close-btn': () => this.hideDetail(),
+                        '.tab-btn': (e) => this._switchTab(e.target.dataset.tab),
+                    },
+                },
+            };
+
+            const { htmlCode, cssCode } = this.properties.publishCode || {};
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', this._popupTemplateId);
+            this.getPopupStyles = () => cssCode || '';
+            this.onPopupCreated = onPopupCreated.bind(this, popupCreatedConfig);
+
+            applyShadowPopupMixin(this, {
+                getHTML: this.getPopupHTML,
+                getStyles: this.getPopupStyles,
+                onCreated: this.onPopupCreated,
+            });
+
+            applyEChartsMixin(this);
+            console.log('[SWBD] Registered:', this._defaultAssetKey);
+        }
+
+        // ======================
+        // PUBLIC METHODS
+        // ======================
+
+        function showDetail() {
+            this.showPopup();
+
+            this._activeTab = 'voltage';
+            const tabBtns = this.popupQueryAll(this.config.chart.selectors.tabBtn);
+            if (tabBtns) {
+                tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
+            }
+
+            fx.go(
+                this.datasetInfo,
+                fx.each(d => fetchDatasetAndRender.call(this, d))
+            );
+
+            this.stopRefresh();
+            fx.go(
+                this.datasetInfo,
+                fx.filter(d => d.refreshInterval > 0),
+                fx.each(d => {
+                    d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
+                })
+            );
+        }
+
+        function hideDetail() {
+            this.stopRefresh();
+            this.hidePopup();
+        }
+
+        function switchTab(tabName) {
+            const { chart } = this.config;
+            if (!tabName || !chart.tabs[tabName]) return;
+            this._activeTab = tabName;
+
+            const buttons = this.popupQueryAll(chart.selectors.tabBtn);
+            if (buttons) {
+                fx.go(
+                    buttons,
+                    fx.each((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName))
+                );
+            }
+
+            if (this._trendData) {
+                this.renderTrendChart({ response: { data: this._trendData } });
+            }
+        }
+
+        // ======================
+        // DATA FETCH
+        // ======================
+
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const h = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const s = String(date.getSeconds()).padStart(2, '0');
+            return y + '-' + m + '-' + d + ' ' + h + ':' + min + ':' + s;
+        }
+
+        function fetchDatasetAndRender(d) {
+            const { datasetNames, chart } = this.config;
+            const { datasetName, param, render } = d;
+
+            if (datasetName === datasetNames.metricHistory) {
+                const hasComparison = Object.values(chart.tabs).some(tab => tab.comparison);
+
+                if (hasComparison) {
+                    const now = new Date();
+                    const todayStart = new Date(now);
+                    todayStart.setHours(0, 0, 0, 0);
+
+                    const todayFrom = formatLocalDate(todayStart);
+                    const todayTo = formatLocalDate(now);
+
+                    const yesterdayStart = new Date(todayStart);
+                    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+                    const yesterdayEnd = new Date(todayStart);
+                    yesterdayEnd.setTime(yesterdayEnd.getTime() - 1000);
+
+                    const yesterdayFrom = formatLocalDate(yesterdayStart);
+                    const yesterdayTo = formatLocalDate(yesterdayEnd);
+
+                    Promise.all([
+                        Wkit.fetchData(this.page, datasetName, { ...param, timeFrom: todayFrom, timeTo: todayTo }),
+                        Wkit.fetchData(this.page, datasetName, { ...param, timeFrom: yesterdayFrom, timeTo: yesterdayTo }),
+                    ])
+                        .then(([todayResp, yesterdayResp]) => {
+                            const todayData = extractData(todayResp) || [];
+                            const yesterdayData = extractData(yesterdayResp) || [];
+                            this._trendData = todayData;
+                            this._trendDataComparison = { today: todayData, yesterday: yesterdayData };
+                            fx.each(fn => this[fn]({ response: { data: todayData } }), render);
+                        })
+                        .catch(e => console.warn('[SWBD] Comparison trend fetch failed:', e));
+                } else {
+                    const now = new Date();
+                    const from = new Date(now.getTime() - param.timeRange);
+                    param.timeFrom = formatLocalDate(from);
+                    param.timeTo = formatLocalDate(now);
+
+                    Wkit.fetchData(this.page, datasetName, param)
+                        .then(response => {
+                            const data = extractData(response);
+                            if (!data) return;
+                            this._trendData = data;
+                            this._trendDataComparison = null;
+                            fx.each(fn => this[fn](response), render);
+                        })
+                        .catch(e => console.warn('[SWBD] Trend fetch failed:', e));
+                }
+                return;
+            }
+
+            Wkit.fetchData(this.page, datasetName, param)
+                .then(response => {
+                    const data = extractData(response);
+                    if (!data) return;
+                    fx.each(fn => this[fn](response), render);
+                })
+                .catch(e => console.warn(`[SWBD] ${datasetName} fetch failed:`, e));
+        }
+
+        function stopRefresh() {
+            fx.go(
+                this.datasetInfo,
+                fx.filter(d => d._intervalId),
+                fx.each(d => {
+                    clearInterval(d._intervalId);
+                    d._intervalId = null;
+                })
+            );
+        }
+
+        // ======================
+        // RENDER HELPERS
+        // ======================
+
+        function renderField(ctx, data, field) {
+            const el = ctx.popupQuery(field.selector);
+            if (!el) return;
+            let value = data[field.key] ?? field.fallback ?? '-';
+            if (field.transform) value = field.transform(value);
+            if (field.dataAttr) {
+                el.dataset[field.dataAttr] = value;
+            } else {
+                el.textContent = value;
+            }
+        }
+
+        function fetchVendorDirect(ctx, asset, chainConfig) {
+            const { datasetNames } = ctx.config;
+            const setCell = (selector, value) => {
+                const el = ctx.popupQuery(selector);
+                if (el) el.textContent = value ?? '-';
+            };
+
+            if (!asset.assetVendorKey) return;
+
+            fx.go(
+                Wkit.fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: asset.assetVendorKey }),
+                (vendorResp) => {
+                    const vendor = extractData(vendorResp, 'data');
+                    if (vendor) setCell(chainConfig.vendor, vendor.name);
+                }
+            ).catch(() => {});
+        }
+
+        // ======================
+        // RENDER: 기본정보 테이블
+        // ======================
+
+        function renderBasicInfo({ response }) {
+            const { data } = response;
+            if (!data || !data.asset) {
+                console.warn('[SWBD] renderBasicInfo: 자산 데이터가 없습니다.');
+                return;
+            }
+
+            const asset = data.asset;
+            const { header, infoTable } = this.config;
+
+            fx.go(
+                header.fields,
+                fx.each((field) => renderField(this, asset, field))
+            );
+
+            fx.go(
+                infoTable.fields,
+                fx.each((field) => renderField(this, asset, field))
+            );
+
+            fetchVendorDirect(this, asset, infoTable.chain);
+        }
+
+        // ======================
+        // RENDER: 트렌드 차트
+        // ======================
+
+        function renderTrendChart({ response }) {
+            const { data } = response;
+            const { chart } = this.config;
+            const { tabs, selectors } = chart;
+            const tabConfig = tabs[this._activeTab];
+            if (!tabConfig) return;
+
+            if (tabConfig.comparison && this._trendDataComparison) {
+                renderComparisonChart.call(this, tabConfig, selectors);
+                return;
+            }
+
+            const safeData = Array.isArray(data) ? data : [];
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+            const { timeField } = trendInfo?.param || {};
+            const timeKey = timeField || 'time';
+
+            const tabData = safeData.filter(row => row.metricCode === tabConfig.metricCode);
+
+            const timeMap = fx.reduce(
+                (acc, row) => {
+                    const time = row[timeKey];
+                    if (!acc[time]) acc[time] = {};
+                    const statsKey = this.config.api.statsKeyMap[row.metricCode];
+                    acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
+                    return acc;
+                },
+                {},
+                tabData
+            );
+
+            const times = Object.keys(timeMap);
+            const values = fx.map(
+                (t) => {
+                    const raw = timeMap[t]?.[tabConfig.metricCode];
+                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+                },
+                times
+            );
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: [tabConfig.label],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 20, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: times,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: {
+                    type: 'value',
+                    name: tabConfig.unit,
+                    axisLine: { show: true, lineStyle: { color: tabConfig.color || '#3b82f6' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } },
+                },
+                series: [
+                    {
+                        name: tabConfig.label,
+                        type: 'line',
+                        data: values,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: tabConfig.color, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(tabConfig.color, 0.3) },
+                                    { offset: 1, color: hexToRgba(tabConfig.color, 0) },
+                                ],
+                            },
+                        },
+                    },
+                ],
+            };
+
+            this.updateChart(selectors.container, option);
+        }
+
+        // ======================
+        // RENDER: 금일/전일 비교 차트
+        // ======================
+
+        function renderComparisonChart(tabConfig, selectors) {
+            const { today, yesterday } = this._trendDataComparison;
+            const { series } = tabConfig;
+            const { datasetNames } = this.config;
+            const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
+            const { timeField } = trendInfo?.param || {};
+            const statsKey = this.config.api.statsKeyMap[tabConfig.metricCode];
+            const timeKey = timeField || 'time';
+
+            const extractHHMM = (timeStr) => {
+                const d = new Date(timeStr);
+                return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            };
+
+            const groupByTime = (data) =>
+                fx.reduce(
+                    (acc, row) => {
+                        const time = extractHHMM(row[timeKey]);
+                        if (row.metricCode === tabConfig.metricCode) {
+                            acc[time] = row.statsBody?.[statsKey] ?? null;
+                        }
+                        return acc;
+                    },
+                    {},
+                    data || []
+                );
+
+            const todayMap = groupByTime(today);
+            const yesterdayMap = groupByTime(yesterday);
+
+            const times = [...new Set([...Object.keys(todayMap), ...Object.keys(yesterdayMap)])].sort();
+
+            const todayValues = fx.map(
+                (t) => {
+                    const raw = todayMap[t];
+                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+                },
+                times
+            );
+
+            const yesterdayValues = fx.map(
+                (t) => {
+                    const raw = yesterdayMap[t];
+                    return raw != null ? +(raw * tabConfig.scale).toFixed(2) : null;
+                },
+                times
+            );
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 },
+                },
+                legend: {
+                    data: [series.today.label, series.yesterday.label],
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 },
+                },
+                grid: { left: 50, right: 20, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: times,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                },
+                yAxis: {
+                    type: 'value',
+                    name: tabConfig.unit,
+                    axisLine: { show: true, lineStyle: { color: series.today.color } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } },
+                },
+                series: [
+                    {
+                        name: series.today.label,
+                        type: 'line',
+                        data: todayValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: series.today.color, width: 2 },
+                        areaStyle: {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: hexToRgba(series.today.color, 0.3) },
+                                    { offset: 1, color: hexToRgba(series.today.color, 0) },
+                                ],
+                            },
+                        },
+                    },
+                    {
+                        name: series.yesterday.label,
+                        type: 'line',
+                        data: yesterdayValues,
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: { color: series.yesterday.color, width: 2, type: 'dashed' },
+                    },
+                ],
+            };
+
+            this.updateChart(selectors.container, option);
+        }
+
+        // ======================
+        // RENDER: 초기 레이블
+        // ======================
+
+        function renderInitialLabels() {
+            const { chart } = this.config;
+            fx.go(
+                Object.entries(chart.tabs),
+                fx.each(([tabKey, cfg]) => {
+                    const btn = this.popupQuery(`${chart.selectors.tabBtn}[data-tab="${tabKey}"]`);
+                    if (btn) btn.textContent = cfg.label;
+                })
+            );
+        }
+
+        // ======================
+        // POPUP LIFECYCLE
+        // ======================
+
+        function onPopupCreated({ chartSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            events && this.bindPopupEvents(events);
+            this.renderInitialLabels();
+        }
+
+        function onInstanceUnLoad() {
+            this.stopRefresh();
+            this.destroyPopup();
+            console.log('[SWBD] Destroyed:', this.id);
+        }
+
+        // ======================
+        // PREVIEW CONTROLS
+        // ======================
+
+        function showNormal() {
+            currentStatus = 'normal';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showWarning() {
+            currentStatus = 'warning';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showCritical() {
+            currentStatus = 'critical';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function destroyInstance() {
+            if (instance) {
+                onInstanceUnLoad.call(instance);
+                instance = null;
+                updateInstanceInfo();
+            }
+        }
+    </script>
+</body>
+</html>

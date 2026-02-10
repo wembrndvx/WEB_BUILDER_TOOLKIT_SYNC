@@ -34,7 +34,8 @@ const DATA_CONFIG = {
     pdusPerRoom: 2,
     upsPerRoom: 1,
     cracsPerRoom: 2,
-    sensorsPerRoom: 4
+    sensorsPerRoom: 4,
+    swbdsPerRoom: 1
 };
 
 const BUILDING_NAMES = [
@@ -59,7 +60,7 @@ const ROOM_TEMPLATES = [
 function generateAssets() {
     ALL_ASSETS = [];
 
-    let serverIdx = 1, pduIdx = 1, upsIdx = 1, cracIdx = 1, sensorIdx = 1, rackIdx = 1;
+    let serverIdx = 1, pduIdx = 1, upsIdx = 1, cracIdx = 1, sensorIdx = 1, rackIdx = 1, swbdIdx = 1;
 
     for (let b = 1; b <= DATA_CONFIG.buildings; b++) {
         const buildingId = `building-${String(b).padStart(3, '0')}`;
@@ -108,6 +109,11 @@ function generateAssets() {
                 for (let c = 1; c <= DATA_CONFIG.cracsPerRoom; c++) {
                     const cracId = `crac-${String(cracIdx++).padStart(4, '0')}`;
                     createAsset(cracId, `CRAC ${cracId.split('-')[1]}`, 'crac', roomId, false);
+                }
+
+                for (let sw = 1; sw <= DATA_CONFIG.swbdsPerRoom; sw++) {
+                    const swbdId = `swbd-${String(swbdIdx++).padStart(4, '0')}`;
+                    createAsset(swbdId, `MHV-${swbdIdx - 1}`, 'swbd', roomId, false);
                 }
 
                 const sensorTypes = ['Temp', 'Humidity', 'Power', 'Air Flow'];
@@ -303,6 +309,13 @@ const PROPERTY_META_DATA = [
     { id: 204, assetCategoryType: 'CRAC', fieldKey: 'power_consumption_kw', description: '소비 전력 (kW)', isVisible: true, displayOrder: 4 },
     { id: 205, assetCategoryType: 'CRAC', fieldKey: 'filter_type', description: '필터 종류', isVisible: true, displayOrder: 5 },
     { id: 206, assetCategoryType: 'CRAC', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 6 },
+    // SWBD 카테고리
+    { id: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', description: '정격 전압 (V)', isVisible: true, displayOrder: 1 },
+    { id: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', description: '정격 전류 (A)', isVisible: true, displayOrder: 2 },
+    { id: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', description: '상 구분', isVisible: true, displayOrder: 3 },
+    { id: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', description: '과전류(OCR) 설정값', isVisible: true, displayOrder: 4 },
+    { id: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', description: '과전류지락(OCGR) 설정값', isVisible: true, displayOrder: 5 },
+    { id: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', description: '지락방향(DGR)', isVisible: true, displayOrder: 6 },
     // SENSOR 카테고리
     { id: 301, assetCategoryType: 'SENSOR', fieldKey: 'sensor_type', description: '센서 유형', isVisible: true, displayOrder: 1 },
     { id: 302, assetCategoryType: 'SENSOR', fieldKey: 'measurement_range', description: '측정 범위', isVisible: true, displayOrder: 2 },
@@ -354,6 +367,20 @@ const FIELD_LABEL_DATA = [
     { id: 210, assetPropertyMetaId: 204, assetCategoryType: 'CRAC', fieldKey: 'power_consumption_kw', locale: 'en', label: 'Power Consumption', helpText: 'Power consumption (kW)' },
     { id: 211, assetPropertyMetaId: 205, assetCategoryType: 'CRAC', fieldKey: 'filter_type', locale: 'en', label: 'Filter Type', helpText: 'Air filter type' },
     { id: 212, assetPropertyMetaId: 206, assetCategoryType: 'CRAC', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
+    // SWBD - Korean
+    { id: 401, assetPropertyMetaId: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', locale: 'ko', label: '정격 전압', helpText: '정격 전압 (V)' },
+    { id: 402, assetPropertyMetaId: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', locale: 'ko', label: '정격 전류', helpText: '정격 전류 (A)' },
+    { id: 403, assetPropertyMetaId: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', locale: 'ko', label: '상 구분', helpText: '단상/삼상 구분' },
+    { id: 404, assetPropertyMetaId: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', locale: 'ko', label: '과전류(OCR)', helpText: '과전류 차단 설정값' },
+    { id: 405, assetPropertyMetaId: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', locale: 'ko', label: '과전류지락(OCGR)', helpText: '과전류지락 차단 설정값' },
+    { id: 406, assetPropertyMetaId: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', locale: 'ko', label: '지락방향(DGR)', helpText: '지락방향 계전기 방향' },
+    // SWBD - English
+    { id: 407, assetPropertyMetaId: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', locale: 'en', label: 'Rated Voltage', helpText: 'Rated voltage (V)' },
+    { id: 408, assetPropertyMetaId: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', locale: 'en', label: 'Rated Current', helpText: 'Rated current (A)' },
+    { id: 409, assetPropertyMetaId: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', locale: 'en', label: 'Phase Type', helpText: 'Single/Three phase' },
+    { id: 410, assetPropertyMetaId: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', locale: 'en', label: 'OCR Setting', helpText: 'Over-current relay setting' },
+    { id: 411, assetPropertyMetaId: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', locale: 'en', label: 'OCGR Setting', helpText: 'Over-current ground relay setting' },
+    { id: 412, assetPropertyMetaId: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', locale: 'en', label: 'DGR Direction', helpText: 'Directional ground relay' },
     // SENSOR - Korean
     { id: 301, assetPropertyMetaId: 301, assetCategoryType: 'SENSOR', fieldKey: 'sensor_type', locale: 'ko', label: '센서 유형', helpText: '온도/습도/전력/풍량 등' },
     { id: 302, assetPropertyMetaId: 302, assetCategoryType: 'SENSOR', fieldKey: 'measurement_range', locale: 'ko', label: '측정 범위', helpText: '센서 측정 가능 범위' },
@@ -409,6 +436,20 @@ function generateCRACProperty(assetKey) {
         power_consumption_kw: 8 + (idx * 3) + Math.round(Math.random() * 2 * 10) / 10,
         filter_type: filters[idx % filters.length],
         manufacturer: manufacturers[idx % manufacturers.length]
+    };
+}
+
+// SWBD용 property mock 데이터 생성 함수
+function generateSWBDProperty(assetKey) {
+    const idx = parseInt(assetKey.replace(/\D/g, '')) || 1;
+    const directions = ['Forward', 'Reverse'];
+    return {
+        rated_voltage_v: 22900,
+        rated_current_a: 2500 + (idx * 200),
+        phase_type: '삼상',
+        ocr_setting: (1200 + idx * 100) + ' A',
+        ocgr_setting: (200 + idx * 50) + ' A',
+        dgr_direction: directions[idx % 2]
     };
 }
 
@@ -627,6 +668,7 @@ app.post('/api/v1/ast/gx', (req, res) => {
         case 'UPS': propertyValues = generateUPSProperty(assetKey); break;
         case 'PDU': propertyValues = generatePDUProperty(assetKey); break;
         case 'CRAC': propertyValues = generateCRACProperty(assetKey); break;
+        case 'SWBD': propertyValues = generateSWBDProperty(assetKey); break;
         case 'SENSOR': propertyValues = generateSensorProperty(assetKey); break;
         default:
             try { propertyValues = JSON.parse(asset.property || '{}'); }
@@ -660,6 +702,7 @@ app.post('/api/v1/ast/gx', (req, res) => {
             serialNumber: asset.serialNumber,
             assetModelKey: asset.assetModelKey,
             assetModelName: model ? model.name : null,
+            assetVendorKey: model ? model.assetVendorKey : null,
             installDate: asset.installDate,
             ownerUserId: asset.ownerUserId,
             description: asset.description
@@ -813,6 +856,7 @@ function generateMetricsByAssetType(assetKey) {
     if (assetKey.startsWith('crac')) return generateCRACMetrics(eventedAt);
     if (assetKey.startsWith('ups')) return generateUPSMetricsData(eventedAt);
     if (assetKey.startsWith('pdu')) return generateDISTMetrics(eventedAt);
+    if (assetKey.startsWith('swbd')) return generateSWBDMetrics(eventedAt);
     // sensor (default)
     return [
         { metricCode: 'SENSOR.TEMP', eventedAt, valueType: 'NUMBER', valueNumber: 20 + Math.round(Math.random() * 10 * 10) / 10 },
@@ -886,6 +930,34 @@ function generateUPSMetricsData(eventedAt) {
     metrics.push({ metricCode: 'UPS.BATT_FAULT', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
     metrics.push({ metricCode: 'UPS.OUTPUT_OVERLOAD', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 });
     return metrics;
+}
+
+function generateSWBDMetrics(eventedAt) {
+    return [
+        // NUMBER (계측)
+        { metricCode: 'SWBD.VOLTAGE_V', eventedAt, valueType: 'NUMBER', valueNumber: 22800 + Math.round(Math.random() * 400) },
+        { metricCode: 'SWBD.CURRENT_A', eventedAt, valueType: 'NUMBER', valueNumber: 1000 + Math.round(Math.random() * 500) },
+        { metricCode: 'SWBD.ACTIVE_POWER_KW', eventedAt, valueType: 'NUMBER', valueNumber: 300 + Math.round(Math.random() * 100) },
+        { metricCode: 'SWBD.FREQUENCY_HZ', eventedAt, valueType: 'NUMBER', valueNumber: 60 + Math.round((Math.random() - 0.5) * 4) / 10 },
+        { metricCode: 'SWBD.REACTIVE_POWER_KVAR', eventedAt, valueType: 'NUMBER', valueNumber: 50 + Math.round(Math.random() * 30) },
+        { metricCode: 'SWBD.POWER_FACTOR', eventedAt, valueType: 'NUMBER', valueNumber: +(0.85 + Math.random() * 0.1).toFixed(2) },
+        { metricCode: 'SWBD.DC_CURRENT_A', eventedAt, valueType: 'NUMBER', valueNumber: 5 + Math.round(Math.random() * 10) },
+        { metricCode: 'SWBD.DC_VOLTAGE_V', eventedAt, valueType: 'NUMBER', valueNumber: 110 + Math.round(Math.random() * 10) },
+        { metricCode: 'SWBD.ACTIVE_ENERGY_KWH', eventedAt, valueType: 'NUMBER', valueNumber: 50000 + Math.round(Math.random() * 10000) },
+        { metricCode: 'SWBD.REACTIVE_ENERGY_KVARH', eventedAt, valueType: 'NUMBER', valueNumber: 8000 + Math.round(Math.random() * 2000) },
+        // BOOL (상태/알람)
+        { metricCode: 'SWBD.IS_NORMAL', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.05 },
+        { metricCode: 'SWBD.ALARM_OCR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.95 },
+        { metricCode: 'SWBD.ALARM_OCGR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.97 },
+        { metricCode: 'SWBD.ALARM_OVR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.96 },
+        { metricCode: 'SWBD.ALARM_OVGR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.97 },
+        { metricCode: 'SWBD.ALARM_UVR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.96 },
+        { metricCode: 'SWBD.ALARM_POR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.98 },
+        { metricCode: 'SWBD.ALARM_DGR', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.98 },
+        { metricCode: 'SWBD.ALARM_ELD', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.97 },
+        { metricCode: 'SWBD.ALARM_TR_TEMP', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.96 },
+        { metricCode: 'SWBD.ALARM_GENERAL', eventedAt, valueType: 'BOOL', valueBool: Math.random() > 0.93 },
+    ];
 }
 
 function generateDISTMetrics(eventedAt) {

@@ -1,0 +1,272 @@
+/*
+ * SWBD - Shadow DOM Popup Styles
+ * 수배전반 상세 팝업 (기획서 v.0.8_260128 기준)
+ */
+
+.popup-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: #1a1f2e;
+    border-radius: 12px 0 0 12px;
+    width: 560px;
+    height: 100%;
+    overflow: hidden;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid #2a3142;
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+}
+
+/* ======================
+   Header
+   ====================== */
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #2a3142;
+    flex-shrink: 0;
+}
+
+.header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.swbd-name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #e0e6ed;
+}
+
+.swbd-zone {
+    font-size: 13px;
+    color: #8892a0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.swbd-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.swbd-status[data-status="normal"] {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.swbd-status[data-status="warning"] {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.swbd-status[data-status="critical"] {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #8892a0;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.close-btn:hover {
+    background: #2a3142;
+    color: #e0e6ed;
+}
+
+/* ======================
+   Body
+   ====================== */
+.popup-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* ======================
+   Section Common
+   ====================== */
+.section {
+    background: #252b3b;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #2a3142;
+}
+
+.section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #8892a0;
+    letter-spacing: 0.5px;
+}
+
+/* ======================
+   Section 1: 기본정보 (이미지 + 테이블)
+   ====================== */
+.info-section .info-content {
+    padding: 16px;
+}
+
+.info-layout {
+    display: flex;
+    gap: 16px;
+}
+
+.info-image-placeholder {
+    width: 100px;
+    min-height: 100px;
+    background: #1a1f2e;
+    border-radius: 8px;
+    border: 1px solid #2a3142;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.info-image-placeholder svg {
+    opacity: 0.5;
+}
+
+.image-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.info-table {
+    flex: 1;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.info-table th,
+.info-table td {
+    padding: 5px 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(42, 49, 66, 0.5);
+}
+
+.info-table th {
+    color: #8892a0;
+    font-weight: 400;
+    white-space: nowrap;
+    width: 70px;
+}
+
+.info-table td {
+    color: #e0e6ed;
+    font-weight: 500;
+}
+
+.info-table tr:last-child th,
+.info-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* ======================
+   Section 2: 트렌드 차트 (4탭)
+   ====================== */
+.chart-section {
+    flex: 1;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-header {
+    display: flex;
+    gap: 4px;
+    padding: 8px 16px;
+    border-bottom: 1px solid #2a3142;
+    flex-shrink: 0;
+}
+
+.tab-btn {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #8892a0;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn:hover {
+    background: #252b3b;
+    color: #e0e6ed;
+}
+
+.tab-btn.active {
+    background: #3b82f6;
+    color: #fff;
+}
+
+.chart-container {
+    flex: 1;
+    min-height: 200px;
+    width: 100%;
+}
+
+/* ======================
+   Empty/Error States
+   ====================== */
+.empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.error-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: #ef4444;
+    font-size: 13px;
+}
