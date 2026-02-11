@@ -605,6 +605,48 @@ Figma metadata에 명시된 **고정 사이즈는 그대로 구현**
 
 ---
 
+### 7. SVG 에셋 렌더링 문제 대응 (에셋 임의 대체 금지)
+
+**문제:**
+Figma MCP가 제공하는 SVG에는 `overflow="visible"` + `preserveAspectRatio="none"` 조합이 흔함.
+이로 인해 브라우저에서 컨테이너 밖으로 넘치거나 비정상적으로 확대되는 렌더링 문제가 발생함.
+
+**실수 사례:**
+```
+❌ "SVG가 깨지니까 CSS로 대체하겠습니다"
+→ Figma 에셋은 원본이다. 렌더링 문제가 있다고 에셋 자체를 CSS로 바꾸는 것은 무책임한 방향.
+
+✅ "CSS에서 크기/위치를 픽셀 단위로 명시하겠습니다"
+→ 에셋은 그대로 두고, CSS로 올바르게 렌더링되도록 크기를 잡아주는 것이 정답.
+```
+
+**해결 방법:**
+```css
+/* ❌ 퍼센트 기반 inset → 브라우저마다 계산이 불안정 */
+.icon img {
+    position: absolute;
+    inset: -83.33%;
+}
+
+/* ✅ 픽셀 단위 명시 → 정확한 렌더링 */
+.icon img {
+    position: absolute;
+    width: 16px;     /* SVG viewBox 너비 */
+    height: 16px;    /* SVG viewBox 높이 */
+    top: -5px;       /* (viewBox - container) / 2 의 음수 */
+    left: -5px;
+    display: block;
+}
+```
+
+**핵심 원칙:**
+1. **Figma 에셋은 절대 임의 대체하지 않는다** - CSS 도형, 외부 아이콘 등으로 바꾸지 않음
+2. **SVG viewBox 크기를 확인**하고 img에 해당 크기를 `width`/`height`로 명시
+3. 글로우/그림자 필터가 있는 SVG는 `overflow: visible` 유지, 컨테이너 크기와 SVG viewBox 크기의 차이만큼 음수 `top`/`left`로 센터링
+4. 필요시 부모에 `overflow: hidden` 추가하여 넘침 방지
+
+---
+
 ### 📊 구현 완료 체크리스트
 
 - [ ] 전체 컨테이너 width/height가 metadata와 일치
@@ -615,6 +657,8 @@ Figma metadata에 명시된 **고정 사이즈는 그대로 구현**
 - [ ] 고정 사이즈를 임의로 변경하지 않음
 - [ ] 브라우저에서 실제 렌더링 결과 확인
 - [ ] Figma 스크린샷과 **픽셀 단위로** 비교 완료
+- [ ] SVG 에셋이 올바른 크기로 렌더링됨 (img에 픽셀 단위 width/height 명시)
+- [ ] SVG 에셋을 CSS나 외부 아이콘으로 임의 대체하지 않음
 
 ---
 

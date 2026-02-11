@@ -1,0 +1,812 @@
+/* ===== Reset ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== Container ===== */
+#content-group-container {
+  width: 464px;
+  height: 790px;
+  overflow: auto;
+}
+
+/* ===== Outer Box ===== */
+#content-group-container .content-group {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  border-radius: 16px;
+  border: 2px solid rgba(144, 161, 185, 0.8);
+  background: rgba(19, 21, 33, 0.8);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+/* ===== Right Column ===== */
+#content-group-container .right {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+/* ===== Contents Section (shared) ===== */
+#content-group-container .contents {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* ===== Contents Title (shared) ===== */
+#content-group-container .contents-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#content-group-container .contents-title-txt {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .title-dot {
+  width: 6px;
+  height: 6px;
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+#content-group-container .title-dot img {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: -5px;
+  left: -5px;
+  display: block;
+}
+
+#content-group-container .title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #f8fafc;
+  line-height: normal;
+  flex-shrink: 0;
+}
+
+#content-group-container .title-union {
+  width: 55.176px;
+  height: 9px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+#content-group-container .title-union img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== Section Box (shared) ===== */
+#content-group-container .contents-section {
+  backdrop-filter: blur(15px);
+  background: rgba(26, 34, 50, 0.6);
+  border: 1px solid rgba(81, 102, 145, 0.6);
+  border-radius: 12px;
+  position: relative;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+#content-group-container .section-shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ============================================================
+   Section 1: Bar Chart
+   ============================================================ */
+
+#content-group-container .section--chart {
+  height: 241px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 19px 20px;
+}
+
+#content-group-container .chart-block {
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* -- Chart Header -- */
+#content-group-container .chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+  line-height: normal;
+}
+
+#content-group-container .chart-header-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #e4ebf6;
+  letter-spacing: -0.32px;
+  flex-shrink: 0;
+}
+
+#content-group-container .chart-header-item {
+  display: flex;
+  gap: 7px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+#content-group-container .chart-header-value {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 28px;
+  color: #f8fafc;
+  line-height: normal;
+  letter-spacing: -1.12px;
+  flex-shrink: 0;
+}
+
+#content-group-container .chart-header-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  line-height: normal;
+  letter-spacing: -0.28px;
+  flex-shrink: 0;
+}
+
+/* -- Chart Box (Legend + Chart Area) -- */
+#content-group-container .chart-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* -- Legend -- */
+#content-group-container .chart-legend {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .legend-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .legend-color {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+#content-group-container .legend-color--today {
+  background: #445ed9;
+}
+
+#content-group-container .legend-color--week {
+  background: #81e1c5;
+}
+
+#content-group-container .legend-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: #bbc2cf;
+  line-height: normal;
+  letter-spacing: -0.26px;
+  flex-shrink: 0;
+}
+
+/* -- Chart Area -- */
+#content-group-container .chart-area {
+  width: 372px;
+  height: 130px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Grid Lines */
+#content-group-container .chart-line {
+  position: absolute;
+  left: 28px;
+  width: 344px;
+  height: 1px;
+  overflow: hidden;
+}
+
+#content-group-container .chart-line img {
+  display: block;
+  width: 344px;
+  height: 1px;
+}
+
+#content-group-container .chart-line--l5 { top: 7px; }
+#content-group-container .chart-line--l4 { top: 32px; }
+#content-group-container .chart-line--l3 { top: 57px; }
+#content-group-container .chart-line--l2 { top: 82px; }
+#content-group-container .chart-line--l1 { top: 107px; }
+
+/* Y-axis Labels */
+#content-group-container .chart-y-label {
+  position: absolute;
+  left: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: rgba(167, 172, 188, 0.6);
+  line-height: normal;
+  letter-spacing: -0.24px;
+  text-align: right;
+}
+
+#content-group-container .chart-y-label--800 { top: 0; }
+#content-group-container .chart-y-label--600 { top: 25px; }
+#content-group-container .chart-y-label--400 { top: 50px; }
+#content-group-container .chart-y-label--200 { top: 75px; }
+#content-group-container .chart-y-label--0   { top: 100px; left: 14px; }
+
+/* X-axis Labels */
+#content-group-container .chart-x-label {
+  position: absolute;
+  top: 116px;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: rgba(167, 172, 188, 0.6);
+  line-height: normal;
+  letter-spacing: -0.24px;
+}
+
+#content-group-container .chart-x-label--01 { left: 52px; }
+#content-group-container .chart-x-label--02 { left: 101px; }
+#content-group-container .chart-x-label--03 { left: 150px; }
+#content-group-container .chart-x-label--04 { left: 199px; }
+#content-group-container .chart-x-label--05 { left: 248px; }
+#content-group-container .chart-x-label--06 { left: 297px; }
+#content-group-container .chart-x-label--07 { left: 346px; }
+
+/* Bar Groups */
+#content-group-container .chart-bar-group {
+  position: absolute;
+  width: 18px;
+}
+
+#content-group-container .chart-bar {
+  position: absolute;
+  width: 6px;
+  border-radius: 2px;
+}
+
+#content-group-container .chart-bar--today {
+  background: #445ed9;
+  left: 0;
+  top: 0;
+}
+
+#content-group-container .chart-bar--week {
+  background: #81e1c5;
+  left: 12px;
+}
+
+/* Bar Group Positions */
+#content-group-container .chart-bar-group--1 { left: 49px; top: 36px; height: 70px; }
+#content-group-container .chart-bar-group--2 { left: 100px; top: 23px; height: 83px; }
+#content-group-container .chart-bar-group--3 { left: 149px; top: 24px; height: 82px; }
+#content-group-container .chart-bar-group--4 { left: 198px; top: 40px; height: 66px; }
+#content-group-container .chart-bar-group--5 { left: 247px; top: 40px; height: 66px; }
+#content-group-container .chart-bar-group--6 { left: 296px; top: 49px; height: 57px; }
+#content-group-container .chart-bar-group--7 { left: 344px; top: 69px; height: 37px; }
+
+/* Bar Heights */
+#content-group-container .chart-bar-group--1 .chart-bar--today { height: 70px; }
+#content-group-container .chart-bar-group--1 .chart-bar--week  { top: 55px; height: 15px; }
+
+#content-group-container .chart-bar-group--2 .chart-bar--today { height: 83px; }
+#content-group-container .chart-bar-group--2 .chart-bar--week  { top: 13px; height: 70px; }
+
+#content-group-container .chart-bar-group--3 .chart-bar--today { height: 82px; }
+#content-group-container .chart-bar-group--3 .chart-bar--week  { top: 12px; height: 70px; }
+
+#content-group-container .chart-bar-group--4 .chart-bar--today { height: 66px; }
+#content-group-container .chart-bar-group--4 .chart-bar--week  { top: 16px; height: 50px; }
+
+#content-group-container .chart-bar-group--5 .chart-bar--today { height: 66px; }
+#content-group-container .chart-bar-group--5 .chart-bar--week  { top: 17px; height: 49px; }
+
+#content-group-container .chart-bar-group--6 .chart-bar--today { height: 57px; }
+#content-group-container .chart-bar-group--6 .chart-bar--week  { top: 20px; height: 37px; }
+
+#content-group-container .chart-bar-group--7 .chart-bar--today { height: 37px; }
+#content-group-container .chart-bar-group--7 .chart-bar--week  { top: 1px; height: 36px; }
+
+/* ============================================================
+   Section 2: System Status
+   ============================================================ */
+
+#content-group-container .section--status {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  background: none;
+  border: none;
+  backdrop-filter: none;
+}
+
+/* -- Status Left Box (Gauge) -- */
+#content-group-container .status-left-box {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 17px;
+  border-radius: 12px;
+  border: 1px solid rgba(81, 102, 145, 0.6);
+  background: rgba(26, 34, 50, 0.6);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+#content-group-container .status-score-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.32px;
+  text-align: center;
+  width: 106px;
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+}
+
+#content-group-container .status-gauge-chart {
+  width: 106px;
+  height: 81px;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#content-group-container .status-gauge-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 106px;
+  height: 106px;
+  overflow: hidden;
+}
+
+#content-group-container .status-gauge-img img {
+  display: block;
+  width: 106px;
+  height: 106px;
+}
+
+#content-group-container .status-gauge-value {
+  position: absolute;
+  top: 39px;
+  left: 50%;
+  transform: translateX(calc(-50% - 0.5px));
+  display: flex;
+  gap: 3px;
+  align-items: flex-end;
+  justify-content: center;
+  line-height: normal;
+  text-align: center;
+  z-index: 1;
+}
+
+#content-group-container .status-gauge-num {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 28px;
+  color: #f8fafc;
+  letter-spacing: -1.12px;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-gauge-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  letter-spacing: -0.28px;
+  flex-shrink: 0;
+}
+
+/* -- Status Right Box (System List) -- */
+#content-group-container .status-right-box {
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+  height: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(81, 102, 145, 0.6);
+  background: rgba(26, 34, 50, 0.6);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+#content-group-container .status-list {
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* System List Row */
+#content-group-container .status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-row-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-row-symbol {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5.871px;
+  border-radius: 5.032px;
+  background: #1f2633;
+  overflow: hidden;
+}
+
+#content-group-container .status-row-icon {
+  width: 12.581px;
+  height: 12.581px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#content-group-container .status-row-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#content-group-container .status-row-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+/* Status Row Values */
+#content-group-container .status-row-item {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  line-height: normal;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-row-value {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 24px;
+  color: #f8fafc;
+  letter-spacing: -0.96px;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-row-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  letter-spacing: -0.28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-text--normal {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: #81e1c5;
+  line-height: normal;
+  letter-spacing: -0.4px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+#content-group-container .status-text--abnormal {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .warning-icon {
+  width: 15px;
+  height: 14px;
+  position: relative;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+#content-group-container .warning-icon img {
+  position: absolute;
+  width: 21px;
+  height: 20px;
+  top: -3px;
+  left: -3px;
+  display: block;
+}
+
+#content-group-container .abnormal-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: #edbc35;
+  line-height: normal;
+  letter-spacing: -0.4px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Section 3: Battery Group
+   ============================================================ */
+
+#content-group-container .section--battery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 19px 20px;
+}
+
+#content-group-container .battery-block {
+  width: 384px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* -- Battery Header -- */
+#content-group-container .battery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-header-item {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-dot {
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-dot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#content-group-container .battery-header-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.28px;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-header-date {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  color: #bbc2cf;
+  line-height: normal;
+  letter-spacing: -0.26px;
+  flex-shrink: 0;
+}
+
+/* -- Battery Body -- */
+#content-group-container .battery-body {
+  display: flex;
+  gap: 55px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Battery Donut Chart */
+#content-group-container .battery-chart {
+  width: 121px;
+  height: 121px;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 33px 19px;
+}
+
+#content-group-container .battery-chart-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 121px;
+  height: 121px;
+}
+
+#content-group-container .battery-chart-img img {
+  display: block;
+  width: 121px;
+  height: 121px;
+}
+
+#content-group-container .battery-chart-value {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  line-height: normal;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-chart-num {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 28px;
+  color: #f8fafc;
+  letter-spacing: -1.12px;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-chart-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  letter-spacing: -0.28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Battery Legend */
+#content-group-container .battery-legend {
+  width: 181px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  align-items: flex-start;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-legend-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2.857px;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-legend-color--red {
+  background: #ff5c57;
+}
+
+#content-group-container .battery-legend-color--yellow {
+  background: #edbc35;
+}
+
+#content-group-container .battery-legend-color--blue {
+  background: #445ed9;
+}
+
+#content-group-container .battery-legend-name {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  color: #bbc2cf;
+  line-height: normal;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+#content-group-container .battery-legend-percent {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.3px;
+  text-align: right;
+  flex-shrink: 0;
+}
