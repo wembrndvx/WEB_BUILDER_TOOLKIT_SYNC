@@ -1,0 +1,721 @@
+/* ================================================================
+   Popup Component  (528 × 657)
+   Figma node 2:1384
+   ================================================================ */
+
+/* ── Container ── */
+#popup-container {
+  width: 528px;
+  height: 657px;
+  overflow: auto;
+}
+
+/* ── Root ── */
+#popup-container .popup {
+  width: 528px;
+  height: 657px;
+  background: #131521;
+  border: 1px solid #6b6b70;
+  border-radius: 16px;
+  box-shadow: 0px 0px 24px 0px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ================================================================
+   TITLE BAR  (528 × 59)
+   ================================================================ */
+#popup-container .popup-title {
+  width: 100%;
+  height: 59px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 15px 20px;
+  box-sizing: border-box;
+  border-bottom: 1px solid #6b6b70;
+  background:
+    linear-gradient(rgba(96, 144, 255, 0) 0%, rgba(96, 144, 255, 0.04) 100%),
+    linear-gradient(90deg, rgba(96, 144, 255, 0.05) 0%, rgba(96, 144, 255, 0.05) 100%),
+    linear-gradient(90deg, rgba(19, 21, 33, 0.8) 0%, rgba(19, 21, 33, 0.8) 100%);
+  backdrop-filter: blur(15px);
+  flex-shrink: 0;
+}
+
+#popup-container .popup-title-txt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#popup-container .popup-title-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+#popup-container .popup-title-dot img {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: -5px;
+  left: -5px;
+  display: block;
+}
+
+#popup-container .popup-title-text {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: normal;
+  color: #f8fafc;
+  margin: 0;
+}
+
+/* Close Button */
+#popup-container .popup-close-btn {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+#popup-container .popup-close-btn .close-bg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+#popup-container .popup-close-btn .close-icon {
+  position: absolute;
+  top: 29.17%;
+  left: 29.17%;
+  width: 41.66%;
+  height: 41.66%;
+}
+
+#popup-container .popup-close-btn .close-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ================================================================
+   SECTION  (528 × 598)
+   ================================================================ */
+#popup-container .popup-section {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+#popup-container .popup-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ================================================================
+   BLOCK 1 – Equipment Info  (496 × 253)
+   ================================================================ */
+#popup-container .popup-block {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#popup-container .block-title {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  line-height: normal;
+  letter-spacing: -0.32px;
+  color: #e4ebf6;
+  margin: 0;
+}
+
+/* Equipment Row: Image + Table */
+#popup-container .equipment-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Equipment Image Container */
+#popup-container .equipment-img-box {
+  width: 196px;
+  height: 224px;
+  background: #282a37;
+  border: 1px solid #323234;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+#popup-container .equipment-img {
+  width: 164px;
+  height: 164px;
+  box-shadow: -4px 4px 8px 0px rgba(0, 0, 0, 0.15);
+}
+
+#popup-container .equipment-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Property Table */
+#popup-container .property-table {
+  flex: 1;
+  height: 224px;
+  background: rgba(40, 42, 55, 0.9);
+  border: 1px solid #323234;
+  border-radius: 8px;
+  padding: 10px 10px 10px 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+#popup-container .property-list {
+  width: 276px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#popup-container .property-row {
+  display: flex;
+  gap: 7px;
+  height: 22px;
+  align-items: center;
+}
+
+#popup-container .property-name {
+  width: 80px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 9px;
+  box-sizing: border-box;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+#popup-container .property-name p {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 18px;
+  color: #e4ebf6;
+  margin: 0;
+  white-space: nowrap;
+}
+
+#popup-container .property-value {
+  flex: 1;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 12px;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+#popup-container .property-value p {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: #f8fafc;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ================================================================
+   BLOCK 2 – Chart  (496 × 293)
+   ================================================================ */
+
+/* Tab Menu */
+#popup-container .tab-menu {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+#popup-container .tab-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 8px 30px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+#popup-container .tab-item--active {
+  background:
+    linear-gradient(-8.6deg, rgba(96, 235, 255, 0) 9.76%, rgba(96, 255, 234, 0.8) 93.85%),
+    linear-gradient(-13.49deg, rgba(112, 132, 245, 0) 15.24%, rgb(129, 225, 197) 112.01%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+  box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.35);
+}
+
+#popup-container .tab-item--active p {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: normal;
+  color: #1e202c;
+  margin: 0;
+}
+
+#popup-container .tab-item--idle p {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: normal;
+  color: #a7acbc;
+  margin: 0;
+}
+
+/* Chart Container */
+#popup-container .chart-container {
+  width: 100%;
+  background: #282a37;
+  border: 1px solid #323234;
+  border-radius: 8px;
+  padding: 20px 16px 0 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Chart Box (inline-grid in Figma, using relative positioning) */
+#popup-container .chart-box {
+  position: relative;
+  width: 464px;
+  height: 204px;
+}
+
+/* ── Grid ── */
+#popup-container .chart-grid {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  width: 464px;
+  height: 159px;
+}
+
+/* Y-axis area: positioned inside grid */
+#popup-container .chart-y-area {
+  position: absolute;
+  top: 7px;
+  left: 28px;
+  right: 15px;
+  bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Y-axis row */
+#popup-container .chart-y-row {
+  flex: 1;
+  position: relative;
+  width: 100%;
+}
+
+#popup-container .chart-y-row--zero {
+  flex: 0 0 1px;
+  position: relative;
+  width: 100%;
+}
+
+/* Y-axis labels */
+#popup-container .chart-y-label {
+  position: absolute;
+  top: -9px;
+  left: -8px;
+  transform: translateX(-100%);
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: rgba(167, 172, 188, 0.6);
+  text-align: right;
+  margin: 0;
+}
+
+/* Y-axis tick marks */
+#popup-container .chart-y-tick {
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 3px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#popup-container .chart-y-tick--zero {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Horizontal grid lines */
+#popup-container .chart-h-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+#popup-container .chart-h-line img {
+  display: block;
+  width: 100%;
+  height: 1px;
+}
+
+/* Zero line (solid) */
+#popup-container .chart-zero-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* X-axis area */
+#popup-container .chart-x-area {
+  position: absolute;
+  top: 7px;
+  left: 28px;
+  right: 15px;
+  bottom: 18px;
+  display: flex;
+}
+
+/* X-axis first item (0 position) */
+#popup-container .chart-x-item--zero {
+  width: 1px;
+  height: 100%;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#popup-container .chart-x-item--zero .x-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+#popup-container .chart-x-item--zero .x-tick {
+  position: absolute;
+  bottom: -3px;
+  right: 0;
+  width: 1px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* X-axis items */
+#popup-container .chart-x-item {
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+/* Vertical dashed lines */
+#popup-container .chart-x-item .x-v-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+}
+
+#popup-container .chart-x-item .x-v-line img {
+  display: block;
+  width: 1px;
+  height: 100%;
+}
+
+#popup-container .chart-x-item .x-tick {
+  position: absolute;
+  bottom: -3px;
+  right: 0;
+  width: 1px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* X-axis labels */
+#popup-container .chart-x-label {
+  position: absolute;
+  bottom: -6px;
+  right: 0;
+  transform: translateX(50%) translateY(100%);
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: rgba(167, 172, 188, 0.6);
+  text-align: center;
+  margin: 0;
+  white-space: nowrap;
+}
+
+#popup-container .chart-x-item--zero .chart-x-label {
+  right: auto;
+  left: 0;
+  transform: translateX(-50%) translateY(100%);
+}
+
+/* ── Graphic (Line Chart) ── */
+#popup-container .chart-graphic {
+  position: absolute;
+  top: 39.5px;
+  left: 44px;
+  width: 421px;
+  height: 107px;
+}
+
+/* Line series */
+#popup-container .chart-line-series {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#popup-container .chart-line-series img {
+  position: absolute;
+  display: block;
+}
+
+/* Line 1 (green-cyan) - viewBox 420.5x87.6, positioned at 19.06% from top */
+#popup-container .chart-line1 img {
+  top: 20.4px;
+  left: 0.88px;
+  width: 419.25px;
+  height: 85.6px;
+}
+
+/* Line 2 (blue) - viewBox 420.1x96.4, positioned at 1.16% from top */
+#popup-container .chart-line2 img {
+  top: 1.24px;
+  left: 0.88px;
+  width: 419.25px;
+  height: 94.39px;
+}
+
+/* Dot markers */
+#popup-container .chart-dot {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dot 1 (on line 1, green-cyan) */
+#popup-container .chart-dot--line1 {
+  top: 85.6px;
+  left: 181.48px;
+  width: 10.5px;
+  height: 8px;
+}
+
+/* Dot 2 (on line 2, blue) */
+#popup-container .chart-dot--line2 {
+  top: 9.69px;
+  left: 181.48px;
+  width: 10.5px;
+  height: 8px;
+}
+
+#popup-container .chart-dot .dot-outer {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#popup-container .chart-dot .dot-outer img {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+#popup-container .chart-dot .dot-inner {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#popup-container .chart-dot .dot-inner img {
+  width: 6px;
+  height: 6px;
+  display: block;
+}
+
+/* ── Hover Tooltip ── */
+#popup-container .chart-hover {
+  position: absolute;
+  top: 27.5px;
+  left: 231px;
+}
+
+#popup-container .chart-hover-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 138px;
+}
+
+#popup-container .chart-hover-line img {
+  display: block;
+  width: 1px;
+  height: 138px;
+}
+
+#popup-container .chart-hover-tips {
+  position: absolute;
+  top: 27.63px;
+  left: 6.79px;
+  width: 82px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  box-sizing: border-box;
+  background: rgba(75, 79, 82, 0.4);
+  backdrop-filter: blur(7px);
+  border-radius: 4px;
+  box-shadow: 0px 0px 12px 0px rgba(0, 0, 0, 0.2);
+}
+
+#popup-container .hover-time {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: normal;
+  color: #f8fafc;
+  margin: 0;
+}
+
+#popup-container .hover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+#popup-container .hover-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#popup-container .hover-legend-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+#popup-container .hover-legend-icon img {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+#popup-container .hover-legend-name {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: normal;
+  color: #e4ebf6;
+  margin: 0;
+}
+
+#popup-container .hover-value {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: normal;
+  color: #f8fafc;
+  margin: 0;
+}
+
+/* ── Legend (Bottom Right) ── */
+#popup-container .chart-legend {
+  position: absolute;
+  top: 194.67px;
+  left: 345.3px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+#popup-container .legend-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#popup-container .legend-info-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+#popup-container .legend-info-icon img {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+
+#popup-container .legend-info-name {
+  font-family: 'Pretendard Variable', Pretendard, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: #bbc2cf;
+  margin: 0;
+}
