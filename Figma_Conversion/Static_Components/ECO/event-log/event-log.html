@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventLog - ECO</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="event-log.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #0f172a;
+    }
+  </style>
+</head>
+<body>
+  <div id="event-log-container">
+    <div class="event-log" data-node-id="2:709">
+      <div class="bottom-log" data-node-id="I2:709;2:1889">
+
+        <!-- ===== Header Bar ===== -->
+        <div class="log-header" data-node-id="I2:709;2:1889;2:1701">
+          <div class="log-header-inner">
+
+            <!-- Left: Title + Controls -->
+            <div class="log-header-left" data-node-id="I2:709;2:1889;2:1702">
+              <div class="log-header-left-inner">
+                <div data-node-id="I2:709;2:1889;2:1703" style="display:flex;align-items:center;height:25.913px;">
+                  <span class="log-title" data-node-id="I2:709;2:1889;2:1704">이벤트 현황</span>
+                </div>
+                <div class="header-divider" data-node-id="I2:709;2:1889;2:1705"></div>
+                <div class="sound-controls" data-node-id="I2:709;2:1889;2:1706">
+                  <div class="sound-btn" data-node-id="I2:709;2:1889;2:1707">
+                    <div class="sound-icon" data-node-id="I2:709;2:1889;2:1708">
+                      <img src="./assets/event-log_4ef870cc945b4a571bf139c00337ea1615bc3034.svg" alt="Volume">
+                    </div>
+                    <span class="sound-label" data-node-id="I2:709;2:1889;2:1710">소리 알림</span>
+                  </div>
+                  <div class="auto-pill" data-node-id="I2:709;2:1889;2:1711">
+                    <div class="auto-pill-inner">
+                      <span class="auto-label" data-node-id="I2:709;2:1889;2:1712">AUTO</span>
+                      <div class="toggle-switch" data-node-id="2:1676">
+                        <div class="toggle-bg"></div>
+                        <div class="toggle-overlay"></div>
+                        <div class="toggle-knob" data-node-id="2:1677"></div>
+                        <div class="toggle-shadow"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Center: Expand Button -->
+            <button class="btn-expand" data-node-id="I2:709;2:1889;2:1714">
+              <div class="btn-expand-icon" data-node-id="I2:709;2:1889;2:1714;69:2406">
+                <div class="btn-expand-icon-img" data-node-id="I2:709;2:1889;2:1714;69:2406;79:4232">
+                  <img src="./assets/event-log_3cf3cc73ef0a57ab66d6525cc42c3b64e2f1a67a.svg" alt="">
+                </div>
+              </div>
+            </button>
+
+            <!-- Right: Actions + Status -->
+            <div class="log-header-right" data-node-id="I2:709;2:1889;2:1715">
+              <div class="action-buttons" data-node-id="I2:709;2:1889;2:1716">
+                <div class="btn-text" data-node-id="I2:709;2:1889;2:1717">
+                  <span class="btn-text-label" data-node-id="I2:709;2:1889;2:1718">Ack</span>
+                </div>
+                <div class="btn-text" data-node-id="I2:709;2:1889;2:1719">
+                  <span class="btn-text-label" data-node-id="I2:709;2:1889;2:1720">All</span>
+                </div>
+              </div>
+              <div class="right-divider" data-node-id="I2:709;2:1889;2:1721"></div>
+              <div class="status-items" data-node-id="I2:709;2:1889;2:1722">
+                <div class="status-item" data-node-id="I2:709;2:1889;2:1723">
+                  <div class="status-dot status-dot--critical"></div>
+                  <span class="status-count" data-node-id="I2:709;2:1889;2:1725">3</span>
+                </div>
+                <div class="status-item" data-node-id="I2:709;2:1889;2:1726">
+                  <div class="status-dot status-dot--major"></div>
+                  <span class="status-count" data-node-id="I2:709;2:1889;2:1728">11</span>
+                </div>
+                <div class="status-item" data-node-id="I2:709;2:1889;2:1729">
+                  <div class="status-dot status-dot--minor"></div>
+                  <span class="status-count" data-node-id="I2:709;2:1889;2:1731">24</span>
+                </div>
+                <div class="status-item" data-node-id="I2:709;2:1889;2:1732">
+                  <div class="status-dot status-dot--warning"></div>
+                  <span class="status-count" data-node-id="I2:709;2:1889;2:1734">927</span>
+                </div>
+                <div class="status-item" data-node-id="I2:709;2:1889;2:1735">
+                  <div class="status-dot status-dot--normal"></div>
+                  <span class="status-count" data-node-id="I2:709;2:1889;2:1737">327</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ===== Table Header ===== -->
+        <div class="table-header" data-node-id="I2:709;2:1889;2:1738">
+          <div class="table-header-inner">
+            <div class="th-cell th--status" data-node-id="I2:709;2:1889;2:1739">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1740">등급</span>
+            </div>
+            <div class="th-cell th--asset" data-node-id="I2:709;2:1889;2:1741">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1742">자산ID</span>
+            </div>
+            <div class="th-cell th--location" data-node-id="I2:709;2:1889;2:1743">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1744">위치</span>
+            </div>
+            <div class="th-cell th--first-time" data-node-id="I2:709;2:1889;2:1745">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1746">최초발생시간</span>
+            </div>
+            <div class="th-cell th--last-time" data-node-id="I2:709;2:1889;2:1747">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1748">마지막발생시간</span>
+            </div>
+            <div class="th-cell th--category" data-node-id="I2:709;2:1889;2:1749">
+              <span class="th-text" data-node-id="I2:709;2:1889;2:1750">구분(업무그룹)</span>
+            </div>
+            <div class="th-cell th--message" data-node-id="I2:709;2:1889;2:1751">
+              <span class="th-text th-text--message" data-node-id="I2:709;2:1889;2:1752">메시지</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Table Body ===== -->
+        <div class="table-body" data-node-id="I2:709;2:1889;2:1753">
+
+          <!-- Row 1: Major -->
+          <div class="table-row" data-node-id="I2:709;2:1889;2:1754">
+            <div class="td-status" data-node-id="I2:709;2:1889;2:1755">
+              <div class="row-dot row-dot--major"></div>
+            </div>
+            <div class="td-asset" data-node-id="I2:709;2:1889;2:1757">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1759">변압기 #302</span>
+            </div>
+            <div class="td-location" data-node-id="I2:709;2:1889;2:1760">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1761">전기실</span>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1762">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1763">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1764">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1765">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1766">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1767">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-category" data-node-id="I2:709;2:1889;2:1768">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1769">구분A</span>
+            </div>
+            <div class="td-message" data-node-id="I2:709;2:1889;2:1770">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1772">배터리 잔량 저하 (현재35%)이벤트 내용</span>
+            </div>
+          </div>
+
+          <!-- Row 2: Minor -->
+          <div class="table-row" data-node-id="I2:709;2:1889;2:1773">
+            <div class="td-status" data-node-id="I2:709;2:1889;2:1774">
+              <div class="row-dot row-dot--minor"></div>
+            </div>
+            <div class="td-asset" data-node-id="I2:709;2:1889;2:1776">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1778">변압기 #302</span>
+            </div>
+            <div class="td-location" data-node-id="I2:709;2:1889;2:1779">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1780">전기실</span>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1781">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1782">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1783">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1784">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1785">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1786">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-category" data-node-id="I2:709;2:1889;2:1787">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1788">구분B</span>
+            </div>
+            <div class="td-message" data-node-id="I2:709;2:1889;2:1789">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1791">정격 전류 초과 근접 (현재 부하 92%)전력 사용량 증가</span>
+            </div>
+          </div>
+
+          <!-- Row 3: Critical (Selected) -->
+          <div class="table-row table-row--selected" data-node-id="I2:709;2:1889;2:1792">
+            <div class="td-status" data-node-id="I2:709;2:1889;2:1793">
+              <div class="row-dot row-dot--critical"></div>
+            </div>
+            <div class="td-asset" data-node-id="I2:709;2:1889;2:1795">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1797">변압기 #302</span>
+            </div>
+            <div class="td-location" data-node-id="I2:709;2:1889;2:1798">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1799">전기실</span>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1800">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1801">
+                <span class="row-time row-time--bright" data-node-id="I2:709;2:1889;2:1802">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1803">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1804">
+                <span class="row-time row-time--bright" data-node-id="I2:709;2:1889;2:1805">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-category" data-node-id="I2:709;2:1889;2:1806">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1807">구분A</span>
+            </div>
+            <div class="td-message" data-node-id="I2:709;2:1889;2:1808">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1810">냉방 용량 부족 감지 (전산실 B존)</span>
+            </div>
+            <div class="row-actions" data-node-id="I2:709;2:1889;2:1811">
+              <div class="btn-new" data-node-id="I2:709;2:1889;2:1812">
+                <span class="btn-new-text">신규</span>
+              </div>
+              <div class="btn-action-sm" data-node-id="I2:709;2:1889;2:1813">
+                <div class="btn-action-sm-icon" data-node-id="I2:709;2:1889;2:1813;2:1602">
+                  <div class="btn-action-sm-icon-img" data-node-id="I2:709;2:1889;2:1813;2:1602;43:3097">
+                    <img src="./assets/event-log_7ffd5f4defde7891313a6209e65c5c1714977687.svg" alt="CCTV">
+                  </div>
+                </div>
+                <span class="btn-action-sm-text">영상</span>
+              </div>
+              <div class="btn-action-sm" data-node-id="I2:709;2:1889;2:1814">
+                <span class="btn-action-sm-text">영상</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 4: Normal -->
+          <div class="table-row" data-node-id="I2:709;2:1889;2:1815">
+            <div class="td-status" data-node-id="I2:709;2:1889;2:1816">
+              <div class="row-dot row-dot--normal"></div>
+            </div>
+            <div class="td-asset" data-node-id="I2:709;2:1889;2:1818">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1820">변압기 #302</span>
+            </div>
+            <div class="td-location" data-node-id="I2:709;2:1889;2:1821">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1822">전기실</span>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1823">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1824">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1825">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1826">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1827">
+                <span class="row-time" data-node-id="I2:709;2:1889;2:1828">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-category" data-node-id="I2:709;2:1889;2:1829">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1830">구분B</span>
+            </div>
+            <div class="td-message" data-node-id="I2:709;2:1889;2:1831">
+              <span class="row-text" data-node-id="I2:709;2:1889;2:1833">온도 임계치 초과 (32.5 ℃)</span>
+            </div>
+          </div>
+
+          <!-- Row 5: Major (Hover) -->
+          <div class="table-row table-row--hover" data-node-id="I2:709;2:1889;2:1834">
+            <div class="td-status" data-node-id="I2:709;2:1889;2:1835">
+              <div class="row-dot row-dot--major"></div>
+            </div>
+            <div class="td-asset" data-node-id="I2:709;2:1889;2:1837">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1839">변압기 #302</span>
+            </div>
+            <div class="td-location" data-node-id="I2:709;2:1889;2:1840">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1841">전기실</span>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1842">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1843">
+                <span class="row-time row-time--bright" data-node-id="I2:709;2:1889;2:1844">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-time" data-node-id="I2:709;2:1889;2:1845">
+              <div class="td-time-inner" data-node-id="I2:709;2:1889;2:1846">
+                <span class="row-time row-time--bright" data-node-id="I2:709;2:1889;2:1847">2026-02-27 09:33:00</span>
+              </div>
+            </div>
+            <div class="td-category" data-node-id="I2:709;2:1889;2:1848">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1849">구분A</span>
+            </div>
+            <div class="td-message" data-node-id="I2:709;2:1889;2:1850">
+              <span class="row-text row-text--bright" data-node-id="I2:709;2:1889;2:1852">온도 임계치 초과 (34.1 ℃)</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+</html>

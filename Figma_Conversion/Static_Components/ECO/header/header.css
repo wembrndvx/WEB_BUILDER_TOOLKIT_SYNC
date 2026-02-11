@@ -1,0 +1,390 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ===========================
+   Container: 1920 x 60
+   =========================== */
+#header-container {
+  width: 1920px;
+  height: 60px;
+  overflow: auto;
+}
+
+/* ===========================
+   Header
+   =========================== */
+#header-container .header {
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ===========================
+   Logo (Left)
+   =========================== */
+#header-container .header-logo {
+  height: 32px;
+  width: 442px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+#header-container .header-logo-inner {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+#header-container .logo {
+  display: flex;
+  gap: 7px;
+  height: 28px;
+  align-items: center;
+  position: relative;
+}
+
+#header-container .logo-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8.75px;
+  box-shadow: 0px 0px 13.125px 0px rgba(29, 78, 216, 0.5);
+  background-image:
+    linear-gradient(-23.6756deg, rgba(96, 235, 255, 0) 9.7594%, rgb(96, 255, 234) 93.845%),
+    linear-gradient(-34.8245deg, rgba(112, 132, 245, 0) 15.237%, rgb(129, 225, 197) 112.01%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+  flex-shrink: 0;
+  position: relative;
+}
+
+#header-container .logo-symbol-text {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  color: #f8fafc;
+  text-align: center;
+  line-height: normal;
+}
+
+#header-container .logo-text {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 700;
+  font-size: 22px;
+  color: #f8fafc;
+  line-height: normal;
+}
+
+/* ===========================
+   GNB (Center)
+   =========================== */
+#header-container .gnb {
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  height: 40px;
+  border-radius: 16px;
+  position: relative;
+  flex-shrink: 0;
+  background-image:
+    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+    linear-gradient(90deg, rgba(3, 51, 72, 0.4) 0%, rgba(3, 51, 72, 0.4) 100%);
+}
+
+#header-container .gnb-inner {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+  padding: 1px 41px;
+  border-radius: inherit;
+  position: relative;
+}
+
+#header-container .gnb-shadow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0px -4px 14px 0px rgba(17, 17, 17, 0.25),
+    inset 0px 4px 4px 0px rgba(96, 235, 255, 0.25);
+}
+
+#header-container .nav-link {
+  height: 38px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#header-container .nav-link-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+}
+
+#header-container .nav-link--active {
+  width: 66px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+#header-container .nav-link--active .nav-link-inner {
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+#header-container .nav-link-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 17px;
+  color: #e4ebf6;
+  text-align: center;
+  line-height: normal;
+  font-style: normal;
+}
+
+#header-container .nav-link-text--active {
+  font-weight: 600;
+  background-image:
+    linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #afeef7;
+  flex: 1 0 0;
+  min-height: 1px;
+  min-width: 1px;
+  white-space: pre-wrap;
+}
+
+#header-container .nav-link-frame {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 66px;
+  height: 39px;
+}
+
+#header-container .nav-link-frame img {
+  display: block;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===========================
+   Info (Right)
+   =========================== */
+#header-container .header-info {
+  position: relative;
+  flex-shrink: 0;
+}
+
+#header-container .header-info-inner {
+  display: flex;
+  align-items: center;
+}
+
+#header-container .info-container {
+  display: flex;
+  gap: 19.743px;
+  align-items: center;
+}
+
+/* --- Toggle --- */
+#header-container .toggle {
+  position: relative;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+#header-container .toggle-inner {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 4px;
+  border-radius: 100px;
+  position: relative;
+}
+
+#header-container .btn-toggle {
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  border: 1px solid #90a1b9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 20px;
+  border-radius: 6px;
+  box-shadow: 0px 4px 4px 0px rgba(44, 44, 44, 0.15);
+  position: relative;
+  flex-shrink: 0;
+  background-image:
+    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+}
+
+#header-container .btn-toggle--active {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-color: white;
+  background-image:
+    linear-gradient(-9.73556deg, rgba(96, 235, 255, 0) 9.7594%, rgb(96, 255, 234) 93.845%),
+    linear-gradient(-15.2276deg, rgba(112, 132, 245, 0) 15.237%, rgb(129, 225, 197) 112.01%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+}
+
+#header-container .btn-toggle-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: normal;
+  font-style: normal;
+}
+
+#header-container .btn-toggle--active .btn-toggle-text {
+  font-weight: 600;
+  color: #1e202c;
+}
+
+/* --- Icon Buttons --- */
+#header-container .icon-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#header-container .btn-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 78.947px;
+  border: 1px solid #90a1b9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1px;
+  position: relative;
+  flex-shrink: 0;
+  background-image:
+    linear-gradient(90deg, rgba(144, 161, 185, 0.1) 0%, rgba(144, 161, 185, 0.1) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+}
+
+#header-container .btn-icon--active {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 100%),
+    linear-gradient(90deg, rgba(144, 161, 185, 0.2) 0%, rgba(144, 161, 185, 0.2) 100%),
+    linear-gradient(90deg, rgba(33, 38, 50, 0.7) 0%, rgba(33, 38, 50, 0.7) 100%);
+}
+
+#header-container .icon-wrap {
+  width: 16.364px;
+  height: 16.364px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#header-container .icon-img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#header-container .icon-img--setting {
+  width: 13.72px;
+  height: 13px;
+  left: calc(50% + 0.18px);
+  top: calc(50% - 0.18px);
+}
+
+#header-container .icon-img--user {
+  width: 9.8564px;
+  height: 12.3806px;
+}
+
+#header-container .icon-img--logout {
+  width: 12.0956px;
+  height: 11.9318px;
+}
+
+#header-container .icon-img img {
+  display: block;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- Divider --- */
+#header-container .info-divider-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: stretch;
+}
+
+#header-container .info-divider {
+  width: 1.234px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+
+/* --- Time --- */
+#header-container .time-section {
+  height: 38px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+#header-container .time-section-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  height: 100%;
+  align-items: flex-end;
+  line-height: normal;
+  position: relative;
+}
+
+#header-container .time-text {
+  font-family: 'Roboto Mono', 'Noto Sans KR', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  color: #f8fafc;
+}
+
+#header-container .date-text {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  color: #94a3b8;
+  text-align: right;
+}

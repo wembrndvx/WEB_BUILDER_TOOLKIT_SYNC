@@ -1,0 +1,320 @@
+/* ===== Reset ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===== Container ===== */
+#status-box-container {
+  width: 740px;
+  height: 116px;
+  overflow: auto;
+}
+
+/* ===== Outer Box ===== */
+#status-box-container .status-box {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  overflow: clip;
+  padding: 12px 12px 12px 23px;
+  border-radius: 12px;
+  border: 2px solid #81e1c5;
+  background: rgba(15, 31, 36, 0.4);
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+#status-box-container .status-box-shadow {
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  box-shadow: inset 0px 4px 8px 0px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+/* ===== PUE Section (Left) ===== */
+#status-box-container .pue-section {
+  width: 140px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+  position: relative;
+}
+
+#status-box-container .pue-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+#status-box-container .pue-title-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#status-box-container .pue-title-icon img {
+  display: block;
+  width: 11px;
+  height: 11px;
+}
+
+#status-box-container .pue-title-text {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+/* ===== Gauge ===== */
+#status-box-container .gauge {
+  width: 118px;
+  height: 59px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+#status-box-container .gauge-arc-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 118px;
+  height: 59px;
+}
+
+#status-box-container .gauge-arc-bg img {
+  display: block;
+  width: 118px;
+  height: 59px;
+}
+
+#status-box-container .gauge-arc-value {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 113.24px;
+  height: 59px;
+}
+
+#status-box-container .gauge-arc-value img {
+  display: block;
+  width: 113.24px;
+  height: 59px;
+}
+
+#status-box-container .gauge-num {
+  position: absolute;
+  bottom: 3.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 30px;
+  color: #f9fdff;
+  line-height: normal;
+  text-align: center;
+  z-index: 1;
+}
+
+/* Gauge scale labels - positioned in pue-section */
+#status-box-container .gauge-label-left {
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: normal;
+}
+
+#status-box-container .gauge-label-right {
+  position: absolute;
+  bottom: 2px;
+  right: 0;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: normal;
+}
+
+/* ===== Info Grid (Right) ===== */
+#status-box-container .info-grid {
+  flex: 1 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, fit-content(100%));
+  gap: 6px;
+  min-height: 1px;
+  min-width: 1px;
+  position: relative;
+}
+
+/* ===== Info Box ===== */
+#status-box-container .info-box {
+  backdrop-filter: blur(15px);
+  background: #090909;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 17px 6px 7px;
+  flex-shrink: 0;
+  position: relative;
+  align-self: start;
+}
+
+#status-box-container .info-box--r1c1 {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+#status-box-container .info-box--r1c2 {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#status-box-container .info-box--r2c1 {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+#status-box-container .info-box--r2c2 {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* ===== Info Box Left Group ===== */
+#status-box-container .info-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#status-box-container .info-symbol {
+  width: 31px;
+  height: 31px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px;
+  border-radius: 8px;
+  background: rgba(228, 235, 246, 0.2);
+  overflow: hidden;
+}
+
+#status-box-container .info-symbol-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#status-box-container .info-symbol-icon img {
+  display: block;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+#status-box-container .info-symbol-icon--electricity img {
+  width: 8.85px;
+}
+
+#status-box-container .info-symbol-icon--humidity img {
+  width: 10.5px;
+}
+
+#status-box-container .info-symbol-icon--temperature img {
+  width: 7.5px;
+}
+
+#status-box-container .info-symbol-icon--alarm img {
+  width: 13.57px;
+}
+
+#status-box-container .info-label {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: #e4ebf6;
+  line-height: normal;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+/* ===== Info Box Right Item ===== */
+#status-box-container .info-item {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  position: relative;
+}
+
+#status-box-container .info-arrow {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#status-box-container .info-arrow img {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+#status-box-container .info-value {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 500;
+  font-size: 26px;
+  line-height: normal;
+  letter-spacing: -1.04px;
+  text-align: right;
+  flex-shrink: 0;
+  background:
+    linear-gradient(0deg, rgba(129, 225, 197, 0) 12.5%, rgb(129, 225, 197) 137.5%),
+    linear-gradient(90deg, rgb(175, 238, 247) 0%, rgb(175, 238, 247) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#status-box-container .info-unit {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: 400;
+  font-size: 14px;
+  color: #bbc2cf;
+  line-height: normal;
+  letter-spacing: -0.28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+#status-box-container .info-unit--kr {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 400;
+}

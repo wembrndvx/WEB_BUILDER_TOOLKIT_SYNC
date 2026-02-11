@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status Box</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&family=Noto+Sans+KR:wght@400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="status-box.css" />
+  <style>
+    body {
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="status-box-container">
+    <div class="status-box" data-node-id="2:636">
+
+      <!-- PUE Section (Left) -->
+      <div class="pue-section" data-node-id="2:637">
+        <div class="pue-title" data-node-id="2:638">
+          <div class="pue-title-icon" data-node-id="2:639">
+            <img src="./assets/status-box_65c97c73c596c25f09ff38e2ffd1366e4cb1cece.svg" alt="" />
+          </div>
+          <p class="pue-title-text" data-node-id="2:642">PUE</p>
+        </div>
+        <div class="gauge" data-node-id="2:643">
+          <!-- Gray background arc -->
+          <div class="gauge-arc-bg" data-node-id="2:650">
+            <img src="./assets/status-box_652acfcf32e8d5c5f2531f1b43ba7a4aa655bf38.svg" alt="" />
+          </div>
+          <!-- Gradient value arc -->
+          <div class="gauge-arc-value" data-node-id="2:651">
+            <img src="./assets/status-box_7826aed5dc6406a9605b4e5f9cca22262bec7d87.svg" alt="" />
+          </div>
+          <!-- Value -->
+          <p class="gauge-num" data-node-id="2:645">1.5</p>
+        </div>
+        <!-- Scale labels (positioned absolute in pue-section) -->
+        <p class="gauge-label-left" data-node-id="2:647">1</p>
+        <p class="gauge-label-right" data-node-id="2:649">3</p>
+      </div>
+
+      <!-- Info Grid (Right) -->
+      <div class="info-grid" data-node-id="2:652">
+
+        <!-- 전력 사용량 (Row 1, Col 1) -->
+        <div class="info-box info-box--r1c1" data-node-id="2:653">
+          <div class="info-group" data-node-id="2:654">
+            <div class="info-symbol" data-node-id="2:655">
+              <div class="info-symbol-icon info-symbol-icon--electricity" data-node-id="2:656">
+                <img src="./assets/status-box_719e85195f4459b339901a5b2c862f360307c9ad.svg" alt="" />
+              </div>
+            </div>
+            <p class="info-label" data-node-id="2:663">전력 사용량</p>
+          </div>
+          <div class="info-item" data-node-id="2:664">
+            <div class="info-arrow" data-node-id="2:665">
+              <img src="./assets/status-box_608468d286304b02e413443f0457320b3622ca8f.svg" alt="" />
+            </div>
+            <p class="info-value" data-node-id="2:667">784</p>
+            <p class="info-unit" data-node-id="2:668">KW</p>
+          </div>
+        </div>
+
+        <!-- 주요알람 (Row 1, Col 2) -->
+        <div class="info-box info-box--r1c2" data-node-id="2:698">
+          <div class="info-group" data-node-id="2:699">
+            <div class="info-symbol" data-node-id="2:700">
+              <div class="info-symbol-icon info-symbol-icon--alarm" data-node-id="2:701">
+                <img src="./assets/status-box_e78594ac4f3aba8932764bb1d9a83c74b11bad1f.svg" alt="" />
+              </div>
+            </div>
+            <p class="info-label" data-node-id="2:705">주요알람</p>
+          </div>
+          <div class="info-item" data-node-id="2:706">
+            <p class="info-value" data-node-id="2:707">5</p>
+            <p class="info-unit info-unit--kr" data-node-id="2:708">건</p>
+          </div>
+        </div>
+
+        <!-- 온도 (Row 2, Col 1) -->
+        <div class="info-box info-box--r2c1" data-node-id="2:684">
+          <div class="info-group" data-node-id="2:685">
+            <div class="info-symbol" data-node-id="2:686">
+              <div class="info-symbol-icon info-symbol-icon--temperature" data-node-id="2:687">
+                <img src="./assets/status-box_e6391fdf2d8535490144226864c7494ddef45687.svg" alt="" />
+              </div>
+            </div>
+            <p class="info-label" data-node-id="2:692">온도</p>
+          </div>
+          <div class="info-item" data-node-id="2:693">
+            <div class="info-arrow" data-node-id="2:694">
+              <img src="./assets/status-box_608468d286304b02e413443f0457320b3622ca8f.svg" alt="" />
+            </div>
+            <p class="info-value" data-node-id="2:696">24</p>
+            <p class="info-unit" data-node-id="2:697">℃</p>
+          </div>
+        </div>
+
+        <!-- 습도 (Row 2, Col 2) -->
+        <div class="info-box info-box--r2c2" data-node-id="2:670">
+          <div class="info-group" data-node-id="2:671">
+            <div class="info-symbol" data-node-id="2:672">
+              <div class="info-symbol-icon info-symbol-icon--humidity" data-node-id="2:673">
+                <img src="./assets/status-box_d73d4179885939a8e81453c6b44bc5a06b6605fa.svg" alt="" />
+              </div>
+            </div>
+            <p class="info-label" data-node-id="2:678">습도</p>
+          </div>
+          <div class="info-item" data-node-id="2:679">
+            <div class="info-arrow" data-node-id="2:680">
+              <img src="./assets/status-box_b4376a697272c56a5a1f728e2b5e8ba42910fe4c.svg" alt="" />
+            </div>
+            <p class="info-value" data-node-id="2:682">46</p>
+            <p class="info-unit" data-node-id="2:683">%</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Inner shadow overlay -->
+      <div class="status-box-shadow"></div>
+    </div>
+  </div>
+</body>
+</html>
