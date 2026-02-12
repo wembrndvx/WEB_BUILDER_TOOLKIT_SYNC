@@ -262,6 +262,21 @@ button {
   height: 100%;
 }
 
+/* Expand button arrow rotation */
+#event-log-container .btn-expand-icon {
+  transition: transform 0.3s ease;
+}
+
+#event-log-container .bottom-log.collapsed .btn-expand-icon {
+  transform: rotate(180deg);
+}
+
+/* Collapsed state */
+#event-log-container .bottom-log.collapsed .table-header,
+#event-log-container .bottom-log.collapsed .table-body {
+  display: none;
+}
+
 /* --- Header Right --- */
 #event-log-container .log-header-right {
   display: flex;

@@ -20,7 +20,7 @@
 <body>
   <div id="event-log-container">
     <div class="event-log" data-node-id="2:709">
-      <div class="bottom-log" data-node-id="I2:709;2:1889">
+      <div class="bottom-log collapsed" data-node-id="I2:709;2:1889">
 
         <!-- ===== Header Bar ===== -->
         <div class="log-header" data-node-id="I2:709;2:1889;2:1701">
@@ -298,5 +298,11 @@
       </div>
     </div>
   </div>
+
+  <script>
+    document.querySelector('.btn-expand').addEventListener('click', function () {
+      document.querySelector('.bottom-log').classList.toggle('collapsed');
+    });
+  </script>
 </body>
 </html>
