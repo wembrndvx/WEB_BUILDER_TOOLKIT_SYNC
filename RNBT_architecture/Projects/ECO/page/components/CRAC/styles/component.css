@@ -148,7 +148,7 @@
     gap: 20px;
     flex: 1;
     min-height: 0;
-    overflow-y: auto;
+    overflow: hidden;
     background: rgba(2, 6, 23, 0.6);
     backdrop-filter: blur(15px);
     position: relative;
@@ -171,7 +171,10 @@
     border: 1px solid #323234;
     border-radius: 8px;
     overflow: hidden;
-    flex-shrink: 0;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .section-header {
@@ -199,7 +202,8 @@
    ====================== */
 .info-section .info-content {
     padding: 16px;
-    max-height: 280px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
 }
 
@@ -268,6 +272,9 @@
     grid-template-columns: 1fr 1fr;
     gap: 1px;
     background: #323234;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .status-card {
@@ -324,6 +331,9 @@
     display: flex;
     justify-content: space-around;
     padding: 16px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .indicator {
@@ -369,15 +379,12 @@
    Section 4: 트렌드 차트
    ====================== */
 .chart-section {
-    flex: 1;
-    min-height: 220px;
-    display: flex;
-    flex-direction: column;
+    min-height: 0;
 }
 
 .chart-container {
     flex: 1;
-    min-height: 180px;
+    min-height: 0;
     width: 100%;
     background: #282a37;
     border: 1px solid #323234;
