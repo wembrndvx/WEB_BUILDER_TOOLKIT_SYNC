@@ -1,11 +1,21 @@
 /*
  * HeatmapMixin.js
  *
- * 3D Heatmap Surface Mixin
+ * 3D Heatmap Surface Mixin (GPU Shader-based)
  *
  * 3D 씬에 온도 히트맵 서피스를 생성/관리하는 Mixin.
- * simpleheat로 2D 히트맵을 생성하고, THREE.ShaderMaterial로
- * displacement + color 텍스처를 적용한 3D PlaneGeometry를 씬에 추가.
+ * GPU Vertex/Fragment Shader에서 직접 히트맵을 연산하여
+ * Canvas2D 기반 simpleheat를 대체. 센서 위치/온도를 uniform 배열로
+ * 전달하고, 1D 그라디언트 텍스처(초기 1회 생성)로 컬러를 매핑.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * 기존 대비 개선점
+ * ─────────────────────────────────────────────────────────────
+ *
+ * - Canvas2D drawImage() × N개 센서  → 0 draw call (GPU 연산)
+ * - 픽셀 루프 (colorize + displacement) → 제거
+ * - 매 프레임 2장 CanvasTexture 업로드  → uniform 값만 갱신
+ * - 1D 그라디언트 텍스처: 초기 1회만 업로드
  *
  * ─────────────────────────────────────────────────────────────
  * 전제 조건
@@ -13,7 +23,6 @@
  *
  * - THREE (Three.js) 전역 접근 가능
  * - wemb.threeElements.scene 접근 가능
- * - simpleheat는 내부에 인라인 포함 (외부 의존성 없음)
  * - Wkit.makeIterator, Wkit.fetchData 사용 가능
  * - applyShadowPopupMixin 이후 호출 (destroyPopup 체인 확장)
  *
@@ -65,158 +74,81 @@ const HeatmapMixin = {};
 HeatmapMixin._activeInstance = null;
 
 // ─────────────────────────────────────────────────────────────
-// simpleheat (인라인 포함)
-// https://github.com/mourner/simpleheat
+// GPU 셰이더 상수
 // ─────────────────────────────────────────────────────────────
-
-function simpleheat(canvas) {
-  if (!(this instanceof simpleheat)) return new simpleheat(canvas);
-  this._canvas = canvas = typeof canvas === 'string' ? document.getElementById(canvas) : canvas;
-  this._ctx = canvas.getContext('2d');
-  this._width = canvas.width;
-  this._height = canvas.height;
-  this._max = 1;
-  this._data = [];
-}
-
-simpleheat.prototype = {
-  defaultRadius: 25,
-  defaultGradient: {
-    0.4: 'blue',
-    0.6: 'cyan',
-    0.7: 'lime',
-    0.8: 'yellow',
-    1.0: 'red',
-  },
-
-  data: function (data) { this._data = data; return this; },
-  max: function (max) { this._max = max; return this; },
-  add: function (point) { this._data.push(point); return this; },
-  clear: function () { this._data = []; return this; },
-
-  radius: function (r, blur) {
-    blur = blur === undefined ? 15 : blur;
-    var circle = this._circle = this._createCanvas();
-    var ctx = circle.getContext('2d');
-    var r2 = this._r = r + blur;
-
-    circle.width = circle.height = r2 * 2;
-    ctx.shadowOffsetX = ctx.shadowOffsetY = r2 * 2;
-    ctx.shadowBlur = blur;
-    ctx.shadowColor = 'black';
-
-    ctx.beginPath();
-    ctx.arc(-r2, -r2, r, 0, Math.PI * 2, true);
-    ctx.closePath();
-    ctx.fill();
-
-    return this;
-  },
-
-  resize: function () {
-    this._width = this._canvas.width;
-    this._height = this._canvas.height;
-  },
-
-  gradient: function (grad) {
-    var canvas = this._createCanvas();
-    var ctx = canvas.getContext('2d');
-    var gradient = ctx.createLinearGradient(0, 0, 0, 256);
-
-    canvas.width = 1;
-    canvas.height = 256;
-
-    for (var i in grad) {
-      gradient.addColorStop(+i, grad[i]);
-    }
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1, 256);
-
-    this._grad = ctx.getImageData(0, 0, 1, 256).data;
-    return this;
-  },
-
-  draw: function (minOpacity) {
-    if (!this._circle) this.radius(this.defaultRadius);
-    if (!this._grad) this.gradient(this.defaultGradient);
-
-    var ctx = this._ctx;
-    ctx.clearRect(0, 0, this._width, this._height);
-
-    for (var i = 0, len = this._data.length; i < len; i++) {
-      var p = this._data[i];
-      ctx.globalAlpha = Math.min(Math.max(p[2] / this._max, minOpacity === undefined ? 0.05 : minOpacity), 1);
-      ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
-    }
-
-    var colored = ctx.getImageData(0, 0, this._width, this._height);
-    this._colorize(colored.data, this._grad);
-    ctx.putImageData(colored, 0, 0);
-
-    return this;
-  },
-
-  _colorize: function (pixels, gradient) {
-    for (var i = 0, len = pixels.length; i < len; i += 4) {
-      var j = pixels[i + 3] * 4;
-      if (j) {
-        pixels[i] = gradient[j];
-        pixels[i + 1] = gradient[j + 1];
-        pixels[i + 2] = gradient[j + 2];
-      }
-    }
-  },
-
-  _createCanvas: function () {
-    if (typeof document !== 'undefined') {
-      return document.createElement('canvas');
-    }
-  },
-};
+const MAX_SENSORS = 64;
 
 // ─────────────────────────────────────────────────────────────
-// Vertex Shader
+// Vertex Shader (센서 기반 displacement 연산)
 // ─────────────────────────────────────────────────────────────
 const VERTEX_SHADER = `
-  uniform sampler2D displacementMap;
+  #define MAX_SENSORS ` + MAX_SENSORS + `
+
+  uniform vec3 sensors[MAX_SENSORS];    // xy = UV 좌표, z = 정규화 온도 (0~1)
+  uniform int sensorCount;
+  uniform float radius;                 // UV 공간 영향 반경
   uniform float displacementScale;
   uniform float baseHeight;
 
   varying vec2 vUv;
-  varying float vDisplacement;
 
   void main() {
     vUv = uv;
 
-    vec4 dispColor = texture2D(displacementMap, uv);
-    float displacement = dispColor.r * displacementScale;
-    vDisplacement = displacement;
+    // 각 센서의 가우시안 기여도 합산 → 변위량 결정
+    float heat = 0.0;
+    for (int i = 0; i < MAX_SENSORS; i++) {
+      if (i >= sensorCount) break;
+      float dist = distance(uv, sensors[i].xy);
+      if (dist < radius) {
+        float t = dist / radius;
+        float falloff = exp(-4.5 * t * t);
+        heat += falloff * sensors[i].z;
+      }
+    }
+    heat = clamp(heat, 0.0, 1.0);
 
     vec3 newPosition = position;
-    newPosition.z = baseHeight + displacement;
+    newPosition.z = baseHeight + heat * displacementScale;
 
     gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
   }
 `;
 
 // ─────────────────────────────────────────────────────────────
-// Fragment Shader
+// Fragment Shader (per-pixel 히트맵 컬러 연산)
 // ─────────────────────────────────────────────────────────────
 const FRAGMENT_SHADER = `
-  uniform sampler2D colorMap;
+  #define MAX_SENSORS ` + MAX_SENSORS + `
+
+  uniform vec3 sensors[MAX_SENSORS];
+  uniform int sensorCount;
+  uniform float radius;
+  uniform sampler2D gradientMap;        // 1D 그라디언트 텍스처 (256x1)
   uniform float opacity;
 
   varying vec2 vUv;
-  varying float vDisplacement;
 
   void main() {
-    vec4 color = texture2D(colorMap, vUv);
+    // per-pixel 히트값 연산 (vertex 보간보다 정밀한 컬러)
+    float heat = 0.0;
+    for (int i = 0; i < MAX_SENSORS; i++) {
+      if (i >= sensorCount) break;
+      float dist = distance(vUv, sensors[i].xy);
+      if (dist < radius) {
+        float t = dist / radius;
+        float falloff = exp(-4.5 * t * t);
+        heat += falloff * sensors[i].z;
+      }
+    }
+    heat = clamp(heat, 0.0, 1.0);
 
-    float highlight = smoothstep(0.3, 0.8, vDisplacement / 4.0) * 0.15;
+    vec4 color = texture2D(gradientMap, vec2(heat, 0.5));
+
+    float highlight = smoothstep(0.3, 0.8, heat) * 0.15;
     color.rgb += highlight;
 
-    float alpha = color.a > 0.1 ? opacity : 0.0;
+    float alpha = heat > 0.01 ? opacity : 0.0;
 
     gl_FragColor = vec4(color.rgb, alpha);
   }
@@ -244,7 +176,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       surfaceSize: 'auto',
       temperatureRange: { min: 17, max: 31 },
       gradient: null,
-      heatmapResolution: 256,
+      heatmapResolution: 256,         // radius 계산 호환용 (캔버스 미사용)
       segments: 64,
       displacementScale: 3,
       baseHeight: 2,
@@ -258,58 +190,67 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     options
   );
 
-  // Internal state
+  // Internal state (캔버스/simpleheat 제거 → gradientTexture만 보유)
   instance._heatmap = {
     visible: false,
     mesh: null,
-    colorCanvas: null,
-    displacementCanvas: null,
-    heat: null,
-    colorTexture: null,
-    displacementTexture: null,
+    gradientTexture: null,
     surface: null,
     config: config,
     refreshTimer: null,
   };
 
   // ────────────────────────────────────────
-  // radius 계산 (센서 개수 기반)
-  // 'auto': heatmapResolution / sqrt(count) * 0.5
-  // 숫자: 고정값 사용
+  // 1D 그라디언트 텍스처 생성 (초기 1회, 재사용)
   // ────────────────────────────────────────
 
-  function computeRadius(sensorCount) {
-    if (config.radius !== 'auto') return config.radius;
+  function createGradientTexture(gradient) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 1;
 
-    const resolution = config.heatmapResolution;
-    const count = Math.max(1, sensorCount);
-    const r = Math.round(resolution / Math.sqrt(count) * 0.5);
-    return Math.max(15, Math.min(Math.round(resolution * 0.4), r));
+    var ctx = canvas.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 256, 0);
+
+    for (var stop in gradient) {
+      grad.addColorStop(+stop, gradient[stop]);
+    }
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 1);
+
+    var texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    return texture;
   }
 
   // ────────────────────────────────────────
-  // 숨겨진 캔버스 + simpleheat 초기화
+  // radius 계산 (UV 공간)
+  //
+  // 기존 simpleheat 호환 공식을 UV로 변환:
+  //   pixel_r = resolution / sqrt(count) * 0.5
+  //   clamped to [15, resolution * 0.4]
+  //   총 영향 반경 = pixel_r + blur
+  //   UV radius = 총 영향 반경 / resolution
   // ────────────────────────────────────────
 
-  function initHeatmapCanvas() {
-    const { heatmapResolution, blur } = config;
+  function computeRadiusUV(sensorCount) {
+    var resolution = config.heatmapResolution;
+    var blur = config.blur;
+    var r;
 
-    const colorCanvas = document.createElement('canvas');
-    colorCanvas.width = heatmapResolution;
-    colorCanvas.height = heatmapResolution;
+    if (config.radius !== 'auto') {
+      r = config.radius;
+    } else {
+      var count = Math.max(1, sensorCount);
+      r = Math.round(resolution / Math.sqrt(count) * 0.5);
+      r = Math.max(15, Math.min(Math.round(resolution * 0.4), r));
+    }
 
-    const displacementCanvas = document.createElement('canvas');
-    displacementCanvas.width = heatmapResolution;
-    displacementCanvas.height = heatmapResolution;
-
-    const heat = simpleheat(colorCanvas);
-    heat.radius(computeRadius(1), blur);
-    heat.max(1);
-    heat.gradient(config.gradient || DEFAULT_GRADIENT);
-
-    instance._heatmap.colorCanvas = colorCanvas;
-    instance._heatmap.displacementCanvas = displacementCanvas;
-    instance._heatmap.heat = heat;
+    return (r + blur) / resolution;
   }
 
   // ────────────────────────────────────────
@@ -347,6 +288,18 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
+  // 센서 uniform 배열 초기화 (MAX_SENSORS개)
+  // ────────────────────────────────────────
+
+  function createSensorArray() {
+    var arr = [];
+    for (var i = 0; i < MAX_SENSORS; i++) {
+      arr.push(new THREE.Vector3(0, 0, 0));
+    }
+    return arr;
+  }
+
+  // ────────────────────────────────────────
   // 3D Mesh 생성
   // ────────────────────────────────────────
 
@@ -354,17 +307,16 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
     const { segments, displacementScale, baseHeight, opacity } = config;
     const { scene } = wemb.threeElements;
 
-    initHeatmapCanvas();
-
     // 센서 분포 기반 동적 서피스 크기 계산
     const surface = computeDynamicSurface();
     instance._heatmap.surface = surface;
 
-    const colorTexture = new THREE.CanvasTexture(instance._heatmap.colorCanvas);
-    const displacementTexture = new THREE.CanvasTexture(instance._heatmap.displacementCanvas);
+    // 1D 그라디언트 텍스처 (1회 생성)
+    const gradientTexture = createGradientTexture(config.gradient || DEFAULT_GRADIENT);
+    instance._heatmap.gradientTexture = gradientTexture;
 
-    instance._heatmap.colorTexture = colorTexture;
-    instance._heatmap.displacementTexture = displacementTexture;
+    // 센서 uniform 배열
+    const sensorArray = createSensorArray();
 
     const geometry = new THREE.PlaneGeometry(
       surface.width,
@@ -375,11 +327,13 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
     const material = new THREE.ShaderMaterial({
       uniforms: {
-        colorMap: { value: colorTexture },
-        displacementMap: { value: displacementTexture },
+        sensors: { value: sensorArray },
+        sensorCount: { value: 0 },
+        radius: { value: 0.3 },
+        gradientMap: { value: gradientTexture },
         displacementScale: { value: displacementScale },
-        opacity: { value: opacity },
         baseHeight: { value: baseHeight },
+        opacity: { value: opacity },
       },
       vertexShader: VERTEX_SHADER,
       fragmentShader: FRAGMENT_SHADER,
@@ -402,52 +356,16 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
-  // 월드좌표 → 캔버스좌표 변환
+  // 월드좌표 → UV좌표 변환
   // ────────────────────────────────────────
 
-  function worldToCanvas(worldX, worldZ, centerX, centerZ) {
-    const surface = instance._heatmap.surface;
-    const heatmapResolution = config.heatmapResolution;
-    const halfW = surface.width / 2;
-    const halfD = surface.depth / 2;
-
-    const canvasX = ((worldX - centerX + halfW) / surface.width) * heatmapResolution;
-    const canvasY = ((worldZ - centerZ + halfD) / surface.depth) * heatmapResolution;
-    return [canvasX, canvasY];
-  }
-
-  // ────────────────────────────────────────
-  // Displacement 맵 생성 (컬러 → grayscale)
-  // ────────────────────────────────────────
-
-  function generateDisplacementMap() {
-    const hm = instance._heatmap;
-    const colorCtx = hm.colorCanvas.getContext('2d');
-    const dispCtx = hm.displacementCanvas.getContext('2d');
-    const w = hm.colorCanvas.width;
-    const h = hm.colorCanvas.height;
-
-    const colorData = colorCtx.getImageData(0, 0, w, h);
-    const dispImageData = dispCtx.createImageData(w, h);
-
-    for (let i = 0; i < colorData.data.length; i += 4) {
-      const r = colorData.data[i];
-      const g = colorData.data[i + 1];
-      const b = colorData.data[i + 2];
-      const a = colorData.data[i + 3];
-
-      const intensity = a / 255;
-      const heatValue = (r * 0.5 + g * 0.3 - b * 0.2) / 255;
-      const displacement = Math.max(0, Math.min(1, intensity * (0.3 + heatValue * 0.7)));
-
-      const gray = Math.floor(displacement * 255);
-      dispImageData.data[i] = gray;
-      dispImageData.data[i + 1] = gray;
-      dispImageData.data[i + 2] = gray;
-      dispImageData.data[i + 3] = 255;
-    }
-
-    dispCtx.putImageData(dispImageData, 0, 0);
+  function worldToUV(worldX, worldZ, centerX, centerZ) {
+    var surface = instance._heatmap.surface;
+    var u = (worldX - centerX + surface.width / 2) / surface.width;
+    // PlaneGeometry rotation.x = -PI/2 에 의해 v축이 worldZ와 반대 방향
+    // (기존 CanvasTexture의 flipY=true가 자동 처리하던 부분)
+    var v = 1.0 - (worldZ - centerZ + surface.depth / 2) / surface.depth;
+    return [u, v];
   }
 
   // ────────────────────────────────────────
@@ -537,38 +455,41 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   }
 
   // ────────────────────────────────────────
-  // 히트맵 렌더링
+  // 히트맵 렌더링 (uniform 갱신만 — 캔버스/텍스처 업로드 없음)
   // ────────────────────────────────────────
 
   function renderHeatmap(dataPoints) {
-    const hm = instance._heatmap;
-    if (!hm.mesh || !hm.heat) return;
+    var hm = instance._heatmap;
+    if (!hm.mesh) return;
 
     // 서피스 중심 좌표 (mesh 위치 사용)
-    const centerX = hm.mesh.position.x;
-    const centerZ = hm.mesh.position.z;
+    var centerX = hm.mesh.position.x;
+    var centerZ = hm.mesh.position.z;
 
-    // 월드좌표 → 캔버스좌표 변환 + 값 정규화 (0~1)
-    const { min, max } = config.temperatureRange;
-    const range = max - min || 1;
-    const canvasData = dataPoints.map(function (point) {
-      const coords = worldToCanvas(point.worldX, point.worldZ, centerX, centerZ);
-      const normalized = Math.max(0, Math.min(1, (point.temperature - min) / range));
-      return [coords[0], coords[1], normalized];
-    });
+    // 온도 정규화 (0~1)
+    var min = config.temperatureRange.min;
+    var max = config.temperatureRange.max;
+    var range = max - min || 1;
 
-    // simpleheat 렌더링 (센서 수 기반 동적 radius)
-    hm.heat.radius(computeRadius(dataPoints.length), config.blur);
-    hm.heat.clear();
-    hm.heat.data(canvasData);
-    hm.heat.draw(0.05);
+    var uniforms = hm.mesh.material.uniforms;
+    var sensorArray = uniforms.sensors.value;
+    var count = Math.min(dataPoints.length, MAX_SENSORS);
 
-    // displacement 맵 생성
-    generateDisplacementMap();
+    // 센서 데이터 → uniform 배열 갱신
+    for (var i = 0; i < count; i++) {
+      var point = dataPoints[i];
+      var uv = worldToUV(point.worldX, point.worldZ, centerX, centerZ);
+      var normalized = Math.max(0, Math.min(1, (point.temperature - min) / range));
+      sensorArray[i].set(uv[0], uv[1], normalized);
+    }
 
-    // 텍스처 업데이트
-    hm.colorTexture.needsUpdate = true;
-    hm.displacementTexture.needsUpdate = true;
+    // 미사용 슬롯 초기화 (이전 프레임 잔여 데이터 제거)
+    for (var j = count; j < MAX_SENSORS; j++) {
+      sensorArray[j].set(0, 0, 0);
+    }
+
+    uniforms.sensorCount.value = count;
+    uniforms.radius.value = computeRadiusUV(count);
   }
 
   // ────────────────────────────────────────
@@ -723,23 +644,16 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       // material dispose
       if (hm.mesh.material) hm.mesh.material.dispose();
 
-      // texture dispose
-      if (hm.colorTexture) {
-        hm.colorTexture.dispose();
-        hm.colorTexture = null;
-      }
-      if (hm.displacementTexture) {
-        hm.displacementTexture.dispose();
-        hm.displacementTexture = null;
-      }
-
       scene.remove(hm.mesh);
       hm.mesh = null;
     }
 
-    hm.colorCanvas = null;
-    hm.displacementCanvas = null;
-    hm.heat = null;
+    // 그라디언트 텍스처 dispose
+    if (hm.gradientTexture) {
+      hm.gradientTexture.dispose();
+      hm.gradientTexture = null;
+    }
+
     hm.surface = null;
     hm.visible = false;
     instance._cachedMetricLatest = null;
