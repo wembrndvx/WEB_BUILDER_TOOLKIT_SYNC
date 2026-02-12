@@ -45,7 +45,7 @@ function initComponent() {
   // 1. 내부 상태
   // ======================
   this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-  this._baseUrl = '10.23.128.140:8811';
+  this._baseUrl = wemb.configManager.assetApiUrl.replace(/^https?:\/\//, '');
   this._locale = 'ko';
   this._popupTemplateId = 'popup-crac';
 

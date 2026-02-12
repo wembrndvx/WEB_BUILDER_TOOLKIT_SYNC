@@ -17,7 +17,7 @@ function initComponent() {
   // ======================
   // 1. STATE
   // ======================
-  this._baseUrl = '10.23.128.140:8811';
+  this._baseUrl = wemb.configManager.assetApiUrl.replace(/^https?:\/\//, '');
   this._datasetName = 'assetList';
   this._assetCache = new Map();      // assetKey → { name, assetType, statusType }
   this._treeData = [];               // 렌더링용 트리 구조
