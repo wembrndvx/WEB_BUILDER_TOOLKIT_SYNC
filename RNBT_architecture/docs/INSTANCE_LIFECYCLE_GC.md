@@ -13,6 +13,8 @@
 ### 관련 문서
 - `Instance_Management.md` — 에디터 관점의 인스턴스 CRUD
 - `WScript_Execution_Process.md` — WScript 실행 프로세스
+- `THIS_PROPERTY_MEMORY_LEAK.md` — this 참조 해제 후 속성이 살아남는 메모리 누수 시나리오
+- `WHY_NULL_UNNECESSARY.md` — 외부 null 처리가 불필요한 이유
 
 ---
 
@@ -666,6 +668,7 @@ Wkit.disposeAllThreeResources = function (page) {
 
 ## 관련 문서
 
+- [THIS_PROPERTY_MEMORY_LEAK.md](/RNBT_architecture/docs/THIS_PROPERTY_MEMORY_LEAK.md) — this 참조 해제 후 속성 잔존 시나리오 (클로저, bind, V8 공유 렉시컬 환경)
 - [WHY_NULL_UNNECESSARY.md](/RNBT_architecture/docs/WHY_NULL_UNNECESSARY.md) — 외부 null 처리가 불필요한 이유 (GC 원칙 기반)
 - [WKIT_API.md](/RNBT_architecture/docs/WKIT_API.md) — Wkit API 레퍼런스
 - [README.md](/RNBT_architecture/README.md) — 아키텍처 가이드

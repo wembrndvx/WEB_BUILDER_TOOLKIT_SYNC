@@ -9,7 +9,7 @@
 
 ### 관련 문서
 - `INSTANCE_LIFECYCLE_GC.md` — 인스턴스 생명주기 및 GC 분석
-- `this-property-memory-leak.md` — this 참조 해제 후 속성 잔존 시나리오
+- `THIS_PROPERTY_MEMORY_LEAK.md` — this 참조 해제 후 속성 잔존 시나리오
 
 ---
 
@@ -95,6 +95,28 @@ instance.X = null이 필요한가?
      └── 아니오 → null 처리 불필요.
 ```
 
+### 3.2 추가 시나리오: this가 클로저에 캡처된 경우
+
+인스턴스가 "곧 GC될 예정"이라고 해도, **this를 캡처한 클로저가 장수명 대상에 등록되어 있으면
+인스턴스 전체가 GC되지 않는다.** 이 경우 대용량 속성의 null 처리가 방어적 의미를 가진다.
+
+```javascript
+// this를 캡처한 화살표 함수가 window에 등록된 경우
+destroy() {
+  // 1. 리스너 해제 (이것이 근본 해결)
+  window.removeEventListener('resize', this._boundOnResize);
+
+  // 2. 해제가 불가능한 경우 (서드파티, bind 참조 불일치 등)
+  //    → 대용량 속성을 null로 설정하여 메모리 영향 최소화
+  this.heavyCache = null;
+}
+```
+
+이것은 `THIS_PROPERTY_MEMORY_LEAK.md`의 케이스 2(화살표 함수), 케이스 3(bind)에 해당한다.
+**근본 해결은 리스너/타이머 해제**이며, 속성 null 처리는 해제가 불가능할 때의 **방어적 완화책**이다.
+
+> 상세 시나리오는 `THIS_PROPERTY_MEMORY_LEAK.md` — "실전 적용: destroy() 패턴" 참조.
+
 ---
 
 ## 4. 외부에서 null 처리할 때의 위험
@@ -168,6 +190,7 @@ instance.cleanup();
 |------|----------------|------|
 | 인스턴스가 곧 GC될 예정 | ❌ | GC가 속성 포함 전체 수거 |
 | 인스턴스 생존 중 + 대용량 데이터 불필요 | ✅ (인스턴스 내부에서) | 메모리 최적화 |
+| this가 클로저에 캡처 + 해제 불가 | ✅ (인스턴스 내부 destroy에서) | 방어적 완화 (근본은 리스너 해제) |
 | 인스턴스 생존 중 + 외부에서 직접 조작 | ❌ | 내부 의존 관계 파괴 위험 |
 
 핵심 원칙:
