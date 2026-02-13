@@ -291,8 +291,9 @@ function hideDetail() {
 }
 
 function stopRefresh() {
+  const datasetInfo = this.datasetInfo ?? [];
   fx.go(
-    this.datasetInfo,
+    datasetInfo,
     fx.filter(d => d._intervalId),
     fx.each(d => {
       clearInterval(d._intervalId);

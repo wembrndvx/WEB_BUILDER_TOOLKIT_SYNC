@@ -338,36 +338,6 @@
     font-weight: 600;
 }
 
-/* 입/출력 범례 */
-.chart-legend {
-    display: flex;
-    gap: 16px;
-    padding: 8px 16px;
-    flex-shrink: 0;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: #bbc2cf;
-}
-
-.legend-dot {
-    width: 10px;
-    height: 3px;
-    border-radius: 1px;
-}
-
-.legend-input .legend-dot {
-    background: #f59e0b;
-}
-
-.legend-output .legend-dot {
-    background: #22c55e;
-}
-
 .chart-container {
     flex: 1;
     min-height: 0;

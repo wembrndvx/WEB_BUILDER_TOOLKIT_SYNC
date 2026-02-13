@@ -58,6 +58,63 @@
         {
           "param_name": "assetKey",
           "param_type": "string",
+          "default_value": "ups-001"
+        },
+        {
+          "param_name": "locale",
+          "param_type": "string",
+          "default_value": "ko"
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Asset API v1 - 자산 상세 조회 (통합: 기본정보 + 동적 프로퍼티)",
+      "dataset_id": "ast-detail-unified-001",
+      "name": "assetDetailUnified",
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/ast/gx\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"locale\\\":\\\"#{locale}\\\"}\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "baseUrl",
+          "param_type": "string",
+          "default_value": "10.23.128.140:8822"
+        },
+        {
+          "param_name": "toAssetKey",
+          "param_type": "string",
+          "default_value": "DC1-DP-01"
+        }
+      ],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "GLOBAL",
+      "query": "",
+      "query_type": "",
+      "description": "Asset API v1 - 특정 부모의 자식 관계 조회 (lazy loading용)",
+      "dataset_id": "rel-children-001",
+      "name": "relationChildren",
+      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"toAssetKey\\\":\\\"#{toAssetKey}\\\"},\\\"sort\\\":[]}\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "baseUrl",
+          "param_type": "string",
+          "default_value": "10.23.128.125:4004"
+        },
+        {
+          "param_name": "assetKey",
+          "param_type": "string",
           "default_value": "building-001"
         }
       ],
@@ -108,37 +165,6 @@
           "default_value": "10.23.128.125:4004"
         },
         {
-          "param_name": "toAssetKey",
-          "param_type": "string",
-          "default_value": "building-001"
-        },
-        {
-          "param_name": "relationType",
-          "param_type": "string",
-          "default_value": "LOCATED_IN"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Asset API v1 - 특정 부모의 자식 관계 조회 (lazy loading용)",
-      "dataset_id": "rel-children-001",
-      "name": "relationChildren",
-      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"toAssetKey\\\":\\\"#{toAssetKey}\\\",\\\"relationType\\\":\\\"#{relationType}\\\"},\\\"sort\\\":[]}\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "baseUrl",
-          "param_type": "string",
-          "default_value": "10.23.128.125:4004"
-        },
-        {
           "param_name": "fromAssetKey",
           "param_type": "string",
           "default_value": "floor-001-01"
@@ -153,37 +179,6 @@
       "dataset_id": "rel-parent-001",
       "name": "relationParent",
       "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/rel/l\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"filter\\\":{\\\"fromAssetKey\\\":\\\"#{fromAssetKey}\\\"},\\\"sort\\\":[]}\"}"
-    },
-    {
-      "datasource": "",
-      "mode": "0",
-      "delivery_type": "0",
-      "param_info": [
-        {
-          "param_name": "baseUrl",
-          "param_type": "string",
-          "default_value": "10.23.128.125:4004"
-        },
-        {
-          "param_name": "assetKey",
-          "param_type": "string",
-          "default_value": "ups-001"
-        },
-        {
-          "param_name": "locale",
-          "param_type": "string",
-          "default_value": "ko"
-        }
-      ],
-      "data_type": "1",
-      "interval": "0",
-      "page_id": "PAGE",
-      "query": "",
-      "query_type": "",
-      "description": "Asset API v1 - 자산 상세 조회 (통합: 기본정보 + 동적 프로퍼티)",
-      "dataset_id": "ast-detail-unified-001",
-      "name": "assetDetailUnified",
-      "rest_api": "{\"url\":\"http://#{baseUrl}/api/v1/ast/gx\",\"method\":\"POST\",\"headers\":{\"Content-Type\":\"application/json\"},\"body\":\"{\\\"assetKey\\\":\\\"#{assetKey}\\\",\\\"locale\\\":\\\"#{locale}\\\"}\"}"
     },
     {
       "datasource": "",

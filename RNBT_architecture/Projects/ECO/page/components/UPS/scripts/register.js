@@ -212,8 +212,6 @@ function initComponent() {
       selectors: {
         container: '.chart-container',
         tabBtn: '.tab-btn',
-        legendInput: '.legend-input .legend-label',
-        legendOutput: '.legend-output .legend-label',
       },
     },
   };
@@ -359,8 +357,9 @@ function hideDetail() {
 }
 
 function stopRefresh() {
+  const datasetInfo = this.datasetInfo ?? [];
   fx.go(
-    this.datasetInfo,
+    datasetInfo,
     fx.filter((d) => d._intervalId),
     fx.each((d) => {
       clearInterval(d._intervalId);
@@ -789,11 +788,6 @@ function renderInitialLabels() {
     })
   );
 
-  // 범례 라벨
-  const inputLegend = this.popupQuery(chart.selectors.legendInput);
-  const outputLegend = this.popupQuery(chart.selectors.legendOutput);
-  if (inputLegend) inputLegend.textContent = chart.series.input.label;
-  if (outputLegend) outputLegend.textContent = chart.series.output.label;
 }
 
 // ======================================

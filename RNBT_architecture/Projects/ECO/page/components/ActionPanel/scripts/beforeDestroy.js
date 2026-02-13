@@ -28,7 +28,9 @@ if (this._dataRefreshId) {
 if (this._dataLabels) {
   this._dataLabels.forEach(function (entry) {
     if (entry.css2dObject) {
-      entry.instance.appendElement.remove(entry.css2dObject);
+      if (entry.instance && entry.instance.appendElement) {
+        entry.instance.appendElement.remove(entry.css2dObject);
+      }
       if (entry.css2dObject.element && entry.css2dObject.element.parentNode) {
         entry.css2dObject.element.parentNode.removeChild(entry.css2dObject.element);
       }
@@ -67,3 +69,5 @@ this._centerComponentName = null;
 this._refreshInterval = null;
 this._dataLabels = null;
 this._dataRefreshId = null;
+
+console.log('[ActionPanel] Destroyed');

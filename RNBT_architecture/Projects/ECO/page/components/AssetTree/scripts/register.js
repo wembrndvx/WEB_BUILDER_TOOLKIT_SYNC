@@ -24,6 +24,7 @@ function initComponent() {
   this._expandedNodes = new Set();
   this._searchTerm = '';
   this._internalHandlers = {};
+  this._cameraAnim = null; // 진행 중인 카메라 애니메이션 참조
 
   // ======================
   // 2. BINDINGS
@@ -293,12 +294,60 @@ function handleTreeDblClick(e) {
 
 function handleEquipmentClick(assetKey) {
   const inst = this._instanceMap.get(assetKey);
-  if (inst && typeof inst.showDetail === 'function') {
-    console.log('[AssetTree] showDetail() called for:', assetKey);
-    inst.showDetail();
-  } else {
-    console.warn('[AssetTree] No showDetail() for:', assetKey);
+  if (!inst || !inst.appendElement) {
+    console.warn('[AssetTree] No 3D instance for:', assetKey);
+    return;
   }
+  focusCameraOnAsset.call(this, inst);
+}
+
+/**
+ * anime.js로 카메라를 타겟 3D 인스턴스로 이동
+ */
+function focusCameraOnAsset(inst) {
+  const camera = wemb.threeElements.camera;
+  const controls = wemb.threeElements.mainControls;
+
+  // 타겟 월드 좌표
+  const targetPos = new THREE.Vector3();
+  inst.appendElement.getWorldPosition(targetPos);
+
+  // 바운딩박스로 적절한 시야 거리 계산
+  const box = new THREE.Box3().setFromObject(inst.appendElement);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const viewDist = Math.max(maxDim * 3, 2); // 최소 거리 2
+
+  // 현재 카메라 방향 유지하되 타겟으로 접근
+  const dir = new THREE.Vector3()
+    .subVectors(camera.position, controls.target)
+    .normalize();
+  const cameraPos = targetPos.clone().add(dir.multiplyScalar(viewDist));
+
+  // 현재 상태 저장
+  const startCamPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const tweenObj = { t: 0 };
+
+  // 진행 중인 애니메이션 취소
+  if (this._cameraAnim) {
+    this._cameraAnim.pause();
+    this._cameraAnim = null;
+  }
+
+  this._cameraAnim = anime.animate(tweenObj, {
+    t: 1,
+    duration: 800,
+    ease: 'inOutQuad',
+    onUpdate: function () {
+      camera.position.lerpVectors(startCamPos, cameraPos, tweenObj.t);
+      controls.target.lerpVectors(startTarget, targetPos, tweenObj.t);
+    },
+    onComplete: function () {
+      console.log('[AssetTree] Camera focused on:', inst._defaultAssetKey || '');
+    },
+  });
 }
 
 function toggleNode(assetKey) {
