@@ -6,7 +6,7 @@
  * - ② 실시간 전력추이현황 4탭 트렌드 차트 (전압/전류/전력사용량/입력주파수)
  */
 
-const { bind3DEvents, fetchData } = Wkit;
+const { bind3DEvents, fetchData, makeIterator } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================
@@ -46,8 +46,9 @@ function initComponent() {
   this._locale = 'ko';
   this._popupTemplateId = 'popup-pdu';
   this._trendData = null;
-  this._trendDataComparison = null;  // { today: [], yesterday: [] }
+  this._trendDataComparison = null; // { today: [], yesterday: [] }
   this._activeTab = 'voltage';
+  this._connectionState = null; // { assetKey, object3D, animationId, svg, line, dot, activeItem }
 
   // ======================
   // 2. 변환 함수 바인딩
@@ -86,7 +87,12 @@ function initComponent() {
       trendParams: {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['DIST.V_LN_AVG', 'DIST.CURRENT_AVG_A', 'DIST.ACTIVE_POWER_TOTAL_KW', 'DIST.FREQUENCY_HZ'],
+        metricCodes: [
+          'DIST.V_LN_AVG',
+          'DIST.CURRENT_AVG_A',
+          'DIST.ACTIVE_POWER_TOTAL_KW',
+          'DIST.FREQUENCY_HZ',
+        ],
         statsKeys: [],
         timeField: 'time',
       },
@@ -108,7 +114,12 @@ function initComponent() {
         { key: 'name', selector: '.pdu-name' },
         { key: 'locationLabel', selector: '.pdu-zone' },
         { key: 'statusType', selector: '.pdu-status', transform: this.statusTypeToLabel },
-        { key: 'statusType', selector: '.pdu-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+        {
+          key: 'statusType',
+          selector: '.pdu-status',
+          dataAttr: 'status',
+          transform: this.statusTypeToDataAttr,
+        },
       ],
     },
 
@@ -130,7 +141,6 @@ function initComponent() {
 
     // 스위치 패널 영역 (자식 자산)
     switchPanel: {
-      relationType: 'POWER_FEED',
       selectors: {
         body: '.switch-panel-body',
         count: '.switch-panel-count',
@@ -148,20 +158,38 @@ function initComponent() {
     // 트렌드 차트 영역 (4탭)
     chart: {
       tabs: {
-        voltage:   { metricCode: 'DIST.V_LN_AVG',              label: '평균 전압',       unit: 'V',   color: '#3b82f6', scale: 1.0 },
-        current:   { metricCode: 'DIST.CURRENT_AVG_A',         label: '평균 전류',       unit: 'A',   color: '#f59e0b', scale: 1.0 },
+        voltage: {
+          metricCode: 'DIST.V_LN_AVG',
+          label: '평균 전압',
+          unit: 'V',
+          color: '#3b82f6',
+          scale: 1.0,
+        },
+        current: {
+          metricCode: 'DIST.CURRENT_AVG_A',
+          label: '평균 전류',
+          unit: 'A',
+          color: '#f59e0b',
+          scale: 1.0,
+        },
         power: {
           metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',
           label: '전력사용량',
           unit: 'kW',
           scale: 1.0,
-          comparison: true,  // 금일/전일 비교
+          comparison: true, // 금일/전일 비교
           series: {
-            today:     { label: '금일', color: '#3b82f6' },
+            today: { label: '금일', color: '#3b82f6' },
             yesterday: { label: '전일', color: '#94a3b8' },
           },
         },
-        frequency: { metricCode: 'DIST.FREQUENCY_HZ',          label: '주파수',          unit: 'Hz',  color: '#22c55e', scale: 1.0 },
+        frequency: {
+          metricCode: 'DIST.FREQUENCY_HZ',
+          label: '주파수',
+          unit: 'Hz',
+          color: '#22c55e',
+          scale: 1.0,
+        },
       },
       selectors: {
         container: '.chart-container',
@@ -174,11 +202,25 @@ function initComponent() {
   // 4. 데이터셋 정의
   // ======================
   const { datasetNames, api } = this.config;
-  const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+  const baseParam = {
+    baseUrl: this._baseUrl,
+    assetKey: this._defaultAssetKey,
+    locale: this._locale,
+  };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+    {
+      datasetName: datasetNames.assetDetail,
+      param: { ...baseParam },
+      render: ['renderBasicInfo'],
+      refreshInterval: 0,
+    },
+    {
+      datasetName: datasetNames.metricHistory,
+      param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory },
+      render: ['renderTrendChart'],
+      refreshInterval: 5000,
+    },
   ];
 
   // ======================
@@ -196,6 +238,9 @@ function initComponent() {
   this.showDetail = showDetail.bind(this);
   this.hideDetail = hideDetail.bind(this);
   this.stopRefresh = stopRefresh.bind(this);
+  this._startConnection = startConnection.bind(this);
+  this._stopConnection = stopConnection.bind(this);
+  this._updateConnectionLine = updateConnectionLine.bind(this);
   this._switchTab = switchTab.bind(this);
 
   // Runtime Parameter Update API
@@ -238,6 +283,15 @@ function initComponent() {
 
   applyEChartsMixin(this);
 
+  // destroyPopup 체인 확장 - interval + connection 정리
+  const _origDestroyPopup = this.destroyPopup;
+  const _ctx = this;
+  this.destroyPopup = function() {
+    _ctx._stopConnection();
+    _ctx.stopRefresh();
+    _origDestroyPopup.call(_ctx);
+  };
+
   console.log('[PDU] Registered:', this._defaultAssetKey);
 }
 
@@ -252,13 +306,13 @@ function showDetail() {
   this._activeTab = 'voltage';
   const tabBtns = this.popupQueryAll(this.config.chart.selectors.tabBtn);
   if (tabBtns) {
-    tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
+    tabBtns.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === 'voltage'));
   }
 
   // 전체 데이터셋 fetch
   fx.go(
     this.datasetInfo,
-    fx.each(d => fetchDatasetAndRender.call(this, d))
+    fx.each((d) => fetchDatasetAndRender.call(this, d))
   );
 
   // 자식 자산 (스위치 패널) fetch
@@ -268,14 +322,15 @@ function showDetail() {
   this.stopRefresh();
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d.refreshInterval > 0),
-    fx.each(d => {
+    fx.filter((d) => d.refreshInterval > 0),
+    fx.each((d) => {
       d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
     })
   );
 }
 
 function hideDetail() {
+  this._stopConnection();
   this.stopRefresh();
   this.hidePopup();
 }
@@ -318,7 +373,7 @@ function fetchDatasetAndRender(d) {
   const { datasetName, param, render } = d;
 
   if (datasetName === datasetNames.metricHistory) {
-    const hasComparison = Object.values(chart.tabs).some(tab => tab.comparison);
+    const hasComparison = Object.values(chart.tabs).some((tab) => tab.comparison);
 
     if (hasComparison) {
       // 금일/전일 비교 fetch (2회 병렬)
@@ -339,16 +394,20 @@ function fetchDatasetAndRender(d) {
 
       Promise.all([
         fetchData(this.page, datasetName, { ...param, timeFrom: todayFrom, timeTo: todayTo }),
-        fetchData(this.page, datasetName, { ...param, timeFrom: yesterdayFrom, timeTo: yesterdayTo }),
+        fetchData(this.page, datasetName, {
+          ...param,
+          timeFrom: yesterdayFrom,
+          timeTo: yesterdayTo,
+        }),
       ])
         .then(([todayResp, yesterdayResp]) => {
           const todayData = extractData(todayResp) || [];
           const yesterdayData = extractData(yesterdayResp) || [];
           this._trendData = todayData;
           this._trendDataComparison = { today: todayData, yesterday: yesterdayData };
-          fx.each(fn => this[fn]({ response: { data: todayData } }), render);
+          fx.each((fn) => this[fn]({ response: { data: todayData } }), render);
         })
-        .catch(e => console.warn('[PDU] Comparison trend fetch failed:', e));
+        .catch((e) => console.warn('[PDU] Comparison trend fetch failed:', e));
     } else {
       // 단일 timeRange fetch
       const now = new Date();
@@ -357,33 +416,33 @@ function fetchDatasetAndRender(d) {
       param.timeTo = formatLocalDate(now);
 
       fetchData(this.page, datasetName, param)
-        .then(response => {
+        .then((response) => {
           const data = extractData(response);
           if (!data) return;
           this._trendData = data;
           this._trendDataComparison = null;
-          fx.each(fn => this[fn](response), render);
+          fx.each((fn) => this[fn](response), render);
         })
-        .catch(e => console.warn('[PDU] Trend fetch failed:', e));
+        .catch((e) => console.warn('[PDU] Trend fetch failed:', e));
     }
     return;
   }
 
   // 일반 데이터셋 (assetDetail 등)
   fetchData(this.page, datasetName, param)
-    .then(response => {
+    .then((response) => {
       const data = extractData(response);
       if (!data) return;
-      fx.each(fn => this[fn](response), render);
+      fx.each((fn) => this[fn](response), render);
     })
-    .catch(e => console.warn(`[PDU] ${datasetName} fetch failed:`, e));
+    .catch((e) => console.warn(`[PDU] ${datasetName} fetch failed:`, e));
 }
 
 function stopRefresh() {
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d._intervalId),
-    fx.each(d => {
+    fx.filter((d) => d._intervalId),
+    fx.each((d) => {
       clearInterval(d._intervalId);
       d._intervalId = null;
     })
@@ -416,7 +475,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
   if (!asset.assetModelKey) return;
 
   fx.go(
-    fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+    fetchData(ctx.page, datasetNames.modelDetail, {
+      baseUrl: ctx._baseUrl,
+      assetModelKey: asset.assetModelKey,
+    }),
     (modelResp) => {
       const model = extractData(modelResp, 'data');
       if (!model) return;
@@ -424,7 +486,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
 
       if (model.assetVendorKey) {
         fx.go(
-          fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+          fetchData(ctx.page, datasetNames.vendorDetail, {
+            baseUrl: ctx._baseUrl,
+            assetVendorKey: model.assetVendorKey,
+          }),
           (vendorResp) => {
             const vendor = extractData(vendorResp, 'data');
             if (vendor) setCell(chainConfig.vendor, vendor.name);
@@ -474,7 +539,7 @@ function renderPropertiesRows(ctx, properties) {
   const tbody = ctx.popupQuery('.info-table tbody');
   if (!tbody) return;
 
-  tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
+  tbody.querySelectorAll('tr[data-property]').forEach((tr) => tr.remove());
 
   [...properties]
     .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
@@ -512,7 +577,7 @@ function renderTrendChart({ response }) {
   const timeKey = timeField || 'time';
 
   // 현재 탭의 metricCode로 필터링
-  const tabData = safeData.filter(row => row.metricCode === tabConfig.metricCode);
+  const tabData = safeData.filter((row) => row.metricCode === tabConfig.metricCode);
 
   // 필터링된 데이터를 시간별로 그룹핑
   const timeMap = fx.reduce(
@@ -520,7 +585,7 @@ function renderTrendChart({ response }) {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
       const statsKey = this.config.api.statsKeyMap[row.metricCode];
-      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
+      acc[time][row.metricCode] = statsKey ? row.statsBody?.[statsKey] ?? null : null;
       return acc;
     },
     {},
@@ -573,7 +638,10 @@ function renderTrendChart({ response }) {
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: hexToRgba(tabConfig.color, 0.3) },
               { offset: 1, color: hexToRgba(tabConfig.color, 0) },
@@ -603,7 +671,9 @@ function renderComparisonChart(tabConfig, selectors) {
   // 시간 부분만 추출 (금일/전일 비교를 위해 날짜 제거)
   const extractHHMM = (timeStr) => {
     const d = new Date(timeStr);
-    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return (
+      String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+    );
   };
 
   // 데이터를 시간(HH:MM)별로 그룹핑하는 헬퍼
@@ -679,7 +749,10 @@ function renderComparisonChart(tabConfig, selectors) {
         areaStyle: {
           color: {
             type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
             colorStops: [
               { offset: 0, color: hexToRgba(series.today.color, 0.3) },
               { offset: 1, color: hexToRgba(series.today.color, 0) },
@@ -721,16 +794,15 @@ function renderInitialLabels() {
 // ======================
 
 function fetchChildAssets() {
-  const { switchPanel, datasetNames } = this.config;
+  const { datasetNames } = this.config;
 
   fetchData(this.page, datasetNames.relationChildren, {
     baseUrl: this._baseUrl,
     toAssetKey: this._defaultAssetKey,
-    relationType: switchPanel.relationType,
   })
-    .then(relResp => {
+    .then((relResp) => {
       const relations = relResp?.response?.data || [];
-      const childKeys = relations.map(r => r.fromAssetKey);
+      const childKeys = relations.map((r) => r.fromAssetKey);
 
       if (childKeys.length === 0) {
         this.renderSwitchPanel([]);
@@ -739,19 +811,163 @@ function fetchChildAssets() {
 
       // 각 자식 자산의 기본정보 조회
       return Promise.all(
-        childKeys.map(key =>
-          fetchData(this.page, datasetNames.childAssetDetail, { baseUrl: this._baseUrl, assetKey: key })
-            .then(resp => resp?.response?.data || null)
+        childKeys.map((key) =>
+          fetchData(this.page, datasetNames.childAssetDetail, {
+            baseUrl: this._baseUrl,
+            assetKey: key,
+          })
+            .then((resp) => resp?.response?.data || null)
             .catch(() => null)
         )
-      ).then(assets => {
+      ).then((assets) => {
         this.renderSwitchPanel(assets.filter(Boolean));
       });
     })
-    .catch(e => {
+    .catch((e) => {
       console.warn('[PDU] fetchChildAssets failed:', e);
       this.renderSwitchPanel([]);
     });
+}
+
+// ======================
+// CONNECTION LINE (3D 오브젝트 ↔ 스위치 버튼 연결선)
+// ======================
+
+function toScreenPosition(object3D, camera, renderer) {
+  const vector = new THREE.Vector3();
+  object3D.getWorldPosition(vector);
+  vector.project(camera);
+
+  const isBehindCamera = vector.z > 1;
+  const halfWidth = renderer.domElement.clientWidth / 2;
+  const halfHeight = renderer.domElement.clientHeight / 2;
+  const canvasRect = renderer.domElement.getBoundingClientRect();
+
+  return {
+    x: (vector.x * halfWidth) + halfWidth + canvasRect.left,
+    y: -(vector.y * halfHeight) + halfHeight + canvasRect.top,
+    isBehindCamera,
+  };
+}
+
+function findObject3DByAssetKey(ctx, assetKey) {
+  const iter = makeIterator(ctx.page, 'threeLayer');
+  for (const inst of iter) {
+    const assetInfo = inst.setter?.assetInfo;
+    if (assetInfo && assetInfo.assetKey === assetKey) {
+      return inst.appendElement;
+    }
+  }
+  return null;
+}
+
+function startConnection(assetKey, switchItem) {
+  this._stopConnection();
+
+  const object3D = findObject3DByAssetKey(this, assetKey);
+  if (!object3D) {
+    console.warn('[PDU] 3D object not found for assetKey:', assetKey);
+    return;
+  }
+
+  // Shadow DOM에 SVG 레이어 생성 (position:fixed로 전체 뷰포트 커버)
+  let svg = this.popupQuery('.connection-svg');
+  if (!svg) {
+    const ns = 'http://www.w3.org/2000/svg';
+    svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'connection-svg');
+    svg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:1001;';
+    this._popup.shadowRoot.appendChild(svg);
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const line = document.createElementNS(ns, 'line');
+  line.setAttribute('stroke', '#ef4444');
+  line.setAttribute('stroke-width', '3');
+  line.setAttribute('fill', 'none');
+
+  const dot = document.createElementNS(ns, 'circle');
+  dot.setAttribute('r', '6');
+  dot.setAttribute('fill', '#ef4444');
+
+  const startDot = document.createElementNS(ns, 'circle');
+  startDot.setAttribute('r', '4');
+  startDot.setAttribute('fill', '#ef4444');
+
+  svg.innerHTML = '';
+  svg.appendChild(line);
+  svg.appendChild(dot);
+  svg.appendChild(startDot);
+
+  switchItem.classList.add('switch-item-active');
+
+  this._connectionState = {
+    assetKey,
+    object3D,
+    svg,
+    line,
+    dot,
+    startDot,
+    activeItem: switchItem,
+    animationId: null,
+  };
+
+  // RAF 루프로 매 프레임 연결선 위치 갱신
+  const update = () => {
+    if (!this._connectionState) return;
+    this._updateConnectionLine();
+    this._connectionState.animationId = requestAnimationFrame(update);
+  };
+  update();
+}
+
+function stopConnection() {
+  if (!this._connectionState) return;
+
+  const { animationId, svg, activeItem } = this._connectionState;
+  if (animationId) cancelAnimationFrame(animationId);
+  if (svg) svg.innerHTML = '';
+  if (activeItem) activeItem.classList.remove('switch-item-active');
+
+  this._connectionState = null;
+}
+
+function updateConnectionLine() {
+  const { object3D, line, dot, startDot, activeItem } = this._connectionState;
+  if (!object3D || !line || !dot || !activeItem) return;
+
+  const camera = this._threeElements.camera;
+  const renderer = this._threeElements.renderer;
+  const screenPos = toScreenPosition(object3D, camera, renderer);
+
+  if (screenPos.isBehindCamera) {
+    line.style.display = 'none';
+    dot.style.display = 'none';
+    if (startDot) startDot.style.display = 'none';
+    return;
+  }
+
+  line.style.display = '';
+  dot.style.display = '';
+  if (startDot) startDot.style.display = '';
+
+  // 스위치 버튼 왼쪽 끝(시작점) → 3D 오브젝트(끝점)
+  const itemRect = activeItem.getBoundingClientRect();
+  const itemX = itemRect.left;
+  const itemY = itemRect.top + itemRect.height / 2;
+
+  line.setAttribute('x1', itemX);
+  line.setAttribute('y1', itemY);
+  line.setAttribute('x2', screenPos.x);
+  line.setAttribute('y2', screenPos.y);
+
+  dot.setAttribute('cx', screenPos.x);
+  dot.setAttribute('cy', screenPos.y);
+
+  if (startDot) {
+    startDot.setAttribute('cx', itemX);
+    startDot.setAttribute('cy', itemY);
+  }
 }
 
 function renderSwitchPanel(children) {
@@ -773,17 +989,26 @@ function renderSwitchPanel(children) {
   body.innerHTML = '';
   fx.go(
     children,
-    fx.each(asset => {
+    fx.each((asset) => {
       const isOn = switchPanel.statusToOn[asset.statusType] ?? false;
       const item = document.createElement('div');
       item.className = 'switch-item';
       item.dataset.assetKey = asset.assetKey;
       item.innerHTML =
-        '<div class="switch-toggle" data-on="' + isOn + '"></div>' +
-        '<span class="switch-label">' + (asset.name || asset.assetKey) + '</span>';
+        '<div class="switch-toggle" data-on="' +
+        isOn +
+        '"></div>' +
+        '<span class="switch-label">' +
+        (asset.name || asset.assetKey) +
+        '</span>';
 
       item.addEventListener('click', () => {
-        console.log('[PDU] Switch clicked - assetKey:', asset.assetKey);
+        // 토글: 이미 연결된 것을 다시 클릭하면 해제
+        if (this._connectionState && this._connectionState.assetKey === asset.assetKey) {
+          this._stopConnection();
+        } else {
+          this._startConnection(asset.assetKey, item);
+        }
       });
 
       body.appendChild(item);
@@ -811,7 +1036,11 @@ function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
   } catch {
     return dateStr;
   }
@@ -833,23 +1062,19 @@ function onPopupCreated({ chartSelector, events }) {
 
 function updateTrendParams(options) {
   const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { timeRange, interval, apiEndpoint, timeField } = options;
-  if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
-  if (interval !== undefined)    trendInfo.param.interval = interval;
+  if (timeRange !== undefined) trendInfo.param.timeRange = timeRange;
+  if (interval !== undefined) trendInfo.param.interval = interval;
   if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
-  if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+  if (timeField !== undefined) trendInfo.param.timeField = timeField;
 }
 
 function updatePduTabMetric(tabName, options) {
   const { datasetNames, chart } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const tab = chart.tabs[tabName];
@@ -871,7 +1096,7 @@ function updatePduTabMetric(tabName, options) {
 
   // UI 필드 업데이트
   if (label !== undefined) tab.label = label;
-  if (unit !== undefined)  tab.unit = unit;
+  if (unit !== undefined) tab.unit = unit;
   if (color !== undefined) tab.color = color;
   if (scale !== undefined) tab.scale = scale;
 
@@ -884,7 +1109,7 @@ function rebuildMetricCodes(trendInfo) {
   codes.length = 0;
 
   const { tabs } = this.config.chart;
-  Object.values(tabs).forEach(tab => {
+  Object.values(tabs).forEach((tab) => {
     if (tab.metricCode && !codes.includes(tab.metricCode)) codes.push(tab.metricCode);
   });
 }
@@ -893,18 +1118,18 @@ function updateGlobalParams(options) {
   const { assetKey, baseUrl, locale } = options;
 
   if (assetKey !== undefined) this._defaultAssetKey = assetKey;
-  if (baseUrl !== undefined)  this._baseUrl = baseUrl;
-  if (locale !== undefined)   this._locale = locale;
+  if (baseUrl !== undefined) this._baseUrl = baseUrl;
+  if (locale !== undefined) this._locale = locale;
 
-  this.datasetInfo.forEach(d => {
+  this.datasetInfo.forEach((d) => {
     if (assetKey !== undefined) d.param.assetKey = assetKey;
-    if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
-    if (locale !== undefined)   d.param.locale = locale;
+    if (baseUrl !== undefined) d.param.baseUrl = baseUrl;
+    if (locale !== undefined) d.param.locale = locale;
   });
 }
 
 function updateRefreshInterval(datasetName, interval) {
-  const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+  const target = this.datasetInfo.find((d) => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
 }

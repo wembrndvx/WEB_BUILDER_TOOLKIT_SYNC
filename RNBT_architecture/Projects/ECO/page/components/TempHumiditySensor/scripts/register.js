@@ -105,7 +105,12 @@ function initComponent() {
         { key: 'name', selector: '.sensor-name' },
         { key: 'locationLabel', selector: '.sensor-zone' },
         { key: 'statusType', selector: '.sensor-status', transform: this.statusTypeToLabel },
-        { key: 'statusType', selector: '.sensor-status', dataAttr: 'status', transform: this.statusTypeToDataAttr },
+        {
+          key: 'statusType',
+          selector: '.sensor-status',
+          dataAttr: 'status',
+          transform: this.statusTypeToDataAttr,
+        },
       ],
     },
 
@@ -156,8 +161,20 @@ function initComponent() {
     // 트렌드 차트 영역 (바+라인 복합)
     chart: {
       series: {
-        temp:     { metricCode: 'SENSOR.TEMP',     label: '온도', unit: '°C', color: '#3b82f6', scale: 1.0 },
-        humidity: { metricCode: 'SENSOR.HUMIDITY', label: '습도', unit: '%',  color: '#22c55e', scale: 1.0 },
+        temp: {
+          metricCode: 'SENSOR.TEMP',
+          label: '온도',
+          unit: '°C',
+          color: '#3b82f6',
+          scale: 1.0,
+        },
+        humidity: {
+          metricCode: 'SENSOR.HUMIDITY',
+          label: '습도',
+          unit: '%',
+          color: '#22c55e',
+          scale: 1.0,
+        },
       },
       selectors: {
         container: '.chart-container',
@@ -169,12 +186,31 @@ function initComponent() {
   // 4. 데이터셋 정의
   // ======================
   const { datasetNames, api } = this.config;
-  const baseParam = { baseUrl: this._baseUrl, assetKey: this._defaultAssetKey, locale: this._locale };
+  const baseParam = {
+    baseUrl: this._baseUrl,
+    assetKey: this._defaultAssetKey,
+    locale: this._locale,
+  };
 
   this.datasetInfo = [
-    { datasetName: datasetNames.assetDetail, param: { ...baseParam }, render: ['renderBasicInfo'], refreshInterval: 0 },
-    { datasetName: datasetNames.metricLatest, param: { ...baseParam }, render: ['renderStatusCards'], refreshInterval: 5000 },
-    { datasetName: datasetNames.metricHistory, param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory }, render: ['renderTrendChart'], refreshInterval: 5000 },
+    {
+      datasetName: datasetNames.assetDetail,
+      param: { ...baseParam },
+      render: ['renderBasicInfo'],
+      refreshInterval: 0,
+    },
+    {
+      datasetName: datasetNames.metricLatest,
+      param: { ...baseParam },
+      render: ['renderStatusCards'],
+      refreshInterval: 5000,
+    },
+    {
+      datasetName: datasetNames.metricHistory,
+      param: { ...baseParam, ...api.trendParams, apiEndpoint: api.trendHistory },
+      render: ['renderTrendChart'],
+      refreshInterval: 5000,
+    },
   ];
 
   // ======================
@@ -243,6 +279,14 @@ function initComponent() {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
   });
 
+  // destroyPopup 체인 확장 - interval 정리
+  const _origDestroyPopup = this.destroyPopup;
+  const _ctx = this;
+  this.destroyPopup = function() {
+    _ctx.stopRefresh();
+    _origDestroyPopup.call(_ctx);
+  };
+
   console.log('[TempHumiditySensor] Registered:', this._defaultAssetKey);
 }
 
@@ -256,15 +300,15 @@ function showDetail() {
   // 모든 datasetInfo를 fetchData로 호출
   fx.go(
     this.datasetInfo,
-    fx.each(d => fetchDatasetAndRender.call(this, d))
+    fx.each((d) => fetchDatasetAndRender.call(this, d))
   );
 
   // refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
   this.stopRefresh();
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d.refreshInterval > 0),
-    fx.each(d => {
+    fx.filter((d) => d.refreshInterval > 0),
+    fx.each((d) => {
       d._intervalId = setInterval(() => fetchDatasetAndRender.call(this, d), d.refreshInterval);
     })
   );
@@ -278,8 +322,8 @@ function hideDetail() {
 function stopRefresh() {
   fx.go(
     this.datasetInfo,
-    fx.filter(d => d._intervalId),
-    fx.each(d => {
+    fx.filter((d) => d._intervalId),
+    fx.each((d) => {
       clearInterval(d._intervalId);
       d._intervalId = null;
     })
@@ -313,12 +357,12 @@ function fetchDatasetAndRender(d) {
   }
 
   fetchData(this.page, datasetName, param)
-    .then(response => {
+    .then((response) => {
       const data = extractData(response);
       if (!data) return;
-      fx.each(fn => this[fn](response), render);
+      fx.each((fn) => this[fn](response), render);
     })
-    .catch(e => console.warn(`[TempHumiditySensor] ${datasetName} fetch failed:`, e));
+    .catch((e) => console.warn(`[TempHumiditySensor] ${datasetName} fetch failed:`, e));
 }
 
 // ======================
@@ -337,27 +381,6 @@ function renderField(ctx, data, field) {
   }
 }
 
-function renderPropertiesRows(ctx, properties) {
-  if (!properties || properties.length === 0) return;
-
-  const tbody = ctx.popupQuery('.info-table tbody');
-  if (!tbody) return;
-
-  // 기존 동적 행 제거 (재렌더링 대비)
-  tbody.querySelectorAll('tr[data-property]').forEach(tr => tr.remove());
-
-  // displayOrder 정렬 후 행 추가
-  [...properties]
-    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-    .forEach(({ fieldKey, label, value, helpText }) => {
-      const tr = document.createElement('tr');
-      tr.dataset.property = fieldKey;
-      if (helpText) tr.title = helpText;
-      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
-      tbody.appendChild(tr);
-    });
-}
-
 function fetchModelVendorChain(ctx, asset, chainConfig) {
   const { datasetNames } = ctx.config;
   const setCell = (selector, value) => {
@@ -368,7 +391,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
   if (!asset.assetModelKey) return;
 
   fx.go(
-    fetchData(ctx.page, datasetNames.modelDetail, { baseUrl: ctx._baseUrl, assetModelKey: asset.assetModelKey }),
+    fetchData(ctx.page, datasetNames.modelDetail, {
+      baseUrl: ctx._baseUrl,
+      assetModelKey: asset.assetModelKey,
+    }),
     (modelResp) => {
       const model = extractData(modelResp, 'data');
       if (!model) return;
@@ -376,7 +402,10 @@ function fetchModelVendorChain(ctx, asset, chainConfig) {
 
       if (model.assetVendorKey) {
         fx.go(
-          fetchData(ctx.page, datasetNames.vendorDetail, { baseUrl: ctx._baseUrl, assetVendorKey: model.assetVendorKey }),
+          fetchData(ctx.page, datasetNames.vendorDetail, {
+            baseUrl: ctx._baseUrl,
+            assetVendorKey: model.assetVendorKey,
+          }),
           (vendorResp) => {
             const vendor = extractData(vendorResp, 'data');
             if (vendor) setCell(chainConfig.vendor, vendor.name);
@@ -418,6 +447,25 @@ function renderBasicInfo({ response }) {
 
   // properties 동적 렌더링 (기본정보 테이블에 행 추가)
   renderPropertiesRows(this, data.properties);
+}
+
+function renderPropertiesRows(ctx, properties) {
+  if (!properties || properties.length === 0) return;
+
+  const tbody = ctx.popupQuery('.info-table tbody');
+  if (!tbody) return;
+
+  tbody.querySelectorAll('tr[data-property]').forEach((tr) => tr.remove());
+
+  [...properties]
+    .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+    .forEach(({ fieldKey, label, value, helpText }) => {
+      const tr = document.createElement('tr');
+      tr.dataset.property = fieldKey;
+      if (helpText) tr.title = helpText;
+      tr.innerHTML = `<th>${label}</th><td>${value ?? '-'}</td>`;
+      tbody.appendChild(tr);
+    });
 }
 
 // ======================
@@ -474,7 +522,7 @@ function renderStatusCards({ response }) {
 
       // 적정값 (API 미확인 → "-")
       if (targetValueEl) {
-        targetValueEl.textContent = config.targetValue ?? '-';
+        targetValueEl.textContent = config.metricCode == 'SENSOR.TEMP' ? '22' : '50';
       }
     })
   );
@@ -500,7 +548,7 @@ function renderTrendChart({ response }) {
 
   // 차트에 표시할 metricCode로 필터링
   const chartMetricCodes = [tempConfig.metricCode, humidConfig.metricCode];
-  const chartData = safeData.filter(row => chartMetricCodes.includes(row.metricCode));
+  const chartData = safeData.filter((row) => chartMetricCodes.includes(row.metricCode));
 
   // 필터링된 데이터를 시간별로 그룹핑
   const timeMap = fx.reduce(
@@ -508,7 +556,7 @@ function renderTrendChart({ response }) {
       const time = row[timeKey];
       if (!acc[time]) acc[time] = {};
       const statsKey = this.config.api.statsKeyMap[row.metricCode];
-      acc[time][row.metricCode] = statsKey ? (row.statsBody?.[statsKey] ?? null) : null;
+      acc[time][row.metricCode] = statsKey ? row.statsBody?.[statsKey] ?? null : null;
       return acc;
     },
     {},
@@ -622,7 +670,7 @@ function renderInitialLabels() {
 
   // DOM에 있지만 config에 없는 카드 제거
   if (container) {
-    container.querySelectorAll(selectors.card).forEach(card => {
+    container.querySelectorAll(selectors.card).forEach((card) => {
       if (!metrics[card.dataset.metric]) card.remove();
     });
   }
@@ -648,7 +696,11 @@ function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
   } catch {
     return dateStr;
   }
@@ -658,7 +710,11 @@ function formatTimestamp(isoString) {
   if (!isoString) return '';
   try {
     const date = new Date(isoString);
-    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return date.toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
   } catch {
     return '';
   }
@@ -680,23 +736,19 @@ function onPopupCreated({ chartSelector, events }) {
 
 function updateTrendParams(options) {
   const { datasetNames } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const { timeRange, interval, apiEndpoint, timeField } = options;
-  if (timeRange !== undefined)   trendInfo.param.timeRange = timeRange;
-  if (interval !== undefined)    trendInfo.param.interval = interval;
+  if (timeRange !== undefined) trendInfo.param.timeRange = timeRange;
+  if (interval !== undefined) trendInfo.param.interval = interval;
   if (apiEndpoint !== undefined) trendInfo.param.apiEndpoint = apiEndpoint;
-  if (timeField !== undefined)   trendInfo.param.timeField = timeField;
+  if (timeField !== undefined) trendInfo.param.timeField = timeField;
 }
 
 function updateSensorSeriesMetric(seriesName, options) {
   const { datasetNames, chart } = this.config;
-  const trendInfo = this.datasetInfo.find(
-    d => d.datasetName === datasetNames.metricHistory
-  );
+  const trendInfo = this.datasetInfo.find((d) => d.datasetName === datasetNames.metricHistory);
   if (!trendInfo) return;
 
   const seriesConfig = chart.series[seriesName];
@@ -706,7 +758,9 @@ function updateSensorSeriesMetric(seriesName, options) {
 
   // metricCode 변경 시 statsKey 필수 검증
   if (metricCode !== undefined && statsKey === undefined) {
-    console.warn(`[updateSensorSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`);
+    console.warn(
+      `[updateSensorSeriesMetric] metricCode 변경 시 statsKey 필수 (series: ${seriesName})`
+    );
     return;
   }
 
@@ -729,7 +783,7 @@ function rebuildMetricCodes(trendInfo) {
   codes.length = 0;
 
   const { series } = this.config.chart;
-  Object.values(series).forEach(s => {
+  Object.values(series).forEach((s) => {
     if (s.metricCode && !codes.includes(s.metricCode)) codes.push(s.metricCode);
   });
 }
@@ -738,18 +792,18 @@ function updateGlobalParams(options) {
   const { assetKey, baseUrl, locale } = options;
 
   if (assetKey !== undefined) this._defaultAssetKey = assetKey;
-  if (baseUrl !== undefined)  this._baseUrl = baseUrl;
-  if (locale !== undefined)   this._locale = locale;
+  if (baseUrl !== undefined) this._baseUrl = baseUrl;
+  if (locale !== undefined) this._locale = locale;
 
-  this.datasetInfo.forEach(d => {
+  this.datasetInfo.forEach((d) => {
     if (assetKey !== undefined) d.param.assetKey = assetKey;
-    if (baseUrl !== undefined)  d.param.baseUrl = baseUrl;
-    if (locale !== undefined)   d.param.locale = locale;
+    if (baseUrl !== undefined) d.param.baseUrl = baseUrl;
+    if (locale !== undefined) d.param.locale = locale;
   });
 }
 
 function updateRefreshInterval(datasetName, interval) {
-  const target = this.datasetInfo.find(d => d.datasetName === datasetName);
+  const target = this.datasetInfo.find((d) => d.datasetName === datasetName);
   if (!target) return;
   target.refreshInterval = interval;
 }
@@ -766,12 +820,12 @@ function updateSensorStatusMetric(key, options) {
   }
 
   const { metricCode, label, unit, color, scale, targetValue } = options;
-  if (metricCode !== undefined)   metric.metricCode = metricCode;
-  if (label !== undefined)        metric.label = label;
-  if (unit !== undefined)         metric.unit = unit;
-  if (color !== undefined)        metric.color = color;
-  if (scale !== undefined)        metric.scale = scale;
-  if (targetValue !== undefined)  metric.targetValue = targetValue;
+  if (metricCode !== undefined) metric.metricCode = metricCode;
+  if (label !== undefined) metric.label = label;
+  if (unit !== undefined) metric.unit = unit;
+  if (color !== undefined) metric.color = color;
+  if (scale !== undefined) metric.scale = scale;
+  if (targetValue !== undefined) metric.targetValue = targetValue;
 }
 
 function addSensorStatusMetric(key, options) {
@@ -781,7 +835,14 @@ function addSensorStatusMetric(key, options) {
     return;
   }
 
-  const { label, unit, metricCode = null, color = '#64748b', scale = 1.0, targetValue = null } = options;
+  const {
+    label,
+    unit,
+    metricCode = null,
+    color = '#64748b',
+    scale = 1.0,
+    targetValue = null,
+  } = options;
   if (!label || !unit) {
     console.warn(`[addSensorStatusMetric] label과 unit은 필수`);
     return;

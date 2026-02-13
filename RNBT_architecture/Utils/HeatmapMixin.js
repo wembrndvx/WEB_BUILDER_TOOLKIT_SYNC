@@ -181,7 +181,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       displacementScale: 3,
       baseHeight: 2,
       radius: 'auto',
-      blur: 25,
+      blur: 30,
       opacity: 0.75,
       temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
       refreshInterval: 0, // ms, 0 = renderStatusCards 체인 사용 (기존 방식)
@@ -205,21 +205,21 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function createGradientTexture(gradient) {
-    var canvas = document.createElement('canvas');
+    const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 1;
 
-    var ctx = canvas.getContext('2d');
-    var grad = ctx.createLinearGradient(0, 0, 256, 0);
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 256, 0);
 
-    for (var stop in gradient) {
+    for (const stop in gradient) {
       grad.addColorStop(+stop, gradient[stop]);
     }
 
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 256, 1);
 
-    var texture = new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(canvas);
     texture.minFilter = THREE.LinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.wrapS = THREE.ClampToEdgeWrapping;
@@ -238,14 +238,14 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function computeRadiusUV(sensorCount) {
-    var resolution = config.heatmapResolution;
-    var blur = config.blur;
-    var r;
+    const resolution = config.heatmapResolution;
+    const blur = config.blur;
+    let r;
 
     if (config.radius !== 'auto') {
       r = config.radius;
     } else {
-      var count = Math.max(1, sensorCount);
+      const count = Math.max(1, sensorCount);
       r = Math.round(resolution / Math.sqrt(count) * 0.5);
       r = Math.max(15, Math.min(Math.round(resolution * 0.4), r));
     }
@@ -292,8 +292,8 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function createSensorArray() {
-    var arr = [];
-    for (var i = 0; i < MAX_SENSORS; i++) {
+    const arr = [];
+    for (let i = 0; i < MAX_SENSORS; i++) {
       arr.push(new THREE.Vector3(0, 0, 0));
     }
     return arr;
@@ -360,11 +360,11 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function worldToUV(worldX, worldZ, centerX, centerZ) {
-    var surface = instance._heatmap.surface;
-    var u = (worldX - centerX + surface.width / 2) / surface.width;
+    const surface = instance._heatmap.surface;
+    const u = (worldX - centerX + surface.width / 2) / surface.width;
     // PlaneGeometry rotation.x = -PI/2 에 의해 v축이 worldZ와 반대 방향
     // (기존 CanvasTexture의 flipY=true가 자동 처리하던 부분)
-    var v = 1.0 - (worldZ - centerZ + surface.depth / 2) / surface.depth;
+    const v = 1.0 - (worldZ - centerZ + surface.depth / 2) / surface.depth;
     return [u, v];
   }
 
@@ -459,37 +459,38 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
   // ────────────────────────────────────────
 
   function renderHeatmap(dataPoints) {
-    var hm = instance._heatmap;
+    const hm = instance._heatmap;
     if (!hm.mesh) return;
 
     // 서피스 중심 좌표 (mesh 위치 사용)
-    var centerX = hm.mesh.position.x;
-    var centerZ = hm.mesh.position.z;
+    const centerX = hm.mesh.position.x;
+    const centerZ = hm.mesh.position.z;
 
     // 온도 정규화 (0~1)
-    var min = config.temperatureRange.min;
-    var max = config.temperatureRange.max;
-    var range = max - min || 1;
+    const min = config.temperatureRange.min;
+    const max = config.temperatureRange.max;
+    const range = max - min || 1;
 
-    var uniforms = hm.mesh.material.uniforms;
-    var sensorArray = uniforms.sensors.value;
-    var count = Math.min(dataPoints.length, MAX_SENSORS);
+    const uniforms = hm.mesh.material.uniforms;
+    const sensorArray = uniforms.sensors.value;
+    const count = Math.min(dataPoints.length, MAX_SENSORS);
+    const radiusUV = computeRadiusUV(count);
 
     // 센서 데이터 → uniform 배열 갱신
-    for (var i = 0; i < count; i++) {
-      var point = dataPoints[i];
-      var uv = worldToUV(point.worldX, point.worldZ, centerX, centerZ);
-      var normalized = Math.max(0, Math.min(1, (point.temperature - min) / range));
+    for (let i = 0; i < count; i++) {
+      const point = dataPoints[i];
+      const uv = worldToUV(point.worldX, point.worldZ, centerX, centerZ);
+      const normalized = Math.max(0.05, Math.min(1, (point.temperature - min) / range));
       sensorArray[i].set(uv[0], uv[1], normalized);
     }
 
     // 미사용 슬롯 초기화 (이전 프레임 잔여 데이터 제거)
-    for (var j = count; j < MAX_SENSORS; j++) {
+    for (let j = count; j < MAX_SENSORS; j++) {
       sensorArray[j].set(0, 0, 0);
     }
 
     uniforms.sensorCount.value = count;
-    uniforms.radius.value = computeRadiusUV(count);
+    uniforms.radius.value = radiusUV;
   }
 
   // ────────────────────────────────────────
@@ -507,6 +508,18 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       }
     });
   }
+
+  // ────────────────────────────────────────
+  // Public: updateHeatmapWithData
+  // 외부에서 수집한 데이터로 히트맵 갱신 (API 중복 호출 방지)
+  // ────────────────────────────────────────
+
+  instance.updateHeatmapWithData = function (dataPoints) {
+    if (!instance._heatmap.visible || !instance._heatmap.mesh) return;
+    if (dataPoints.length > 0) {
+      renderHeatmap(dataPoints);
+    }
+  };
 
   // ────────────────────────────────────────
   // 독립 타이머 (refreshInterval > 0일 때 사용)
@@ -571,6 +584,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
       collectSensorData().then(function (dataPoints) {
         notifyLoading(false);
+        if (!instance._heatmap.visible || !instance._heatmap.mesh) return;
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         } else {
@@ -618,6 +632,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
 
       collectSensorData().then(function (dataPoints) {
         notifyLoading(false);
+        if (!instance._heatmap.visible || !instance._heatmap.mesh) return;
         if (dataPoints.length > 0) {
           renderHeatmap(dataPoints);
         }

@@ -4,27 +4,23 @@
  */
 
 .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    top: 10%;
+    right: 0;
+    width: 560px;
+    max-height: 800px;
     z-index: 1000;
 }
 
 .popup-content {
     background: #131521;
-    border-radius: 16px;
-    width: 560px;
-    max-width: 90vw;
-    height: 80vh;
+    border-radius: 16px 0 0 16px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    box-shadow: 0px 0px 24px 0px rgba(0, 0, 0, 0.45);
+    box-shadow: -4px 0 24px 0 rgba(0, 0, 0, 0.45);
     border: 1px solid #6b6b70;
+    border-right: none;
     display: flex;
     flex-direction: column;
 }
@@ -36,6 +32,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 60px;
+    box-sizing: border-box;
     padding: 20px 20px 15px 20px;
     border-bottom: 1px solid #6b6b70;
     background:
@@ -122,7 +120,7 @@
     gap: 20px;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
     background: rgba(2, 6, 23, 0.6);
     backdrop-filter: blur(15px);
     position: relative;
@@ -145,8 +143,7 @@
     border: 1px solid #323234;
     border-radius: 8px;
     overflow: hidden;
-    flex: 1;
-    min-height: 0;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
 }
@@ -169,6 +166,10 @@
 /* ======================
    Section 1: 기본정보 (이미지 + 테이블)
    ====================== */
+.info-section {
+    max-height: 260px;
+}
+
 .info-section .info-content {
     padding: 16px;
     flex: 1;
@@ -243,6 +244,11 @@
     background: rgba(255, 255, 255, 0.1);
 }
 
+.switch-item-active {
+    background: rgba(239, 68, 68, 0.2);
+    outline: 1px solid rgba(239, 68, 68, 0.4);
+}
+
 .switch-toggle {
     width: 28px;
     height: 14px;
@@ -315,7 +321,8 @@
    Section 2: 트렌드 차트 (4탭)
    ====================== */
 .chart-section {
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: 300px;
 }
 
 .tab-header {
@@ -378,4 +385,24 @@
     text-align: center;
     color: #ef4444;
     font-size: 13px;
+}
+
+/* ======================
+   Custom Scrollbar
+   ====================== */
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #576774;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #6b7a8a;
 }

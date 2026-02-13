@@ -97,7 +97,9 @@ async function collectAndBuild() {
   try {
     const results = await Promise.all([
       fetchData(this.page, 'assetList', { baseUrl: this._baseUrl }),
-      fetchData(this.page, 'relationList', { baseUrl: this._baseUrl, relationType: 'LOCATED_IN' }),
+      fetchData(this.page, 'relationList', {
+        baseUrl: this._baseUrl,
+      }),
     ]);
 
     // 자산 캐시

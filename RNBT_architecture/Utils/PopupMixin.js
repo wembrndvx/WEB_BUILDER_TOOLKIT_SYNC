@@ -53,6 +53,9 @@ const PopupMixin = {};
 // 팝업 z-index 카운터 (나중에 연 팝업이 항상 최상단)
 let _popupZCounter = 1000;
 
+// 현재 열려있는 팝업 인스턴스 (한 번에 하나만 열림)
+let _activePopupInstance = null;
+
 /**
  * ─────────────────────────────────────────────────────────────
  * applyShadowPopupMixin - 기본 Shadow DOM 팝업
@@ -109,11 +112,17 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      * 팝업 표시
      */
     instance.showPopup = function() {
+        // 다른 팝업이 열려있으면 먼저 닫기
+        if (_activePopupInstance && _activePopupInstance !== instance && _activePopupInstance._popup.host) {
+            _activePopupInstance.hidePopup();
+        }
+
         if (!instance._popup.host) {
             instance.createPopup();
         }
         instance._popup.host.style.zIndex = ++_popupZCounter;
         instance._popup.host.style.display = 'block';
+        _activePopupInstance = instance;
     };
 
     /**
@@ -165,6 +174,11 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      * 팝업 및 리소스 정리
      */
     instance.destroyPopup = function() {
+        // 활성 팝업 참조 해제
+        if (_activePopupInstance === instance) {
+            _activePopupInstance = null;
+        }
+
         // 이벤트 정리
         fx.each(cleanup => cleanup(), instance._popup.eventCleanups);
         instance._popup.eventCleanups = [];

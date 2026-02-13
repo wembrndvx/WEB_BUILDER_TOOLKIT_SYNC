@@ -250,6 +250,14 @@ function initComponent() {
     temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
   });
 
+  // destroyPopup 체인 확장 - interval 정리
+  const _origDestroyPopup = this.destroyPopup;
+  const _ctx = this;
+  this.destroyPopup = function() {
+    _ctx.stopRefresh();
+    _origDestroyPopup.call(_ctx);
+  };
+
   console.log('[CRAC] Registered:', this._defaultAssetKey);
 }
 
@@ -828,7 +836,7 @@ function addCracStatusMetric(key, options) {
     return;
   }
 
-  const { label, unit, metricCode = null, scale = 1.0 } = options;
+  const { label, unit, metricCode = null, scale = 0.1 } = options;
   if (!label || !unit) {
     console.warn(`[addCracStatusMetric] label과 unit은 필수`);
     return;

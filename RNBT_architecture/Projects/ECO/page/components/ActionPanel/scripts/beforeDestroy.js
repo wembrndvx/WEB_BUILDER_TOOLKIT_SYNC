@@ -13,6 +13,31 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
+// DATA REFRESH TIMER CLEANUP
+// ======================
+
+if (this._dataRefreshId) {
+  clearInterval(this._dataRefreshId);
+  this._dataRefreshId = null;
+}
+
+// ======================
+// DATA LABELS CLEANUP
+// ======================
+
+if (this._dataLabels) {
+  this._dataLabels.forEach(function (entry) {
+    if (entry.css2dObject) {
+      entry.instance.appendElement.remove(entry.css2dObject);
+      if (entry.css2dObject.element && entry.css2dObject.element.parentNode) {
+        entry.css2dObject.element.parentNode.removeChild(entry.css2dObject.element);
+      }
+    }
+  });
+  this._dataLabels = null;
+}
+
+// ======================
 // HEATMAP CLEANUP
 // ======================
 
@@ -26,17 +51,19 @@ if (this._centerInstance && this._centerInstance._heatmap && this._centerInstanc
 
 const root = this.appendElement;
 if (this._internalHandlers) {
-  const panel = root.querySelector('.action-panel');
+  const panel = root?.querySelector('.action-panel');
   if (panel) panel.removeEventListener('click', this._internalHandlers.btnClick);
 }
-this._internalHandlers = null;
 
 // ======================
 // STATE CLEANUP
 // ======================
 
+this._internalHandlers = null;
 this._centerInstance = null;
 this._heatmapApplied = false;
-this._activeTab = null;
+this._activeModes = null;
 this._centerComponentName = null;
 this._refreshInterval = null;
+this._dataLabels = null;
+this._dataRefreshId = null;
