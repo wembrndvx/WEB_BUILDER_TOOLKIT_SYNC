@@ -666,5 +666,6 @@ Wkit.disposeAllThreeResources = function (page) {
 
 ## 관련 문서
 
+- [WHY_NULL_UNNECESSARY.md](/RNBT_architecture/docs/WHY_NULL_UNNECESSARY.md) — 외부 null 처리가 불필요한 이유 (GC 원칙 기반)
 - [WKIT_API.md](/RNBT_architecture/docs/WKIT_API.md) — Wkit API 레퍼런스
 - [README.md](/RNBT_architecture/README.md) — 아키텍처 가이드
