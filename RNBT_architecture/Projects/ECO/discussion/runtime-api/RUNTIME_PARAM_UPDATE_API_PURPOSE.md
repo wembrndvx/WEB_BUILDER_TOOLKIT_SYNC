@@ -224,7 +224,7 @@ component.updateUpsTabMetric('current', {
 |------|------|
 | [RUNTIME_PARAM_UPDATE_API.md](RUNTIME_PARAM_UPDATE_API.md) | 메서드별 상세 설계 (시그니처, 파라미터, 동기화 규칙) |
 | [RUNTIME_PARAM_UPDATE_API_TEST_RESULTS.md](RUNTIME_PARAM_UPDATE_API_TEST_RESULTS.md) | 130개 테스트 전수 통과 결과 |
-| [ECO_IMPLEMENTATION_AUDIT_REPORT.md](ECO_IMPLEMENTATION_AUDIT_REPORT.md) | 구현 충실도 감사 보고서 |
+| [ECO_IMPLEMENTATION_AUDIT_REPORT.md](../ECO_IMPLEMENTATION_AUDIT_REPORT.md) | 구현 충실도 감사 보고서 |
 
 ---
 
