@@ -19,8 +19,9 @@ Figma 디자인을 **정적 HTML/CSS**로 변환하는 Skill입니다.
 
 1. [/.claude/skills/SHARED_INSTRUCTIONS.md](/.claude/skills/SHARED_INSTRUCTIONS.md) - 공통 규칙
 2. [/Figma_Conversion/README.md](/Figma_Conversion/README.md) - 프로젝트 구조 및 시작 방법
-3. [/Figma_Conversion/CLAUDE.md](/Figma_Conversion/CLAUDE.md) - 워크플로우와 규칙 (MCP 도구, 추측 금지, 에셋, 컨테이너 구조, box-sizing, Playwright, 완료 체크리스트)
-4. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일 (CSS 원칙: px 단위, Flexbox 우선)
+3. [/.claude/guides/FIGMA_MCP_GUIDE.md](/.claude/guides/FIGMA_MCP_GUIDE.md) - MCP 도구, 에셋 규칙, dirForAssetWrites
+4. [/.claude/guides/FIGMA_IMPLEMENTATION_GUIDE.md](/.claude/guides/FIGMA_IMPLEMENTATION_GUIDE.md) - 구현 주의사항, 변환 워크플로우, Playwright
+5. [/.claude/guides/CODING_STYLE.md](/.claude/guides/CODING_STYLE.md) - 코딩 스타일 (CSS 원칙: px 단위, Flexbox 우선)
 
 ---
 
