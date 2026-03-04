@@ -146,12 +146,12 @@ function initComponent() {
     // 상태 인디케이터 영역 (6개 BOOL dot)
     indicators: {
       metrics: {
-        'CRAC.FAN_STATUS':        { label: '팬상태',       isLeak: false },
-        'CRAC.COOL_STATUS':       { label: '냉방동작상태', isLeak: false },
-        'CRAC.HEAT_STATUS':       { label: '난방동작상태', isLeak: false },
-        'CRAC.HUMIDIFY_STATUS':   { label: '가습상태',     isLeak: false },
-        'CRAC.DEHUMIDIFY_STATUS': { label: '제습상태',     isLeak: false },
-        'CRAC.LEAK_STATUS':       { label: '누수상태',     isLeak: true },
+        fanStatus:        { metricCode: 'CRAC.FAN_STATUS',        label: '팬상태',       isLeak: false },
+        coolStatus:       { metricCode: 'CRAC.COOL_STATUS',       label: '냉방동작상태', isLeak: false },
+        heatStatus:       { metricCode: 'CRAC.HEAT_STATUS',       label: '난방동작상태', isLeak: false },
+        humidifyStatus:   { metricCode: 'CRAC.HUMIDIFY_STATUS',   label: '가습상태',     isLeak: false },
+        dehumidifyStatus: { metricCode: 'CRAC.DEHUMIDIFY_STATUS', label: '제습상태',     isLeak: false },
+        leakStatus:       { metricCode: 'CRAC.LEAK_STATUS',       label: '누수상태',     isLeak: true },
       },
       selectors: {
         indicator: '.indicator',
@@ -503,18 +503,23 @@ function renderIndicators({ response }) {
   fx.go(
     Array.from(indicatorEls),
     fx.each(el => {
-      const code = el.dataset.metric;
+      const key = el.dataset.metric;
       const dot = el.querySelector(selectors.dot);
-      if (!dot || !code) return;
+      if (!dot || !key) return;
 
-      const metric = metricMap[code];
+      const cfg = metrics[key];
+      if (!cfg) {
+        dot.dataset.state = 'unknown';
+        return;
+      }
+
+      const metric = metricMap[cfg.metricCode];
       if (!metric) {
         dot.dataset.state = 'unknown';
         return;
       }
 
       // 누수(LEAK)는 true=에러, 나머지는 true=정상
-      const cfg = metrics[code];
       const isLeak = cfg?.isLeak ?? false;
       const isOn = metric.valueBool;
 
@@ -720,11 +725,30 @@ function renderInitialLabels() {
     });
   }
 
+  // ── 인디케이터: 구 HTML data-metric 정규화 (하위 호환) ──
+  // 리팩토링 이전: config 키 = metricCode 문자열, HTML data-metric = metricCode
+  // 리팩토링 이후: config 키 = camelCase 안정 키, HTML data-metric = 안정 키
+  // 이미 저장된 구 HTML의 data-metric을 새 키로 변환
+  const metricCodeToKey = {};
+  Object.entries(indicators.metrics).forEach(([key, cfg]) => {
+    metricCodeToKey[cfg.metricCode] = key;
+  });
+
+  const allIndicators = this.popupQueryAll(indicators.selectors.indicator);
+  if (allIndicators) {
+    allIndicators.forEach(el => {
+      const attr = el.dataset.metric;
+      if (attr && !indicators.metrics[attr] && metricCodeToKey[attr]) {
+        el.dataset.metric = metricCodeToKey[attr];
+      }
+    });
+  }
+
   // ── 인디케이터 라벨 ──
   fx.go(
     Object.entries(indicators.metrics),
-    fx.each(([code, cfg]) => {
-      const indicator = this.popupQuery(`${indicators.selectors.indicator}[data-metric="${code}"]`);
+    fx.each(([key, cfg]) => {
+      const indicator = this.popupQuery(`${indicators.selectors.indicator}[data-metric="${key}"]`);
       if (!indicator) return;
       const labelEl = indicator.querySelector('.indicator-label');
       if (labelEl) labelEl.textContent = cfg.label;
