@@ -80,6 +80,89 @@ function renderList(config, { response }) { ... }
 
 ---
 
+## 주기적 데이터 갱신 패턴
+
+> **⚠️ 2026-03 이후 적용 규칙**
+> 기존 컴포넌트 예제나 문서에 `setInterval` + `_intervalId` 패턴이 남아있을 수 있습니다.
+> 이는 리팩토링 이전의 구 패턴이며, **새로 작성하거나 수정하는 코드는 반드시 아래 패턴을 따릅니다.**
+
+`setInterval` 대신 **setTimeout 체이닝 + `_stopped` 가드**를 사용합니다.
+
+| 방식 | 문제 |
+|------|------|
+| `setInterval` | 응답 완료 전 다음 요청이 누적됨 |
+| `setTimeout` + `.finally()` | 응답 완료 후에만 다음 요청 예약 |
+| + `_stopped` 가드 | `stopRefresh` 후 `.finally()`가 좀비 타이머를 재등록하는 것을 방지 |
+
+### 시작: setTimeout 체이닝
+
+```javascript
+// refreshInterval > 0인 데이터셋에 대해 주기적 갱신 시작
+this.stopRefresh();
+fx.go(
+    this.datasetInfo,
+    fx.filter(d => d.refreshInterval > 0),
+    fx.each(d => {
+        d._stopped = false;
+        const scheduleNext = () => {
+            if (d._stopped) return;        // 좀비 방지 가드
+            d._timerId = setTimeout(() => {
+                fetchDatasetAndRender.call(this, d).finally(scheduleNext);
+            }, d.refreshInterval);
+        };
+        scheduleNext();
+    })
+);
+```
+
+### 정지: _stopped 플래그
+
+```javascript
+function stopRefresh() {
+    const datasetInfo = this.datasetInfo ?? [];
+    fx.go(
+        datasetInfo,
+        fx.filter(d => d.refreshInterval > 0),
+        fx.each(d => {
+            d._stopped = true;             // 반드시 clearTimeout보다 먼저
+            clearTimeout(d._timerId);
+            d._timerId = null;
+        })
+    );
+}
+```
+
+### fetchDatasetAndRender: Promise 반환 필수
+
+```javascript
+function fetchDatasetAndRender(d) {
+    // ... param 설정 ...
+
+    return fetchData(this.page, datasetName, param)   // ← return 필수
+        .then(response => { ... })
+        .catch(e => console.warn(...));
+}
+```
+
+`.finally(scheduleNext)`가 동작하려면 `fetchDatasetAndRender`가 **반드시 Promise를 반환**해야 합니다.
+
+### 좀비 타이머가 발생하는 시나리오
+
+```
+1. scheduleNext() → d._timerId = setTimeout(callback, 5s)
+2. 5초 후 callback 실행: fetchDatasetAndRender() 시작 (HTTP 대기중)
+3. 이 시점에 stopRefresh() 호출
+   → clearTimeout(d._timerId)  ← 이미 실행된 타이머라 no-op
+   → d._timerId = null
+4. HTTP 응답 도착
+   → .finally(scheduleNext) 실행
+   → _stopped 가드 없으면 새 타이머 등록됨 ← 좀비!
+```
+
+`d._stopped = true`가 설정되어 있으므로 `scheduleNext()`는 즉시 return하여 좀비를 방지합니다.
+
+---
+
 ## beforeDestroy 정리 순서
 
 **반드시 이 순서를 따릅니다. 생성의 역순입니다.**
