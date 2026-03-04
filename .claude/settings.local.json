@@ -36,7 +36,22 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nfix\\(SimpleDashboard\\): unbindEvents → removeCustomEvents 수정\n\n존재하지 않는 함수명 사용 수정\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(xcopy:*)",
       "Bash(git init:*)",
-      "Skill(create-component)"
+      "Skill(create-component)",
+      "Bash(dir:*)",
+      "Bash(git status:*)",
+      "Bash(git commit:*)",
+      "WebFetch(domain:playwright.dev)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(pandoc --version)",
+      "Bash(wkhtmltopdf --version)",
+      "Bash(choco --version)",
+      "Bash(winget --version)",
+      "Bash(npm --version)",
+      "Bash(choco install pandoc wkhtmltopdf -y)",
+      "Bash(md-to-pdf COMPONENT_RUNTIME_GUIDE.md --pdf-options '{\"\"format\"\":\"\"A4\"\",\"\"margin\"\":{\"\"top\"\":\"\"20mm\"\",\"\"bottom\"\":\"\"20mm\"\",\"\"left\"\":\"\"15mm\"\",\"\"right\"\":\"\"15mm\"\"}}')",
+      "Bash(ls -lh /c/Users/junsungkim/Desktop/work/renobit/front_source/WEB_BUILDER_TOOLKIT/RNBT_architecture/docs/*.pdf)",
+      "Bash(taskkill //F //IM \"chrome.exe\")",
+      "Bash(taskkill //F //IM \"chromium.exe\")"
     ],
     "deny": [],
     "ask": []

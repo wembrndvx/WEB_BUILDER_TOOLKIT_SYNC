@@ -110,8 +110,8 @@ Wkit.disposeAllThreeResources = function (page) {
           Object.keys(instance.subscriptions),
           fx.each((topic) => unsubscribe(topic, instance))
         );
+        
       }
-
 
       // 2. 3D 리소스 정리
       if (instance.appendElement) {

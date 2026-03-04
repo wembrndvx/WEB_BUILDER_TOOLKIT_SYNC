@@ -92,6 +92,7 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
           loadedObj = await NLoaderManager.loadGLTF(info, true).catch((err) => {
             throw new Error(err);
           });
+          instance.animations = NLoaderManager.getAnimationPool(convertServerPath(info.path));
         }
         instance.composeResource(loadedObj);
         instance._onValidateResource();

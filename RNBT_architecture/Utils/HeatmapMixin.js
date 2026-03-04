@@ -171,6 +171,7 @@ const DEFAULT_GRADIENT = {
 // ─────────────────────────────────────────────────────────────
 
 HeatmapMixin.applyHeatmapMixin = function (instance, options) {
+  const MC = wemb.configManager.assetMetricCodes;
   const config = Object.assign(
     {
       surfaceSize: 'auto',
@@ -183,7 +184,7 @@ HeatmapMixin.applyHeatmapMixin = function (instance, options) {
       radius: 'auto',
       blur: 30,
       opacity: 0.75,
-      temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+      temperatureMetrics: [MC.SENSOR.TEMP, MC.CRAC.RETURN_TEMP],
       refreshInterval: 0, // ms, 0 = renderStatusCards 체인 사용 (기존 방식)
       onLoadingChange: null, // callback(isLoading: boolean) - 데이터 로딩 상태 알림
     },
