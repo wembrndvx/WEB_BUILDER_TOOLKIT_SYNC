@@ -58,6 +58,57 @@ const LABEL_STYLE = {
   textAlign: 'center',
 };
 
+// ======================
+// PROMISE POOL (동시성 제한 유틸)
+// ======================
+
+/**
+ * 최대 동시 실행 수를 제한하며 비동기 작업 배열을 실행한다.
+ * 각 작업 완료 시 onSettled 콜백을 즉시 호출하여 점진적 렌더링을 지원한다.
+ *
+ * @param {Array<function(): Promise>} tasks - 실행할 비동기 작업 팩토리 배열
+ * @param {number} concurrency - 최대 동시 실행 수
+ * @param {function(*, number): void} onSettled - 각 작업 완료 시 콜백 (결과, 인덱스)
+ * @returns {Promise<void>} 모든 작업 완료 시 resolve
+ */
+function promisePool(tasks, concurrency, onSettled) {
+  if (tasks.length === 0) return Promise.resolve();
+
+  let nextIndex = 0;
+  let settledCount = 0;
+  const total = tasks.length;
+
+  return new Promise(function (resolve) {
+    function runNext() {
+      if (nextIndex >= total) return;
+      const idx = nextIndex++;
+      tasks[idx]()
+        .then(function (result) {
+          if (onSettled) onSettled(result, idx);
+        })
+        .catch(function () {
+          if (onSettled) onSettled(null, idx);
+        })
+        .finally(function () {
+          settledCount++;
+          if (settledCount === total) {
+            resolve();
+          } else {
+            runNext();
+          }
+        });
+    }
+
+    // 초기 동시 실행
+    const initialCount = Math.min(concurrency, total);
+    for (let i = 0; i < initialCount; i++) {
+      runNext();
+    }
+  });
+}
+
+const FETCH_CONCURRENCY = 6;
+
 initComponent.call(this);
 
 function initComponent() {
@@ -154,6 +205,7 @@ function activateMode(action) {
 
 /**
  * 히트맵 OFF
+ * - 삭제하지 않고 숨김 처리 (Stale-While-Revalidate 캐시 유지)
  */
 function deactivateHeatmap() {
   if (
@@ -161,7 +213,7 @@ function deactivateHeatmap() {
     this._centerInstance._heatmap &&
     this._centerInstance._heatmap.visible
   ) {
-    this._centerInstance.toggleHeatmap();
+    this._centerInstance._heatmap.visible = false;
   }
   stopDataTimerIfIdle.call(this);
 }
@@ -221,8 +273,9 @@ function activateHeatmap() {
   } else {
     this._centerInstance.updateHeatmapConfig(HEATMAP_PRESET);
 
+    // Stale-While-Revalidate: 숨겨진 히트맵 즉시 복원
     if (!this._centerInstance._heatmap.visible) {
-      this._centerInstance.toggleHeatmap();
+      this._centerInstance._heatmap.visible = true;
     }
   }
 
@@ -236,18 +289,29 @@ function activateHeatmap() {
 
 /**
  * 데이터 라벨 활성화
- * - 3D 레이어의 모든 자산을 순회
- * - statusCards.metrics에 온도/습도 metricCode가 있는 인스턴스를 대상으로
- * - metricLatest API 호출 후 CSS2DObject 라벨 생성
- * - _refreshInterval 주기로 자동 갱신
+ * - 캐시(숨긴 라벨)가 있으면 즉시 복원 + 백그라운드에서 최신 데이터 갱신
+ * - 캐시가 없으면 로딩 UI 표시 후 fetch
  */
 function activateDataLabels() {
   const ctx = this;
-  syncLoadingUI.call(this, 'humidity', true);
+  const hasCache = this._dataLabels.length > 0;
 
-  fetchAndRenderLabels.call(this, function () {
-    syncLoadingUI.call(ctx, 'humidity', false);
-  });
+  if (hasCache) {
+    // Stale-While-Revalidate: 캐시 즉시 복원
+    this._dataLabels.forEach(function (entry) {
+      entry.css2dObject.visible = true;
+    });
+
+    // 백그라운드에서 최신 데이터로 갱신 (로딩 UI 없음)
+    fetchAndRenderLabels.call(this);
+  } else {
+    // 캐시 없음: 로딩 UI 표시 후 fetch
+    syncLoadingUI.call(this, 'humidity', true);
+
+    fetchAndRenderLabels.call(this, function () {
+      syncLoadingUI.call(ctx, 'humidity', false);
+    });
+  }
 
   // 통합 타이머 시작 (이미 실행 중이면 무시)
   ensureDataTimer.call(this);
@@ -255,9 +319,12 @@ function activateDataLabels() {
 
 /**
  * 데이터 라벨 비활성화
+ * - 삭제하지 않고 숨김 처리 (Stale-While-Revalidate 캐시 유지)
  */
 function deactivateDataLabels() {
-  clearDataLabels.call(this);
+  this._dataLabels.forEach(function (entry) {
+    entry.css2dObject.visible = false;
+  });
   stopDataTimerIfIdle.call(this);
 }
 
@@ -275,6 +342,7 @@ function findMetricConfig(metrics, metricCodes) {
 
 /**
  * 3D 레이어 순회 → metricLatest 수집 → 라벨 생성/갱신
+ * promisePool로 동시성 제한 + 응답 도착 즉시 점진적 렌더링
  */
 function fetchAndRenderLabels(callback) {
   const ctx = this;
@@ -306,65 +374,66 @@ function fetchAndRenderLabels(callback) {
     return;
   }
 
-  // 각 대상에 대해 metricLatest 호출
-  const fetchPromises = targets.map(function (target) {
-    return fetchData(ctx.page, 'metricLatest', {
-      baseUrl: target.instance._baseUrl,
-      assetKey: target.instance._defaultAssetKey,
-    })
-      .then(function (response) {
-        const data = response?.response?.data;
-        if (!data || !Array.isArray(data)) return null;
-
-        // metricCode → value 매핑
-        const metricMap = {};
-        data.forEach(function (m) {
-          metricMap[m.metricCode] =
-            m.valueType === 'NUMBER' ? m.valueNumber : m.valueString;
-        });
-
-        // 라벨 파트 조합
-        const parts = [];
-
-        if (target.tempCfg) {
-          const raw = metricMap[target.tempCfg.metricCode];
-          if (raw != null) {
-            parts.push({
-              text: (raw * target.tempCfg.scale).toFixed(1) + LABEL_METRICS.temperature.unit,
-              color: LABEL_METRICS.temperature.color,
-            });
-          }
-        }
-
-        if (target.humidCfg) {
-          const raw = metricMap[target.humidCfg.metricCode];
-          if (raw != null) {
-            parts.push({
-              text: (raw * target.humidCfg.scale).toFixed(1) + LABEL_METRICS.humidity.unit,
-              color: LABEL_METRICS.humidity.color,
-            });
-          }
-        }
-
-        if (parts.length === 0) return null;
-
-        return {
-          instance: target.instance,
-          parts: parts,
-        };
+  // 각 대상에 대해 metricLatest 호출 (동시성 제한 + 점진적 렌더링)
+  const tasks = targets.map(function (target) {
+    return function () {
+      return fetchData(ctx.page, 'metricLatest', {
+        baseUrl: target.instance._baseUrl,
+        assetKey: target.instance._defaultAssetKey,
       })
-      .catch(function () {
-        return null;
-      });
+        .then(function (response) {
+          const data = response?.response?.data;
+          if (!data || !Array.isArray(data)) return null;
+
+          // metricCode → value 매핑
+          const metricMap = {};
+          data.forEach(function (m) {
+            metricMap[m.metricCode] =
+              m.valueType === 'NUMBER' ? m.valueNumber : m.valueString;
+          });
+
+          // 라벨 파트 조합
+          const parts = [];
+
+          if (target.tempCfg) {
+            const raw = metricMap[target.tempCfg.metricCode];
+            if (raw != null) {
+              parts.push({
+                text: (raw * target.tempCfg.scale).toFixed(1) + LABEL_METRICS.temperature.unit,
+                color: LABEL_METRICS.temperature.color,
+              });
+            }
+          }
+
+          if (target.humidCfg) {
+            const raw = metricMap[target.humidCfg.metricCode];
+            if (raw != null) {
+              parts.push({
+                text: (raw * target.humidCfg.scale).toFixed(1) + LABEL_METRICS.humidity.unit,
+                color: LABEL_METRICS.humidity.color,
+              });
+            }
+          }
+
+          if (parts.length === 0) return null;
+
+          return {
+            instance: target.instance,
+            parts: parts,
+          };
+        })
+        .catch(function () {
+          return null;
+        });
+    };
   });
 
-  Promise.all(fetchPromises).then(function (results) {
-    const validResults = results.filter(Boolean);
-
-    validResults.forEach(function (result) {
+  promisePool(tasks, FETCH_CONCURRENCY, function (result) {
+    // 각 응답 도착 즉시 라벨 렌더링
+    if (result) {
       updateOrCreateLabel.call(ctx, result.instance, result.parts);
-    });
-
+    }
+  }).then(function () {
     if (callback) callback();
   });
 }
@@ -427,21 +496,6 @@ function updateOrCreateLabel(inst, parts) {
   }
 }
 
-/**
- * 모든 데이터 라벨 제거
- */
-function clearDataLabels() {
-  this._dataLabels.forEach(function (entry) {
-    if (entry.css2dObject) {
-      entry.instance.appendElement.remove(entry.css2dObject);
-      if (entry.css2dObject.element && entry.css2dObject.element.parentNode) {
-        entry.css2dObject.element.parentNode.removeChild(entry.css2dObject.element);
-      }
-    }
-  });
-  this._dataLabels = [];
-}
-
 // ======================
 // SHARED DATA REFRESH (통합 데이터 갱신)
 // ======================
@@ -477,6 +531,8 @@ function stopDataTimerIfIdle() {
 /**
  * 통합 데이터 갱신 콜백
  * metricLatest API를 인스턴스당 1회 호출 → 활성 모드에 분배
+ * - 라벨: 응답 도착 즉시 점진적 렌더링
+ * - 히트맵: 전체 포인트가 모여야 하므로 모든 fetch 완료 후 1회 갱신
  */
 function refreshAllActiveData() {
   const ctx = this;
@@ -533,88 +589,84 @@ function refreshAllActiveData() {
 
   if (targets.length === 0) return Promise.resolve();
 
-  const fetchPromises = targets.map(function (target) {
-    return fetchData(ctx.page, 'metricLatest', {
-      baseUrl: target.instance._baseUrl,
-      assetKey: target.instance._defaultAssetKey,
-    })
-      .then(function (response) {
-        return { target: target, data: response?.response?.data };
+  // 히트맵 포인트를 누적할 배열 (전체 완료 후 1회 갱신)
+  const pendingHeatmapPoints = [];
+
+  const tasks = targets.map(function (target) {
+    return function () {
+      return fetchData(ctx.page, 'metricLatest', {
+        baseUrl: target.instance._baseUrl,
+        assetKey: target.instance._defaultAssetKey,
       })
-      .catch(function () {
-        return null;
-      });
+        .then(function (response) {
+          return { target: target, data: response?.response?.data };
+        })
+        .catch(function () {
+          return null;
+        });
+    };
   });
 
-  return Promise.all(fetchPromises).then(function (results) {
-    const valid = results.filter(function (r) {
-      return r && r.data && Array.isArray(r.data);
+  return promisePool(tasks, FETCH_CONCURRENCY, function (result) {
+    if (!result || !result.data || !Array.isArray(result.data)) return;
+
+    const t = result.target;
+    const metricMap = {};
+    result.data.forEach(function (m) {
+      metricMap[m.metricCode] =
+        m.valueType === 'NUMBER' ? m.valueNumber : m.valueString;
     });
 
-    // 온습도현황 라벨 갱신
+    // 온습도현황 라벨: 즉시 렌더링
     if (humidityActive) {
-      valid.forEach(function (result) {
-        const t = result.target;
-        const metricMap = {};
-        result.data.forEach(function (m) {
-          metricMap[m.metricCode] =
-            m.valueType === 'NUMBER' ? m.valueNumber : m.valueString;
-        });
-
-        const parts = [];
-        if (t.tempCfg) {
-          const raw = metricMap[t.tempCfg.metricCode];
-          if (raw != null) {
-            parts.push({
-              text:
-                (raw * t.tempCfg.scale).toFixed(1) +
-                LABEL_METRICS.temperature.unit,
-              color: LABEL_METRICS.temperature.color,
-            });
-          }
+      const parts = [];
+      if (t.tempCfg) {
+        const raw = metricMap[t.tempCfg.metricCode];
+        if (raw != null) {
+          parts.push({
+            text:
+              (raw * t.tempCfg.scale).toFixed(1) +
+              LABEL_METRICS.temperature.unit,
+            color: LABEL_METRICS.temperature.color,
+          });
         }
-        if (t.humidCfg) {
-          const raw = metricMap[t.humidCfg.metricCode];
-          if (raw != null) {
-            parts.push({
-              text:
-                (raw * t.humidCfg.scale).toFixed(1) +
-                LABEL_METRICS.humidity.unit,
-              color: LABEL_METRICS.humidity.color,
-            });
-          }
+      }
+      if (t.humidCfg) {
+        const raw = metricMap[t.humidCfg.metricCode];
+        if (raw != null) {
+          parts.push({
+            text:
+              (raw * t.humidCfg.scale).toFixed(1) +
+              LABEL_METRICS.humidity.unit,
+            color: LABEL_METRICS.humidity.color,
+          });
         }
-        if (parts.length > 0) {
-          updateOrCreateLabel.call(ctx, t.instance, parts);
-        }
-      });
+      }
+      if (parts.length > 0) {
+        updateOrCreateLabel.call(ctx, t.instance, parts);
+      }
     }
 
-    // 온도분포도 히트맵 갱신
-    if (temperatureActive) {
-      const heatmapPoints = [];
-      valid.forEach(function (result) {
-        const t = result.target;
-        if (!t.heatmapMetricCode) return;
-
-        const tempMetric = result.data.find(function (m) {
-          return m.metricCode === t.heatmapMetricCode;
-        });
-        if (!tempMetric || tempMetric.valueNumber == null) return;
-
+    // 온도분포도 히트맵: 포인트 누적 (전체 완료 후 일괄 갱신)
+    if (temperatureActive && t.heatmapMetricCode) {
+      const tempMetric = result.data.find(function (m) {
+        return m.metricCode === t.heatmapMetricCode;
+      });
+      if (tempMetric && tempMetric.valueNumber != null) {
         const worldPos = new THREE.Vector3();
         t.instance.appendElement.getWorldPosition(worldPos);
 
-        heatmapPoints.push({
+        pendingHeatmapPoints.push({
           worldX: worldPos.x,
           worldZ: worldPos.z,
           temperature: tempMetric.valueNumber * t.heatmapScale,
         });
-      });
-
-      if (heatmapPoints.length > 0) {
-        ctx._centerInstance.updateHeatmapWithData(heatmapPoints);
       }
+    }
+  }).then(function () {
+    // 히트맵: 모든 fetch 완료 후 1회 갱신
+    if (temperatureActive && pendingHeatmapPoints.length > 0) {
+      ctx._centerInstance.updateHeatmapWithData(pendingHeatmapPoints);
     }
   });
 }
