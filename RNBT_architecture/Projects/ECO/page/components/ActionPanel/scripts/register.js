@@ -14,13 +14,14 @@
 
 const { bindEvents, makeIterator, fetchData } = Wkit;
 const { applyHeatmapMixin } = HeatmapMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // HEATMAP PRESET (온도분포도용)
 // ======================
 
 const HEATMAP_PRESET = {
-  temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+  temperatureMetrics: [MC.SENSOR.TEMP, MC.CRAC.RETURN_TEMP],
   gradient: null,
   temperatureRange: { min: 17, max: 31 },
 };
@@ -31,12 +32,12 @@ const HEATMAP_PRESET = {
 
 const LABEL_METRICS = {
   temperature: {
-    metricCodes: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    metricCodes: [MC.SENSOR.TEMP, MC.CRAC.RETURN_TEMP],
     unit: '\u00B0C',
     color: '#3b82f6',
   },
   humidity: {
-    metricCodes: ['SENSOR.HUMIDITY', 'CRAC.RETURN_HUMIDITY'],
+    metricCodes: [MC.SENSOR.HUMIDITY, MC.CRAC.RETURN_HUMIDITY],
     unit: '%',
     color: '#22c55e',
   },

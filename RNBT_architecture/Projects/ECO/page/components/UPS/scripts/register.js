@@ -9,6 +9,7 @@
 
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // TEMPLATE HELPER
@@ -77,23 +78,23 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
-          'UPS.INPUT_A_SUM',
-          'UPS.OUTPUT_A_SUM',
-          'UPS.INPUT_V_AVG',
-          'UPS.OUTPUT_V_AVG',
-          'UPS.INPUT_F_AVG',
-          'UPS.OUTPUT_F_AVG',
+          MC.UPS.INPUT_A_SUM,
+          MC.UPS.OUTPUT_A_SUM,
+          MC.UPS.INPUT_V_AVG,
+          MC.UPS.OUTPUT_V_AVG,
+          MC.UPS.INPUT_F_AVG,
+          MC.UPS.OUTPUT_F_AVG,
         ],
         statsKeys: [],
         timeField: 'time',
       },
       statsKeyMap: {
-        'UPS.INPUT_A_SUM': 'sum',
-        'UPS.OUTPUT_A_SUM': 'sum',
-        'UPS.INPUT_V_AVG': 'avg',
-        'UPS.OUTPUT_V_AVG': 'avg',
-        'UPS.INPUT_F_AVG': 'avg',
-        'UPS.OUTPUT_F_AVG': 'avg',
+        [MC.UPS.INPUT_A_SUM]: 'sum',
+        [MC.UPS.OUTPUT_A_SUM]: 'sum',
+        [MC.UPS.INPUT_V_AVG]: 'avg',
+        [MC.UPS.OUTPUT_V_AVG]: 'avg',
+        [MC.UPS.INPUT_F_AVG]: 'avg',
+        [MC.UPS.OUTPUT_F_AVG]: 'avg',
       },
     },
 
@@ -148,7 +149,7 @@ function initComponent() {
         batterySoc: {
           label: '배터리 사용률',
           unit: '%',
-          metricCode: 'UPS.BATT_PCT',
+          metricCode: MC.UPS.BATT_PCT,
           scale: 1.0,
           demoRange: [75, 100],
         },
@@ -162,14 +163,14 @@ function initComponent() {
         loadRate: {
           label: '부하율',
           unit: '%',
-          metricCode: 'UPS.LOAD_PCT',
+          metricCode: MC.UPS.LOAD_PCT,
           scale: 1.0,
           demoRange: [20, 65],
         },
         batteryVolt: {
           label: '배터리 출력전압',
           unit: 'V',
-          metricCode: 'UPS.BATT_V',
+          metricCode: MC.UPS.BATT_V,
           scale: 1.0,
           demoRange: [380, 420],
         },
@@ -189,20 +190,20 @@ function initComponent() {
         current: {
           label: '입/출력 전류',
           unit: 'A',
-          inputCode: 'UPS.INPUT_A_SUM',
-          outputCode: 'UPS.OUTPUT_A_SUM',
+          inputCode: MC.UPS.INPUT_A_SUM,
+          outputCode: MC.UPS.OUTPUT_A_SUM,
         },
         voltage: {
           label: '입/출력 전압',
           unit: 'V',
-          inputCode: 'UPS.INPUT_V_AVG',
-          outputCode: 'UPS.OUTPUT_V_AVG',
+          inputCode: MC.UPS.INPUT_V_AVG,
+          outputCode: MC.UPS.OUTPUT_V_AVG,
         },
         frequency: {
           label: '입/출력 주파수',
           unit: 'Hz',
-          inputCode: 'UPS.INPUT_F_AVG',
-          outputCode: 'UPS.OUTPUT_F_AVG',
+          inputCode: MC.UPS.INPUT_F_AVG,
+          outputCode: MC.UPS.OUTPUT_F_AVG,
         },
       },
       series: {

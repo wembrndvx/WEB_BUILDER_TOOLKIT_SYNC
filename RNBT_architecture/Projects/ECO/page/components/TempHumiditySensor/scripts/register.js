@@ -10,6 +10,7 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 const { applyHeatmapMixin } = HeatmapMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // TEMPLATE HELPER
@@ -85,13 +86,13 @@ function initComponent() {
       trendParams: {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['SENSOR.TEMP', 'SENSOR.HUMIDITY'],
+        metricCodes: [MC.SENSOR.TEMP, MC.SENSOR.HUMIDITY],
         statsKeys: [],
         timeField: 'time',
       },
       statsKeyMap: {
-        'SENSOR.TEMP': 'avg',
-        'SENSOR.HUMIDITY': 'avg',
+        [MC.SENSOR.TEMP]: 'avg',
+        [MC.SENSOR.HUMIDITY]: 'avg',
       },
     },
 
@@ -134,7 +135,7 @@ function initComponent() {
     statusCards: {
       metrics: {
         temperature: {
-          metricCode: 'SENSOR.TEMP',
+          metricCode: MC.SENSOR.TEMP,
           label: '온도',
           unit: '°C',
           color: '#3b82f6',
@@ -142,7 +143,7 @@ function initComponent() {
           targetValue: null,
         },
         humidity: {
-          metricCode: 'SENSOR.HUMIDITY',
+          metricCode: MC.SENSOR.HUMIDITY,
           label: '습도',
           unit: '%',
           color: '#22c55e',
@@ -162,14 +163,14 @@ function initComponent() {
     chart: {
       series: {
         temp: {
-          metricCode: 'SENSOR.TEMP',
+          metricCode: MC.SENSOR.TEMP,
           label: '온도',
           unit: '°C',
           color: '#3b82f6',
           scale: 1.0,
         },
         humidity: {
-          metricCode: 'SENSOR.HUMIDITY',
+          metricCode: MC.SENSOR.HUMIDITY,
           label: '습도',
           unit: '%',
           color: '#22c55e',
@@ -276,7 +277,7 @@ function initComponent() {
   // 3D Heatmap Surface Mixin
   applyHeatmapMixin(this, {
     surfaceSize: { width: 20, depth: 20 },
-    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    temperatureMetrics: [MC.SENSOR.TEMP, MC.CRAC.RETURN_TEMP],
   });
 
   // destroyPopup 체인 확장 - interval 정리
@@ -523,7 +524,7 @@ function renderStatusCards({ response }) {
 
       // 적정값 (API 미확인 → "-")
       if (targetValueEl) {
-        targetValueEl.textContent = config.metricCode == 'SENSOR.TEMP' ? '22' : '50';
+        targetValueEl.textContent = config.metricCode == MC.SENSOR.TEMP ? '22' : '50';
       }
     })
   );

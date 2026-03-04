@@ -11,6 +11,7 @@
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 const { applyHeatmapMixin } = HeatmapMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // TEMPLATE HELPER
@@ -76,13 +77,13 @@ function initComponent() {
       trendParams: {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
-        metricCodes: ['CRAC.RETURN_TEMP', 'CRAC.RETURN_HUMIDITY'],
+        metricCodes: [MC.CRAC.RETURN_TEMP, MC.CRAC.RETURN_HUMIDITY],
         statsKeys: [],
         timeField: 'time',
       },
       statsKeyMap: {
-        'CRAC.RETURN_TEMP': 'avg',
-        'CRAC.RETURN_HUMIDITY': 'avg',
+        [MC.CRAC.RETURN_TEMP]: 'avg',
+        [MC.CRAC.RETURN_HUMIDITY]: 'avg',
       },
     },
 
@@ -129,10 +130,10 @@ function initComponent() {
     // 상태정보 카드 영역 (온습도 현재값/설정값)
     statusCards: {
       metrics: {
-        currentTemp:  { metricCode: 'CRAC.RETURN_TEMP',     label: '현재온도', unit: '°C', scale: 1.0 },
-        setTemp:      { metricCode: 'CRAC.TEMP_SET',        label: '설정온도', unit: '°C', scale: 1.0 },
-        currentHumid: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '현재습도', unit: '%',  scale: 1.0 },
-        setHumid:     { metricCode: 'CRAC.HUMIDITY_SET',    label: '설정습도', unit: '%',  scale: 1.0 },
+        currentTemp:  { metricCode: MC.CRAC.RETURN_TEMP,     label: '현재온도', unit: '°C', scale: 1.0 },
+        setTemp:      { metricCode: MC.CRAC.TEMP_SET,        label: '설정온도', unit: '°C', scale: 1.0 },
+        currentHumid: { metricCode: MC.CRAC.RETURN_HUMIDITY, label: '현재습도', unit: '%',  scale: 1.0 },
+        setHumid:     { metricCode: MC.CRAC.HUMIDITY_SET,    label: '설정습도', unit: '%',  scale: 1.0 },
       },
       selectors: {
         card: '.status-card',
@@ -146,12 +147,12 @@ function initComponent() {
     // 상태 인디케이터 영역 (6개 BOOL dot)
     indicators: {
       metrics: {
-        fanStatus:        { metricCode: 'CRAC.FAN_STATUS',        label: '팬상태',       isLeak: false },
-        coolStatus:       { metricCode: 'CRAC.COOL_STATUS',       label: '냉방동작상태', isLeak: false },
-        heatStatus:       { metricCode: 'CRAC.HEAT_STATUS',       label: '난방동작상태', isLeak: false },
-        humidifyStatus:   { metricCode: 'CRAC.HUMIDIFY_STATUS',   label: '가습상태',     isLeak: false },
-        dehumidifyStatus: { metricCode: 'CRAC.DEHUMIDIFY_STATUS', label: '제습상태',     isLeak: false },
-        leakStatus:       { metricCode: 'CRAC.LEAK_STATUS',       label: '누수상태',     isLeak: true },
+        fanStatus:        { metricCode: MC.CRAC.FAN_STATUS,        label: '팬상태',       isLeak: false },
+        coolStatus:       { metricCode: MC.CRAC.COOL_STATUS,       label: '냉방동작상태', isLeak: false },
+        heatStatus:       { metricCode: MC.CRAC.HEAT_STATUS,       label: '난방동작상태', isLeak: false },
+        humidifyStatus:   { metricCode: MC.CRAC.HUMIDIFY_STATUS,   label: '가습상태',     isLeak: false },
+        dehumidifyStatus: { metricCode: MC.CRAC.DEHUMIDIFY_STATUS, label: '제습상태',     isLeak: false },
+        leakStatus:       { metricCode: MC.CRAC.LEAK_STATUS,       label: '누수상태',     isLeak: true },
       },
       selectors: {
         indicator: '.indicator',
@@ -162,8 +163,8 @@ function initComponent() {
     // 트렌드 차트 영역 (바+라인 복합)
     chart: {
       series: {
-        temp:     { metricCode: 'CRAC.RETURN_TEMP',     label: '온도', unit: '°C',  color: '#3b82f6', scale: 1.0 },
-        humidity: { metricCode: 'CRAC.RETURN_HUMIDITY', label: '습도', unit: '%',   color: '#22c55e', scale: 1.0 },
+        temp:     { metricCode: MC.CRAC.RETURN_TEMP,     label: '온도', unit: '°C',  color: '#3b82f6', scale: 1.0 },
+        humidity: { metricCode: MC.CRAC.RETURN_HUMIDITY, label: '습도', unit: '%',   color: '#22c55e', scale: 1.0 },
       },
       selectors: {
         container: '.chart-container',
@@ -247,7 +248,7 @@ function initComponent() {
   // 3D Heatmap Surface Mixin
   applyHeatmapMixin(this, {
     surfaceSize: { width: 20, depth: 20 },
-    temperatureMetrics: ['SENSOR.TEMP', 'CRAC.RETURN_TEMP'],
+    temperatureMetrics: [MC.SENSOR.TEMP, MC.CRAC.RETURN_TEMP],
   });
 
   // destroyPopup 체인 확장 - interval 정리

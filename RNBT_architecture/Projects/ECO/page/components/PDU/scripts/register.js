@@ -8,6 +8,7 @@
 
 const { bind3DEvents, fetchData, makeIterator } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // TEMPLATE HELPER
@@ -89,19 +90,19 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
-          'DIST.V_LN_AVG',
-          'DIST.CURRENT_AVG_A',
-          'DIST.ACTIVE_POWER_TOTAL_KW',
-          'DIST.FREQUENCY_HZ',
+          MC.DIST.V_LN_AVG,
+          MC.DIST.CURRENT_AVG_A,
+          MC.DIST.ACTIVE_POWER_TOTAL_KW,
+          MC.DIST.FREQUENCY_HZ,
         ],
         statsKeys: [],
         timeField: 'time',
       },
       statsKeyMap: {
-        'DIST.V_LN_AVG': 'avg',
-        'DIST.CURRENT_AVG_A': 'avg',
-        'DIST.ACTIVE_POWER_TOTAL_KW': 'avg',
-        'DIST.FREQUENCY_HZ': 'avg',
+        [MC.DIST.V_LN_AVG]: 'avg',
+        [MC.DIST.CURRENT_AVG_A]: 'avg',
+        [MC.DIST.ACTIVE_POWER_TOTAL_KW]: 'avg',
+        [MC.DIST.FREQUENCY_HZ]: 'avg',
       },
     },
 
@@ -160,21 +161,21 @@ function initComponent() {
     chart: {
       tabs: {
         voltage: {
-          metricCode: 'DIST.V_LN_AVG',
+          metricCode: MC.DIST.V_LN_AVG,
           label: '평균 전압',
           unit: 'V',
           color: '#3b82f6',
           scale: 1.0,
         },
         current: {
-          metricCode: 'DIST.CURRENT_AVG_A',
+          metricCode: MC.DIST.CURRENT_AVG_A,
           label: '평균 전류',
           unit: 'A',
           color: '#f59e0b',
           scale: 1.0,
         },
         power: {
-          metricCode: 'DIST.ACTIVE_POWER_TOTAL_KW',
+          metricCode: MC.DIST.ACTIVE_POWER_TOTAL_KW,
           label: '전력사용량',
           unit: 'kW',
           scale: 1.0,
@@ -185,7 +186,7 @@ function initComponent() {
           },
         },
         frequency: {
-          metricCode: 'DIST.FREQUENCY_HZ',
+          metricCode: MC.DIST.FREQUENCY_HZ,
           label: '주파수',
           unit: 'Hz',
           color: '#22c55e',

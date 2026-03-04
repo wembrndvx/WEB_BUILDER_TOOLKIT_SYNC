@@ -8,6 +8,7 @@
 
 const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+const MC = wemb.configManager.assetMetricCodes;
 
 // ======================
 // TEMPLATE HELPER
@@ -84,19 +85,19 @@ function initComponent() {
         interval: '1h',
         timeRange: 24 * 60 * 60 * 1000,
         metricCodes: [
-          'SWBD.VOLTAGE_V',
-          'SWBD.CURRENT_A',
-          'SWBD.FREQUENCY_HZ',
-          'SWBD.ACTIVE_POWER_KW',
+          MC.SWBD.VOLTAGE_V,
+          MC.SWBD.CURRENT_A,
+          MC.SWBD.FREQUENCY_HZ,
+          MC.SWBD.ACTIVE_POWER_KW,
         ],
         statsKeys: [],
         timeField: 'time',
       },
       statsKeyMap: {
-        'SWBD.VOLTAGE_V': 'avg',
-        'SWBD.CURRENT_A': 'avg',
-        'SWBD.FREQUENCY_HZ': 'avg',
-        'SWBD.ACTIVE_POWER_KW': 'avg',
+        [MC.SWBD.VOLTAGE_V]: 'avg',
+        [MC.SWBD.CURRENT_A]: 'avg',
+        [MC.SWBD.FREQUENCY_HZ]: 'avg',
+        [MC.SWBD.ACTIVE_POWER_KW]: 'avg',
       },
     },
 
@@ -139,28 +140,28 @@ function initComponent() {
     chart: {
       tabs: {
         voltage: {
-          metricCode: 'SWBD.VOLTAGE_V',
+          metricCode: MC.SWBD.VOLTAGE_V,
           label: '전압',
           unit: 'V',
           color: '#3b82f6',
           scale: 1.0,
         },
         current: {
-          metricCode: 'SWBD.CURRENT_A',
+          metricCode: MC.SWBD.CURRENT_A,
           label: '전류',
           unit: 'A',
           color: '#f59e0b',
           scale: 1.0,
         },
         frequency: {
-          metricCode: 'SWBD.FREQUENCY_HZ',
+          metricCode: MC.SWBD.FREQUENCY_HZ,
           label: '주파수',
           unit: 'Hz',
           color: '#22c55e',
           scale: 1.0,
         },
         power: {
-          metricCode: 'SWBD.ACTIVE_POWER_KW',
+          metricCode: MC.SWBD.ACTIVE_POWER_KW,
           label: '유효전력',
           unit: 'kW',
           scale: 1.0,
