@@ -228,7 +228,7 @@
         // ======================
         // MOCK IMPLEMENTATIONS
         // ======================
-        const API_BASE = 'http://10.23.128.125:4004';
+        const API_BASE = 'http://127.0.0.1:6381';
 
         const fx = {
             go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
@@ -546,7 +546,7 @@
             // 1. 내부 상태
             // ======================
             this._defaultAssetKey = this.setter?.assetInfo?.assetKey || this.id;
-            this._baseUrl = '10.23.128.140:8811';
+            this._baseUrl = '127.0.0.1:6381';
             this._locale = 'ko';
             this._popupTemplateId = 'popup-ups';
             this._trendData = null;
