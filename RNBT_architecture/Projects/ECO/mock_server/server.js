@@ -8,6 +8,48 @@ app.use(cors());
 app.use(express.json());
 
 // ======================
+// TEST SIMULATION MIDDLEWARE
+// ======================
+// 사용법:
+//   ?delay=10000  → 응답을 10초 지연 (TC-1394-01: 느린 API 시뮬레이션)
+//   ?error=500    → 500 에러 강제 반환 (TC-1394-03: 에러 복원력 검증)
+//   ?delay=3000&error=500 → 3초 후 500 에러 반환 (조합 가능)
+//
+// 예시:
+//   POST http://localhost:6381/api/v1/mh/gl?delay=10000
+//   POST http://localhost:6381/api/v1/mh/gl?error=500
+
+app.use('/api', (req, res, next) => {
+    const delayMs = parseInt(req.query.delay, 10);
+    const errorCode = parseInt(req.query.error, 10);
+
+    const proceed = () => {
+        if (errorCode >= 400 && errorCode < 600) {
+            console.log(`[SIMULATION] Returning ${errorCode} for ${req.method} ${req.path}`);
+            return res.status(errorCode).json({
+                success: false,
+                data: null,
+                error: {
+                    key: 'SIMULATED_ERROR',
+                    message: `Simulated ${errorCode} error for testing`,
+                    data: null
+                },
+                timestamp: new Date().toISOString(),
+                path: req.path
+            });
+        }
+        next();
+    };
+
+    if (delayMs > 0) {
+        console.log(`[SIMULATION] Delaying ${delayMs}ms for ${req.method} ${req.path}`);
+        setTimeout(proceed, delayMs);
+    } else {
+        proceed();
+    }
+});
+
+// ======================
 // UTILITY FUNCTIONS
 // ======================
 
@@ -1168,5 +1210,9 @@ app.listen(PORT, () => {
     console.log(`  POST /api/v1/mdl/l      - Model list (all)`);
     console.log(`  POST /api/v1/mdl/g      - Model single`);
     console.log(`\nMock Data: ${VENDOR_DATA.length} vendors, ${MODEL_DATA.length} models`);
+    console.log(`\nTest simulation (query params):`);
+    console.log(`  ?delay=10000  → 10s response delay`);
+    console.log(`  ?error=500    → force 500 error`);
+    console.log(`  Example: POST /api/v1/mh/gl?delay=10000`);
     console.log(`\n`);
 });
