@@ -200,19 +200,31 @@ function findAssetById(id) {
 // ASSET API v1 DATA
 // ======================
 
+// 내부 asset.type → assetCategoryType 매핑
+const ASSET_TYPE_TO_CATEGORY = {
+    'building': 'BUILDING',
+    'floor': 'FLOOR',
+    'room': 'ROOM',
+    'ups': 'UPS',
+    'pdu': 'DB_PANEL_METER',
+    'crac': 'CRAC',
+    'sensor': 'TEMP_HUMI_SENSOR',
+    'swbd': 'SWGR_METER',
+};
+
 // 카테고리별 모델 키 매핑 (MODEL_DATA의 categoryCode 기준)
 const MODEL_KEY_BY_CATEGORY = {
     'UPS': 'MODEL_SCHNEIDER_GALAXY_001',
-    'PDU': 'MODEL_SCHNEIDER_PDU_001',
+    'DB_PANEL_METER': 'MODEL_SCHNEIDER_PDU_001',
     'CRAC': 'MODEL_EMERSON_LIEBERT_001',
-    'SENSOR': 'MODEL_HONEYWELL_TEMP_001',
-    'SWBD': 'MODEL_LS_SWBD_001',
+    'TEMP_HUMI_SENSOR': 'MODEL_HONEYWELL_TEMP_001',
+    'SWGR_METER': 'MODEL_LS_SWBD_001',
     'DIST': 'MODEL_SIEMENS_ACCURA_001',
 };
 
 function getAssetApiData() {
     return ALL_ASSETS.map((asset, index) => {
-        const categoryType = asset.type.toUpperCase();
+        const categoryType = ASSET_TYPE_TO_CATEGORY[asset.type] || asset.type.toUpperCase();
         const assetModelKey = MODEL_KEY_BY_CATEGORY[categoryType] || null;
 
         return {
@@ -225,7 +237,7 @@ function getAssetApiData() {
             domainType: 'FACILITY',
             assetCategoryType: categoryType,
             assetType: categoryType,
-            usageCode: null,
+            usageCode: asset.canHaveChildren ? null : ['PRODUCTION', 'STANDBY', 'MAINTENANCE', 'BACKUP'][index % 4],
             serialNumber: `SN-${asset.id}`,
             name: asset.name,
             locationCode: asset.parentId || null,
@@ -338,12 +350,12 @@ const PROPERTY_META_DATA = [
     { id: 5, assetCategoryType: 'UPS', fieldKey: 'output_voltage_v', description: '출력 전압 (V)', isVisible: true, displayOrder: 5 },
     { id: 6, assetCategoryType: 'UPS', fieldKey: 'backup_time_min', description: '백업 시간 (분)', isVisible: true, displayOrder: 6 },
     // PDU 카테고리
-    { id: 101, assetCategoryType: 'PDU', fieldKey: 'rated_power_kw', description: '정격 용량 (kW)', isVisible: true, displayOrder: 1 },
-    { id: 102, assetCategoryType: 'PDU', fieldKey: 'rated_current_a', description: '정격 전류 (A)', isVisible: true, displayOrder: 2 },
-    { id: 103, assetCategoryType: 'PDU', fieldKey: 'input_voltage_v', description: '입력 전압 (V)', isVisible: true, displayOrder: 3 },
-    { id: 104, assetCategoryType: 'PDU', fieldKey: 'phase_type', description: '상 구분', isVisible: true, displayOrder: 4 },
-    { id: 105, assetCategoryType: 'PDU', fieldKey: 'circuit_count', description: '회로 수', isVisible: true, displayOrder: 5 },
-    { id: 106, assetCategoryType: 'PDU', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 6 },
+    { id: 101, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_power_kw', description: '정격 용량 (kW)', isVisible: true, displayOrder: 1 },
+    { id: 102, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_current_a', description: '정격 전류 (A)', isVisible: true, displayOrder: 2 },
+    { id: 103, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'input_voltage_v', description: '입력 전압 (V)', isVisible: true, displayOrder: 3 },
+    { id: 104, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'phase_type', description: '상 구분', isVisible: true, displayOrder: 4 },
+    { id: 105, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'circuit_count', description: '회로 수', isVisible: true, displayOrder: 5 },
+    { id: 106, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 6 },
     // CRAC 카테고리
     { id: 201, assetCategoryType: 'CRAC', fieldKey: 'cooling_capacity_kw', description: '냉방 용량 (kW)', isVisible: true, displayOrder: 1 },
     { id: 202, assetCategoryType: 'CRAC', fieldKey: 'airflow_cfm', description: '풍량 (CFM)', isVisible: true, displayOrder: 2 },
@@ -352,18 +364,18 @@ const PROPERTY_META_DATA = [
     { id: 205, assetCategoryType: 'CRAC', fieldKey: 'filter_type', description: '필터 종류', isVisible: true, displayOrder: 5 },
     { id: 206, assetCategoryType: 'CRAC', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 6 },
     // SWBD 카테고리
-    { id: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', description: '정격 전압 (V)', isVisible: true, displayOrder: 1 },
-    { id: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', description: '정격 전류 (A)', isVisible: true, displayOrder: 2 },
-    { id: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', description: '상 구분', isVisible: true, displayOrder: 3 },
-    { id: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', description: '과전류(OCR) 설정값', isVisible: true, displayOrder: 4 },
-    { id: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', description: '과전류지락(OCGR) 설정값', isVisible: true, displayOrder: 5 },
-    { id: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', description: '지락방향(DGR)', isVisible: true, displayOrder: 6 },
+    { id: 401, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_voltage_v', description: '정격 전압 (V)', isVisible: true, displayOrder: 1 },
+    { id: 402, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_current_a', description: '정격 전류 (A)', isVisible: true, displayOrder: 2 },
+    { id: 403, assetCategoryType: 'SWGR_METER', fieldKey: 'phase_type', description: '상 구분', isVisible: true, displayOrder: 3 },
+    { id: 404, assetCategoryType: 'SWGR_METER', fieldKey: 'ocr_setting', description: '과전류(OCR) 설정값', isVisible: true, displayOrder: 4 },
+    { id: 405, assetCategoryType: 'SWGR_METER', fieldKey: 'ocgr_setting', description: '과전류지락(OCGR) 설정값', isVisible: true, displayOrder: 5 },
+    { id: 406, assetCategoryType: 'SWGR_METER', fieldKey: 'dgr_direction', description: '지락방향(DGR)', isVisible: true, displayOrder: 6 },
     // SENSOR 카테고리
-    { id: 301, assetCategoryType: 'SENSOR', fieldKey: 'sensor_type', description: '센서 유형', isVisible: true, displayOrder: 1 },
-    { id: 302, assetCategoryType: 'SENSOR', fieldKey: 'measurement_range', description: '측정 범위', isVisible: true, displayOrder: 2 },
-    { id: 303, assetCategoryType: 'SENSOR', fieldKey: 'accuracy', description: '정확도', isVisible: true, displayOrder: 3 },
-    { id: 304, assetCategoryType: 'SENSOR', fieldKey: 'protocol', description: '통신 프로토콜', isVisible: true, displayOrder: 4 },
-    { id: 305, assetCategoryType: 'SENSOR', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 5 },
+    { id: 301, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'sensor_type', description: '센서 유형', isVisible: true, displayOrder: 1 },
+    { id: 302, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'measurement_range', description: '측정 범위', isVisible: true, displayOrder: 2 },
+    { id: 303, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'accuracy', description: '정확도', isVisible: true, displayOrder: 3 },
+    { id: 304, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'protocol', description: '통신 프로토콜', isVisible: true, displayOrder: 4 },
+    { id: 305, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'manufacturer', description: '제조사', isVisible: true, displayOrder: 5 },
 ];
 
 const FIELD_LABEL_DATA = [
@@ -382,19 +394,19 @@ const FIELD_LABEL_DATA = [
     { id: 11, assetPropertyMetaId: 5, assetCategoryType: 'UPS', fieldKey: 'output_voltage_v', locale: 'en', label: 'Output Voltage', helpText: 'Output voltage (V)' },
     { id: 12, assetPropertyMetaId: 6, assetCategoryType: 'UPS', fieldKey: 'backup_time_min', locale: 'en', label: 'Backup Time', helpText: 'Backup time during outage (min)' },
     // PDU - Korean
-    { id: 101, assetPropertyMetaId: 101, assetCategoryType: 'PDU', fieldKey: 'rated_power_kw', locale: 'ko', label: '정격 용량', helpText: '분전반 정격 용량 (kW)' },
-    { id: 102, assetPropertyMetaId: 102, assetCategoryType: 'PDU', fieldKey: 'rated_current_a', locale: 'ko', label: '정격 전류', helpText: '정격 전류 (A)' },
-    { id: 103, assetPropertyMetaId: 103, assetCategoryType: 'PDU', fieldKey: 'input_voltage_v', locale: 'ko', label: '입력 전압', helpText: '입력 전압 (V)' },
-    { id: 104, assetPropertyMetaId: 104, assetCategoryType: 'PDU', fieldKey: 'phase_type', locale: 'ko', label: '상 구분', helpText: '단상/삼상 구분' },
-    { id: 105, assetPropertyMetaId: 105, assetCategoryType: 'PDU', fieldKey: 'circuit_count', locale: 'ko', label: '회로 수', helpText: '총 회로(분기) 수' },
-    { id: 106, assetPropertyMetaId: 106, assetCategoryType: 'PDU', fieldKey: 'manufacturer', locale: 'ko', label: '제조사', helpText: '제조사명' },
+    { id: 101, assetPropertyMetaId: 101, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_power_kw', locale: 'ko', label: '정격 용량', helpText: '분전반 정격 용량 (kW)' },
+    { id: 102, assetPropertyMetaId: 102, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_current_a', locale: 'ko', label: '정격 전류', helpText: '정격 전류 (A)' },
+    { id: 103, assetPropertyMetaId: 103, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'input_voltage_v', locale: 'ko', label: '입력 전압', helpText: '입력 전압 (V)' },
+    { id: 104, assetPropertyMetaId: 104, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'phase_type', locale: 'ko', label: '상 구분', helpText: '단상/삼상 구분' },
+    { id: 105, assetPropertyMetaId: 105, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'circuit_count', locale: 'ko', label: '회로 수', helpText: '총 회로(분기) 수' },
+    { id: 106, assetPropertyMetaId: 106, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'manufacturer', locale: 'ko', label: '제조사', helpText: '제조사명' },
     // PDU - English
-    { id: 107, assetPropertyMetaId: 101, assetCategoryType: 'PDU', fieldKey: 'rated_power_kw', locale: 'en', label: 'Rated Power', helpText: 'Rated power capacity (kW)' },
-    { id: 108, assetPropertyMetaId: 102, assetCategoryType: 'PDU', fieldKey: 'rated_current_a', locale: 'en', label: 'Rated Current', helpText: 'Rated current (A)' },
-    { id: 109, assetPropertyMetaId: 103, assetCategoryType: 'PDU', fieldKey: 'input_voltage_v', locale: 'en', label: 'Input Voltage', helpText: 'Input voltage (V)' },
-    { id: 110, assetPropertyMetaId: 104, assetCategoryType: 'PDU', fieldKey: 'phase_type', locale: 'en', label: 'Phase Type', helpText: 'Single/Three phase' },
-    { id: 111, assetPropertyMetaId: 105, assetCategoryType: 'PDU', fieldKey: 'circuit_count', locale: 'en', label: 'Circuit Count', helpText: 'Total circuit branches' },
-    { id: 112, assetPropertyMetaId: 106, assetCategoryType: 'PDU', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
+    { id: 107, assetPropertyMetaId: 101, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_power_kw', locale: 'en', label: 'Rated Power', helpText: 'Rated power capacity (kW)' },
+    { id: 108, assetPropertyMetaId: 102, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'rated_current_a', locale: 'en', label: 'Rated Current', helpText: 'Rated current (A)' },
+    { id: 109, assetPropertyMetaId: 103, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'input_voltage_v', locale: 'en', label: 'Input Voltage', helpText: 'Input voltage (V)' },
+    { id: 110, assetPropertyMetaId: 104, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'phase_type', locale: 'en', label: 'Phase Type', helpText: 'Single/Three phase' },
+    { id: 111, assetPropertyMetaId: 105, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'circuit_count', locale: 'en', label: 'Circuit Count', helpText: 'Total circuit branches' },
+    { id: 112, assetPropertyMetaId: 106, assetCategoryType: 'DB_PANEL_METER', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
     // CRAC - Korean
     { id: 201, assetPropertyMetaId: 201, assetCategoryType: 'CRAC', fieldKey: 'cooling_capacity_kw', locale: 'ko', label: '냉방 용량', helpText: '냉방 능력 (kW)' },
     { id: 202, assetPropertyMetaId: 202, assetCategoryType: 'CRAC', fieldKey: 'airflow_cfm', locale: 'ko', label: '풍량', helpText: '공기 순환량 (CFM)' },
@@ -410,31 +422,31 @@ const FIELD_LABEL_DATA = [
     { id: 211, assetPropertyMetaId: 205, assetCategoryType: 'CRAC', fieldKey: 'filter_type', locale: 'en', label: 'Filter Type', helpText: 'Air filter type' },
     { id: 212, assetPropertyMetaId: 206, assetCategoryType: 'CRAC', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
     // SWBD - Korean
-    { id: 401, assetPropertyMetaId: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', locale: 'ko', label: '정격 전압', helpText: '정격 전압 (V)' },
-    { id: 402, assetPropertyMetaId: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', locale: 'ko', label: '정격 전류', helpText: '정격 전류 (A)' },
-    { id: 403, assetPropertyMetaId: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', locale: 'ko', label: '상 구분', helpText: '단상/삼상 구분' },
-    { id: 404, assetPropertyMetaId: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', locale: 'ko', label: '과전류(OCR)', helpText: '과전류 차단 설정값' },
-    { id: 405, assetPropertyMetaId: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', locale: 'ko', label: '과전류지락(OCGR)', helpText: '과전류지락 차단 설정값' },
-    { id: 406, assetPropertyMetaId: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', locale: 'ko', label: '지락방향(DGR)', helpText: '지락방향 계전기 방향' },
+    { id: 401, assetPropertyMetaId: 401, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_voltage_v', locale: 'ko', label: '정격 전압', helpText: '정격 전압 (V)' },
+    { id: 402, assetPropertyMetaId: 402, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_current_a', locale: 'ko', label: '정격 전류', helpText: '정격 전류 (A)' },
+    { id: 403, assetPropertyMetaId: 403, assetCategoryType: 'SWGR_METER', fieldKey: 'phase_type', locale: 'ko', label: '상 구분', helpText: '단상/삼상 구분' },
+    { id: 404, assetPropertyMetaId: 404, assetCategoryType: 'SWGR_METER', fieldKey: 'ocr_setting', locale: 'ko', label: '과전류(OCR)', helpText: '과전류 차단 설정값' },
+    { id: 405, assetPropertyMetaId: 405, assetCategoryType: 'SWGR_METER', fieldKey: 'ocgr_setting', locale: 'ko', label: '과전류지락(OCGR)', helpText: '과전류지락 차단 설정값' },
+    { id: 406, assetPropertyMetaId: 406, assetCategoryType: 'SWGR_METER', fieldKey: 'dgr_direction', locale: 'ko', label: '지락방향(DGR)', helpText: '지락방향 계전기 방향' },
     // SWBD - English
-    { id: 407, assetPropertyMetaId: 401, assetCategoryType: 'SWBD', fieldKey: 'rated_voltage_v', locale: 'en', label: 'Rated Voltage', helpText: 'Rated voltage (V)' },
-    { id: 408, assetPropertyMetaId: 402, assetCategoryType: 'SWBD', fieldKey: 'rated_current_a', locale: 'en', label: 'Rated Current', helpText: 'Rated current (A)' },
-    { id: 409, assetPropertyMetaId: 403, assetCategoryType: 'SWBD', fieldKey: 'phase_type', locale: 'en', label: 'Phase Type', helpText: 'Single/Three phase' },
-    { id: 410, assetPropertyMetaId: 404, assetCategoryType: 'SWBD', fieldKey: 'ocr_setting', locale: 'en', label: 'OCR Setting', helpText: 'Over-current relay setting' },
-    { id: 411, assetPropertyMetaId: 405, assetCategoryType: 'SWBD', fieldKey: 'ocgr_setting', locale: 'en', label: 'OCGR Setting', helpText: 'Over-current ground relay setting' },
-    { id: 412, assetPropertyMetaId: 406, assetCategoryType: 'SWBD', fieldKey: 'dgr_direction', locale: 'en', label: 'DGR Direction', helpText: 'Directional ground relay' },
+    { id: 407, assetPropertyMetaId: 401, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_voltage_v', locale: 'en', label: 'Rated Voltage', helpText: 'Rated voltage (V)' },
+    { id: 408, assetPropertyMetaId: 402, assetCategoryType: 'SWGR_METER', fieldKey: 'rated_current_a', locale: 'en', label: 'Rated Current', helpText: 'Rated current (A)' },
+    { id: 409, assetPropertyMetaId: 403, assetCategoryType: 'SWGR_METER', fieldKey: 'phase_type', locale: 'en', label: 'Phase Type', helpText: 'Single/Three phase' },
+    { id: 410, assetPropertyMetaId: 404, assetCategoryType: 'SWGR_METER', fieldKey: 'ocr_setting', locale: 'en', label: 'OCR Setting', helpText: 'Over-current relay setting' },
+    { id: 411, assetPropertyMetaId: 405, assetCategoryType: 'SWGR_METER', fieldKey: 'ocgr_setting', locale: 'en', label: 'OCGR Setting', helpText: 'Over-current ground relay setting' },
+    { id: 412, assetPropertyMetaId: 406, assetCategoryType: 'SWGR_METER', fieldKey: 'dgr_direction', locale: 'en', label: 'DGR Direction', helpText: 'Directional ground relay' },
     // SENSOR - Korean
-    { id: 301, assetPropertyMetaId: 301, assetCategoryType: 'SENSOR', fieldKey: 'sensor_type', locale: 'ko', label: '센서 유형', helpText: '온도/습도/전력/풍량 등' },
-    { id: 302, assetPropertyMetaId: 302, assetCategoryType: 'SENSOR', fieldKey: 'measurement_range', locale: 'ko', label: '측정 범위', helpText: '센서 측정 가능 범위' },
-    { id: 303, assetPropertyMetaId: 303, assetCategoryType: 'SENSOR', fieldKey: 'accuracy', locale: 'ko', label: '정확도', helpText: '측정 정확도' },
-    { id: 304, assetPropertyMetaId: 304, assetCategoryType: 'SENSOR', fieldKey: 'protocol', locale: 'ko', label: '통신 프로토콜', helpText: 'Modbus/BACnet/SNMP 등' },
-    { id: 305, assetPropertyMetaId: 305, assetCategoryType: 'SENSOR', fieldKey: 'manufacturer', locale: 'ko', label: '제조사', helpText: '제조사명' },
+    { id: 301, assetPropertyMetaId: 301, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'sensor_type', locale: 'ko', label: '센서 유형', helpText: '온도/습도/전력/풍량 등' },
+    { id: 302, assetPropertyMetaId: 302, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'measurement_range', locale: 'ko', label: '측정 범위', helpText: '센서 측정 가능 범위' },
+    { id: 303, assetPropertyMetaId: 303, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'accuracy', locale: 'ko', label: '정확도', helpText: '측정 정확도' },
+    { id: 304, assetPropertyMetaId: 304, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'protocol', locale: 'ko', label: '통신 프로토콜', helpText: 'Modbus/BACnet/SNMP 등' },
+    { id: 305, assetPropertyMetaId: 305, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'manufacturer', locale: 'ko', label: '제조사', helpText: '제조사명' },
     // SENSOR - English
-    { id: 306, assetPropertyMetaId: 301, assetCategoryType: 'SENSOR', fieldKey: 'sensor_type', locale: 'en', label: 'Sensor Type', helpText: 'Temp/Humidity/Power/Airflow etc.' },
-    { id: 307, assetPropertyMetaId: 302, assetCategoryType: 'SENSOR', fieldKey: 'measurement_range', locale: 'en', label: 'Measurement Range', helpText: 'Measurable range' },
-    { id: 308, assetPropertyMetaId: 303, assetCategoryType: 'SENSOR', fieldKey: 'accuracy', locale: 'en', label: 'Accuracy', helpText: 'Measurement accuracy' },
-    { id: 309, assetPropertyMetaId: 304, assetCategoryType: 'SENSOR', fieldKey: 'protocol', locale: 'en', label: 'Protocol', helpText: 'Modbus/BACnet/SNMP etc.' },
-    { id: 310, assetPropertyMetaId: 305, assetCategoryType: 'SENSOR', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
+    { id: 306, assetPropertyMetaId: 301, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'sensor_type', locale: 'en', label: 'Sensor Type', helpText: 'Temp/Humidity/Power/Airflow etc.' },
+    { id: 307, assetPropertyMetaId: 302, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'measurement_range', locale: 'en', label: 'Measurement Range', helpText: 'Measurable range' },
+    { id: 308, assetPropertyMetaId: 303, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'accuracy', locale: 'en', label: 'Accuracy', helpText: 'Measurement accuracy' },
+    { id: 309, assetPropertyMetaId: 304, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'protocol', locale: 'en', label: 'Protocol', helpText: 'Modbus/BACnet/SNMP etc.' },
+    { id: 310, assetPropertyMetaId: 305, assetCategoryType: 'TEMP_HUMI_SENSOR', fieldKey: 'manufacturer', locale: 'en', label: 'Manufacturer', helpText: 'Manufacturer name' },
 ];
 
 // UPS용 property mock 데이터 생성 함수
@@ -708,10 +720,10 @@ app.post('/api/v1/ast/gx', (req, res) => {
     let propertyValues = {};
     switch (categoryType) {
         case 'UPS': propertyValues = generateUPSProperty(assetKey); break;
-        case 'PDU': propertyValues = generatePDUProperty(assetKey); break;
+        case 'DB_PANEL_METER': propertyValues = generatePDUProperty(assetKey); break;
         case 'CRAC': propertyValues = generateCRACProperty(assetKey); break;
-        case 'SWBD': propertyValues = generateSWBDProperty(assetKey); break;
-        case 'SENSOR': propertyValues = generateSensorProperty(assetKey); break;
+        case 'SWGR_METER': propertyValues = generateSWBDProperty(assetKey); break;
+        case 'TEMP_HUMI_SENSOR': propertyValues = generateSensorProperty(assetKey); break;
         default:
             try { propertyValues = JSON.parse(asset.property || '{}'); }
             catch (e) { propertyValues = {}; }
@@ -739,6 +751,7 @@ app.post('/api/v1/ast/gx', (req, res) => {
             name: asset.name,
             assetType: asset.assetType,
             assetCategoryType: categoryType,
+            usageCode: asset.usageCode,
             statusType: asset.statusType,
             locationLabel: asset.locationLabel,
             serialNumber: asset.serialNumber,
@@ -774,11 +787,11 @@ const MODEL_DATA = [
     { id: 1, assetModelKey: 'MODEL_DELL_R750_001', assetVendorKey: 'VENDOR_DELL_001', vendorName: 'Dell', name: 'PowerEdge R750', code: 'R750', categoryCode: 'SERVER', specJson: '{"cpu":"Intel Xeon","ram":"128GB"}' },
     { id: 2, assetModelKey: 'MODEL_SCHNEIDER_GALAXY_001', assetVendorKey: 'VENDOR_SCHNEIDER_001', vendorName: 'Schneider Electric', name: 'Galaxy VX 500kVA', code: 'GALAXY_VX_500', categoryCode: 'UPS', specJson: '{"capacity_kva":500,"phase":"3P"}' },
     { id: 3, assetModelKey: 'MODEL_EATON_93PM_001', assetVendorKey: 'VENDOR_EATON_001', vendorName: 'Eaton', name: '93PM 200kVA', code: '93PM_200', categoryCode: 'UPS', specJson: '{"capacity_kva":200,"phase":"3P"}' },
-    { id: 4, assetModelKey: 'MODEL_SCHNEIDER_PDU_001', assetVendorKey: 'VENDOR_SCHNEIDER_001', vendorName: 'Schneider Electric', name: 'Rack PDU 9000', code: 'RPDU_9000', categoryCode: 'PDU', specJson: '{"rated_a":32,"outlets":24}' },
+    { id: 4, assetModelKey: 'MODEL_SCHNEIDER_PDU_001', assetVendorKey: 'VENDOR_SCHNEIDER_001', vendorName: 'Schneider Electric', name: 'Rack PDU 9000', code: 'RPDU_9000', categoryCode: 'DB_PANEL_METER', specJson: '{"rated_a":32,"outlets":24}' },
     { id: 5, assetModelKey: 'MODEL_EMERSON_LIEBERT_001', assetVendorKey: 'VENDOR_EMERSON_001', vendorName: 'Emerson', name: 'Liebert CRV 35kW', code: 'CRV_35', categoryCode: 'CRAC', specJson: '{"cooling_kw":35,"airflow_cfm":5500}' },
     { id: 6, assetModelKey: 'MODEL_DAIKIN_SURROUND_001', assetVendorKey: 'VENDOR_DAIKIN_001', vendorName: 'Daikin', name: 'Surround Handler 25kW', code: 'SH_25', categoryCode: 'CRAC', specJson: '{"cooling_kw":25,"refrigerant":"R-410A"}' },
-    { id: 7, assetModelKey: 'MODEL_HONEYWELL_TEMP_001', assetVendorKey: 'VENDOR_HONEYWELL_001', vendorName: 'Honeywell', name: 'C7110A Room Sensor', code: 'C7110A', categoryCode: 'SENSOR', specJson: '{"type":"temp_humidity","range":"-20~60C"}' },
-    { id: 8, assetModelKey: 'MODEL_LS_SWBD_001', assetVendorKey: 'VENDOR_LS_001', vendorName: 'LS Electric', name: 'SUSOL MCC Panel', code: 'SUSOL_MCC', categoryCode: 'SWBD', specJson: '{"rated_v":380,"rated_a":3200}' },
+    { id: 7, assetModelKey: 'MODEL_HONEYWELL_TEMP_001', assetVendorKey: 'VENDOR_HONEYWELL_001', vendorName: 'Honeywell', name: 'C7110A Room Sensor', code: 'C7110A', categoryCode: 'TEMP_HUMI_SENSOR', specJson: '{"type":"temp_humidity","range":"-20~60C"}' },
+    { id: 8, assetModelKey: 'MODEL_LS_SWBD_001', assetVendorKey: 'VENDOR_LS_001', vendorName: 'LS Electric', name: 'SUSOL MCC Panel', code: 'SUSOL_MCC', categoryCode: 'SWGR_METER', specJson: '{"rated_v":380,"rated_a":3200}' },
     { id: 9, assetModelKey: 'MODEL_SIEMENS_ACCURA_001', assetVendorKey: 'VENDOR_SIEMENS_001', vendorName: 'Siemens', name: 'ACCURA 2350', code: 'ACCURA_2350', categoryCode: 'DIST', specJson: '{"type":"power_meter","protocol":"Modbus"}' },
 ].map(m => ({ ...m, createdAt: '2026-01-15T09:00:00Z', updatedAt: new Date().toISOString() }));
 
